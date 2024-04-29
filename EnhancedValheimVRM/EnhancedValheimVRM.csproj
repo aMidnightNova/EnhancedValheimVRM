@@ -1,0 +1,294 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
+            Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <ProjectGuid>{56266ABF-B3F1-44F5-8790-D269FE536067}</ProjectGuid>
+        <OutputType>Library</OutputType>
+        <Version>1.0.0</Version>
+        <AppDesignerFolder>Properties</AppDesignerFolder>
+        <RootNamespace>EnhancedValheimVRM</RootNamespace>
+        <AssemblyName>EnhancedValheimVRM</AssemblyName>
+        <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+        <FileAlignment>512</FileAlignment>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>full</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>bin\Debug\</OutputPath>
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DebugType>pdbonly</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>bin\Release\</OutputPath>
+        <DefineConstants>TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+    <ItemGroup>
+        <Reference Include="System"/>
+        <Reference Include="System.Core"/>
+        <Reference Include="System.Data"/>
+        <Reference Include="System.Xml"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Compression.cs" />
+        <Compile Include="ConsoleCommands.cs" />
+        <Compile Include="Constants.cs" />
+        <Compile Include="CoroutineHelper.cs" />
+        <Compile Include="Plugin.cs" />
+        <Compile Include="PatchShaderFind.cs" />
+        <Compile Include="Properties\AssemblyInfo.cs"/>
+        <Compile Include="Settings.cs" />
+        <Compile Include="TextureDeserializer.cs" />
+        <Compile Include="TimeElapsedHelper.cs" />
+        <Compile Include="VrmAnimationSync.cs" />
+        <Compile Include="VrmController.cs" />
+        <Compile Include="VrmInstance.cs" />
+        <Compile Include="VrmSettings.cs" />
+        <Compile Include="VrmTransferController.cs" />
+    </ItemGroup>
+    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+
+
+
+
+
+
+
+
+    <ItemGroup>
+        <Reference Include="0Harmony">
+            <HintPath>$(VALHEIM_INSTALL)\BepInEx\core\0Harmony.dll</HintPath>
+        </Reference>
+        <Reference Include="assembly_utils">
+            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\assembly_utils.dll</HintPath>
+        </Reference>
+        <Reference Include="assembly_guiutils">
+            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\assembly_guiutils.dll</HintPath>
+        </Reference>
+        <Reference Include="assembly_valheim">
+            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\assembly_valheim.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine">
+            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.dll</HintPath>
+        </Reference>
+
+
+        <Reference Include="BepInEx">
+            <HintPath>$(VALHEIM_INSTALL)\BepInEx\core\BepInEx.dll</HintPath>
+        </Reference>
+
+
+        <Reference Include="UnityEngine.AnimationModule">
+            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.AssetBundleModule">
+            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.CoreModule">
+            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.PhysicsModule">
+            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.UI">
+            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.UI.dll</HintPath>
+        </Reference>
+        <!--    <Reference Include="UniUnlit">-->
+        <!--      <HintPath>$(UNIVRM_UNITY_LIBS)\UniUnlit.dll</HintPath>-->
+        <!--    </Reference>-->
+        <Reference Include="VRM">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRM.dll</HintPath>
+        </Reference>
+        <Reference Include="VRM10">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRM10.dll</HintPath>
+        </Reference>
+        <Reference Include="VrmLib">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VrmLib.dll</HintPath>
+        </Reference>
+        <Reference Include="VRMShaders.GLTF.IO.Runtime">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.GLTF.IO.Runtime.dll</HintPath>
+        </Reference>
+        <Reference Include="VRMShaders.GLTF.UniUnlit.Runtime">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.GLTF.UniUnlit.Runtime.dll</HintPath>
+        </Reference>
+        <Reference Include="VRMShaders.VRM.IO.Runtime">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.VRM.IO.Runtime.dll</HintPath>
+        </Reference>
+        <Reference Include="VRMShaders.VRM10.Format.Runtime">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.VRM10.Format.Runtime.dll</HintPath>
+        </Reference>
+        <Reference Include="VRMShaders.VRM10.MToon10.Runtime">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.VRM10.MToon10.Runtime.dll</HintPath>
+        </Reference>
+
+        <Reference Include="FastSpringBone">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\FastSpringBone.dll</HintPath>
+        </Reference>
+        <Reference Include="FastSpringBone10">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\FastSpringBone10.dll</HintPath>
+        </Reference>
+        <!--    <Reference Include="MeshUtility">-->
+        <!--      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\MeshUtility.dll</HintPath>-->
+        <!--    </Reference>-->
+        <Reference Include="MToon">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\MToon.dll</HintPath>
+        </Reference>
+        <!--    <Reference Include="ShaderProperty.Runtime">-->
+        <!--      <HintPath>$(UNIVRM_UNITY_LIBS)\ShaderProperty.Runtime.dll</HintPath>-->
+        <!--    </Reference>-->
+        <Reference Include="UniGLTF">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\UniGLTF.dll</HintPath>
+        </Reference>
+        <Reference Include="UniGLTF.Utils">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\UniGLTF.Utils.dll</HintPath>
+        </Reference>
+        <!--    <Reference Include="UniGLTF.Editor">-->
+        <!--      <HintPath>$(UNIVRM_UNITY_LIBS)\UniGLTF.Editor.dll</HintPath>-->
+        <!--    </Reference>-->
+        <Reference Include="UniHumanoid">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\UniHumanoid.dll</HintPath>
+        </Reference>
+        <Reference Include="AsyncImageLoader">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\AsyncImageLoader.Runtime.dll</HintPath>
+        </Reference>
+
+        <Reference Include="Unity.Burst">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\Unity.Burst.dll</HintPath>
+        </Reference>
+
+        <Reference Include="Unity.Mathematics">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\Unity.Mathematics.dll</HintPath>
+        </Reference>
+        <Reference Include="FreeImage.dll">
+            <HintPath>$(UNIVRM_UNITY_LIBS)\Plugins\x86_64\FreeImage.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+    
+
+    
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <!-- Set Paths -->
+        <PropertyGroup>
+            <BepInExPluginPath>$(VALHEIM_INSTALL)\BepInEx\plugins\</BepInExPluginPath>
+            <ManagedPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\</ManagedPath>
+            <ValheimInstallPath>$(VALHEIM_INSTALL)\</ValheimInstallPath>
+            <UniVrmLibsPathManaged>$(UNIVRM_UNITY_LIBS)\Managed</UniVrmLibsPathManaged>
+            <UniVrmLibsPathPlugins>$(UNIVRM_UNITY_LIBS)\Plugins\x86_64</UniVrmLibsPathPlugins>
+            <Pdb2MdbPath>$(SolutionDir)pdb2mdb.exe</Pdb2MdbPath>
+            <!--      <UnstrippedCorlibPath>$(VALHEIM_INSTALL)\unstripped_corlib\</UnstrippedCorlibPath>-->
+        </PropertyGroup>
+
+        <PropertyGroup>
+            <ReleasePath>$(SolutionDir)release\</ReleasePath>
+            <ReleaseManagedPath>$(ReleasePath)valheim_Data\Managed\</ReleaseManagedPath>
+            <ReleasePluginPath>$(ReleasePath)BepInEx\plugins\</ReleasePluginPath>
+        </PropertyGroup>
+
+
+        <!-- Delete old files from BepInExPluginPath -->
+        <Exec Command="del &quot;$(BepInExPluginPath)$(TargetFileName)&quot;" />
+        <Exec Command="del &quot;$(BepInExPluginPath)$(TargetName).pdb&quot;" />
+        <Exec Command="del &quot;$(BepInExPluginPath)$(TargetFileName).mdb&quot;" />
+
+        <!-- Copyable files -->
+        <ItemGroup>
+            <!-- UNI VRM -->
+            <LibFiles Include="$(UniVrmLibsPathManaged)\FastSpringBone.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\FastSpringBone10.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\MToon.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\UniGLTF.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\UniHumanoid.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\VRM.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\VRM10.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\VrmLib.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\UniGLTF.Utils.dll" />
+
+            <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.GLTF.IO.Runtime.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.GLTF.UniUnlit.Runtime.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.VRM.IO.Runtime.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.VRM10.Format.Runtime.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.VRM10.MToon10.Runtime.dll" />
+
+            <!-- AsyncImageLoader -->
+
+            <LibFiles Include="$(UniVrmLibsPathManaged)\AsyncImageLoader.Runtime.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\Unity.Burst.dll" />
+            <LibFiles Include="$(UniVrmLibsPathManaged)\Unity.Mathematics.dll" />
+            <LibFiles Include="$(UniVrmLibsPathPlugins)\FreeImage.dll" />
+
+            <!--      <LibFiles Include="$(LibsPath)\System.dll" />-->
+
+            <!-- Unstripped_corlib  -->
+            <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.dll" />-->
+            <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.CoreModule.dll" />-->
+            <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.AnimationModule.dll" />-->
+            <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.AssetBundleModule.dll" />-->
+            <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.PhysicsModule.dll" />-->
+            <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.UI.dll" />-->
+
+        </ItemGroup>
+
+
+        <!-- COPY FILES TO LOCAL VALHIEM -->
+        <Copy SourceFiles="@(LibFiles)" DestinationFolder="$(ManagedPath)" />
+        <Exec Command="copy &quot;$(SolutionDir)shaders\UniVrm.shaders&quot; &quot;$(ValheimInstallPath)EnhancedValheimVRM\shaders\UniVrm.shaders&quot;" />
+        <Exec Command="copy &quot;$(SolutionDir)shaders\OldUniVrm.shaders&quot; &quot;$(ValheimInstallPath)EnhancedValheimVRM\shaders\OldUniVrm.shaders&quot;" />
+
+        <!-- DEBUG BUILD STUFF -->
+        <Exec Condition=" '$(Configuration)' == 'Debug' " Command="&quot;$(Pdb2MdbPath)&quot; &quot;$(TargetPath)&quot;" />
+        <Exec Condition=" '$(Configuration)' == 'Debug' " Command="copy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(BepInExPluginPath)$(TargetFileName)&quot;" />
+        <Exec Condition=" '$(Configuration)' == 'Debug' " Command="copy &quot;$(TargetDir)$(TargetName).pdb&quot; &quot;$(BepInExPluginPath)$(TargetName).pdb&quot;" />
+        <Exec Condition=" '$(Configuration)' == 'Debug' " Command="copy &quot;$(TargetDir)$(TargetFileName).mdb&quot; &quot;$(BepInExPluginPath)$(TargetFileName).mdb&quot;" />
+
+
+
+
+        <!-- RELEASE BUILD STUFF -->
+
+        <Exec Condition=" '$(Configuration)' == 'Release' " Command="if exist &quot;$(ReleasePath)&quot; rd /s /q &quot;$(ReleasePath)&quot;" />
+
+        <MakeDir Directories="$(ReleasePath)" Condition=" '$(Configuration)' == 'Release' " />
+        <MakeDir Directories="$(SolutionDir)packaged" Condition=" '$(Configuration)' == 'Release' " />
+        <MakeDir Directories="$(ReleasePath)EnhancedValheimVRM\" Condition=" '$(Configuration)' == 'Release' " />
+        <MakeDir Directories="$(ReleasePath)EnhancedValheimVRM\shaders\" Condition=" '$(Configuration)' == 'Release' " />
+
+        <MakeDir Directories="$(ReleaseManagedPath)" Condition=" '$(Configuration)' == 'Release' " />
+        <MakeDir Directories="$(ReleasePluginPath)" Condition=" '$(Configuration)' == 'Release' " />
+
+
+        <!-- Copy EnhancedValheimVRM.dll to correct places -->
+        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(BepInExPluginPath)$(TargetFileName)&quot;" />
+        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(ReleasePluginPath)$(TargetFileName)&quot;" />
+
+
+        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)shaders\UniVrm.shaders&quot; &quot;$(ReleasePath)EnhancedValheimVRM\shaders\UniVrm.shaders&quot;" />
+        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)shaders\OldUniVrm.shaders&quot; &quot;$(ReleasePath)EnhancedValheimVRM\shaders\OldUniVrm.shaders&quot;" />
+
+
+        <Copy Condition=" '$(Configuration)' == 'Release' " SourceFiles="@(LibFiles)" DestinationFolder="$(ReleaseManagedPath)" />
+
+        <!--  Copy Other Project files  -->
+        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)settings____Default.txt.example&quot; &quot;$(ReleasePath)EnhancedValheimVRM\settings___Default.txt.example&quot;" />
+        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)settings_Example.txt.example&quot; &quot;$(ReleasePath)EnhancedValheimVRM\settings_Example.txt.example&quot;" />
+        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)README.md&quot; &quot;$(ReleasePath)EnhancedValheimVRM\README.md&quot;" />
+
+
+
+        <!-- Zip for release -->
+        <Exec Condition=" '$(Configuration)' == 'Release' " Command="powershell -command &quot;Compress-Archive -Path '$(ReleasePath)' -DestinationPath '$(SolutionDir)packaged\EnhancedValheimVRM-$(Version).zip'&quot; -Force" />
+
+
+
+    </Target>
+
+</Project>
