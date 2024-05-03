@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UniGLTF;
 using UnityEngine;
@@ -16,25 +17,57 @@ namespace EnhancedValheimVRM
         private byte[] _sourceHash;
         private byte[] _settingsHash;
 
+        public bool SettingsHashIsDirty = false;
+        public bool SourceHashIsDirty = false;
+
         private RuntimeGltfInstance _instance;
-        private GameObject _go;
+        private GameObject _vrmGo;
         private readonly string _playerName;
-        private VrmSettings _settings;
+        private readonly string _playerSettingsName;
+        private readonly VrmSettings _settings;
         private readonly string _vrmPath;
+        private readonly Player _player;
 
-        public VrmInstance(string playerName, bool sync = true)
+        public VrmInstance(Player player)
         {
-            _playerName = playerName;
+            _player = player;
 
-            _vrmPath = Path.Combine(Constants.VrmDir, $"{_playerName}.vrm");
+            _playerName = player.name;
+            _playerSettingsName = player.name;
+
+            _vrmPath = Path.Combine(Settings.Constants.VrmDir, $"{_playerName}.vrm");
+
+            if (!File.Exists(_vrmPath))
+            {
+                if (Settings.UseDefaultVrm && File.Exists(Settings.Constants.DefaultVrmPath))
+                {
+                    _vrmPath = Settings.Constants.DefaultVrmPath;
+                    _playerSettingsName = Settings.Constants.DefaultVrmName;
+                }
+                else
+                {
+                    var exMsg = $"No Vrm file found for {_playerName}.vrm";
+
+                    if (Settings.UseDefaultVrm && !File.Exists(Settings.Constants.DefaultVrmPath))
+                    {
+                        exMsg += $" and no Vrm file found for {Settings.Constants.DefaultVrmName}";
+                    }
+
+                    exMsg += ".";
+
+                    throw new FileNotFoundException(exMsg);
+                }
+            }
+
 
             _settings = new VrmSettings(_playerName);
 
             CalculateSettingsHash();
 
-            Debug.Log("[EnhancedValheimVRM] loading vrm");
+            Debug.Log("loading vrm");
 
-            if (sync)
+            // this will determine if the player is local, basically loading at the start screen needs to be sync.
+            if (Player.m_localPlayer.name == player.name)
             {
                 LoadVrm();
             }
@@ -46,9 +79,9 @@ namespace EnhancedValheimVRM
 
         ~VrmInstance()
         {
-            if (_go != null)
+            if (_vrmGo != null)
             {
-                Object.Destroy(_go);
+                Object.Destroy(_vrmGo);
             }
         }
 
@@ -59,14 +92,17 @@ namespace EnhancedValheimVRM
 
         public GameObject GetGameObject()
         {
-            return _go;
+            return _vrmGo;
         }
 
         public void ReloadSettings()
         {
             _settings.Reload();
         }
-
+        public VrmSettings GetSettings()
+        {
+            return _settings;
+        }
         private void LoadVrm()
         {
             byte[] bytes = File.ReadAllBytes(_vrmPath);
@@ -97,14 +133,13 @@ namespace EnhancedValheimVRM
                     loaded.ShowMeshes();
                     loaded.Root.transform.localScale = Vector3.one * _settings.ModelScale;
 
-                    Debug.Log("[EnhancedValheimVRM] VRM read successful");
+                    Debug.Log("VRM read successful");
 
                     _instance = loaded;
-                    _go = _instance.Root;
                 }
                 else
                 {
-                    Debug.LogError("[EnhancedValheimVRM] loading vrm Failed.");
+                    Debug.LogError("loading vrm Failed.");
                 }
             }
             catch (Exception ex)
@@ -112,7 +147,7 @@ namespace EnhancedValheimVRM
                 Debug.LogError(ex);
             }
 
-            CalculateSourceBytesHash();
+            SetupVrm();
         }
 
         private IEnumerator LoadVrmAsync()
@@ -126,7 +161,7 @@ namespace EnhancedValheimVRM
 
             if (bytesTask.IsFaulted)
             {
-                Debug.LogError($"[EnhancedValheimVRM] Error loading VRM: {bytesTask.Exception.Flatten().InnerException}");
+                Debug.LogError($"Error loading VRM: {bytesTask.Exception.Flatten().InnerException}");
                 yield break;
             }
 
@@ -167,9 +202,8 @@ namespace EnhancedValheimVRM
 
                 loaded.Root.transform.localScale = Vector3.one * _settings.ModelScale;
                 _instance = loaded;
-                _go = _instance.Root;
-                Debug.Log("[EnhancedValheimVRM] VRM read successful");
-                CalculateSourceBytesHash();
+
+                SetupVrm();
             }
             catch (Exception ex)
             {
@@ -177,8 +211,145 @@ namespace EnhancedValheimVRM
             }
         }
 
+        private void SetupVrm()
+        {
+            CalculateSourceBytesHash();
+
+            _vrmGo = Object.Instantiate(_instance.Root);
+
+            Object.DontDestroyOnLoad(_vrmGo);
+
+            _vrmGo.name = Settings.Constants.VrmGoName;
+            
+            
+            
+           var lodGroupPlayer = _player.GetComponentInChildren<LODGroup>();
+            
+            var lodGroup = _vrmGo.AddComponent<LODGroup>();
+            if (_settings.EnablePlayerFade)
+            {
+                lodGroup.SetLODs(new LOD[]
+                {
+                    new LOD(0.1f, _vrmGo.GetComponentsInChildren<SkinnedMeshRenderer>())
+                });
+            }
+            lodGroup.RecalculateBounds();
+
+            lodGroup.fadeMode = lodGroupPlayer.fadeMode;
+            lodGroup.animateCrossFading = lodGroupPlayer.animateCrossFading;
+
+            _vrmGo.SetActive(false);
+
+
+            CoroutineHelper.Instance.StartCoroutine(ProcessMaterialsCoroutine());
+
+
+            var animator = _player.GetComponentInChildren<Animator>();
+
+            _vrmGo.transform.SetParent(animator.transform.parent, false);
+            //_player.gameObject.AddComponent<VrmController>();
+        }
+
+        private IEnumerator ProcessMaterialsCoroutine()
+        {
+            
+            
+            var materials = new List<Material>();
+
+            foreach (var smr in _vrmGo.GetComponentsInChildren<SkinnedMeshRenderer>())
+            {
+                foreach (var mat in smr.materials)
+                {
+                    if (!materials.Contains(mat)) materials.Add(mat);
+                }
+            }
+
+            foreach (var mr in _vrmGo.GetComponentsInChildren<MeshRenderer>())
+            {
+                foreach (var mat in mr.materials)
+                {
+                    if (!materials.Contains(mat)) materials.Add(mat);
+                }
+            }
+
+            
+            
+            
+            
+            Shader foundShader = Shader.Find("Custom/Player");
+
+            foreach (var mat in materials)
+            {
+                if (_settings.UseMToonShader && !_settings.AttemptTextureFix && mat.HasProperty("_Color"))
+                {
+                    var color = mat.GetColor("_Color");
+                    color.r *= _settings.ModelBrightness;
+                    color.g *= _settings.ModelBrightness;
+                    color.b *= _settings.ModelBrightness;
+                    mat.SetColor("_Color", color);
+                }
+                else if (_settings.AttemptTextureFix)
+                {
+                    if (mat.shader != foundShader)
+                    {
+                        var color = mat.HasProperty("_Color") ? mat.GetColor("_Color") : Color.white;
+
+                        var mainTex = mat.HasProperty("_MainTex") ? mat.GetTexture("_MainTex") as Texture2D : null;
+                        Texture2D tex = mainTex;
+
+                        if (mainTex != null)
+                        {
+                            tex = new Texture2D(mainTex.width, mainTex.height);
+                            var pixels = mainTex.GetPixels();
+
+                            var pixelsTask = Task.Run(() =>
+                            {
+                                for (int i = 0; i < pixels.Length; i++)
+                                {
+                                    var col = pixels[i] * color;
+                                    Color.RGBToHSV(col, out float h, out float s, out float v);
+                                    v *= _settings.ModelBrightness;
+                                    pixels[i] = Color.HSVToRGB(h, s, v, true);
+                                    pixels[i].a = col.a;
+                                }
+                            });
+
+                            while (!pixelsTask.IsCompleted)
+                            {
+                                yield return new WaitUntil(() => pixelsTask.IsCompleted);
+                            }
+
+                            pixelsTask.Wait();
+
+
+                            tex.SetPixels(pixels);
+                            tex.Apply();
+                        }
+
+                        var bumpMap = mat.HasProperty("_BumpMap") ? mat.GetTexture("_BumpMap") : null;
+                        mat.shader = foundShader;
+
+                        mat.SetTexture("_MainTex", tex);
+                        mat.SetTexture("_SkinBumpMap", bumpMap);
+                        mat.SetColor("_SkinColor", color);
+                        mat.SetTexture("_ChestTex", tex);
+                        mat.SetTexture("_ChestBumpMap", bumpMap);
+                        mat.SetTexture("_LegsTex", tex);
+                        mat.SetTexture("_LegsBumpMap", bumpMap);
+                        mat.SetFloat("_Glossiness", 0.2f);
+                        mat.SetFloat("_MetalGlossiness", 0.0f);
+                    }
+                }
+
+                yield return null;
+            }
+
+            Debug.Log("[ValheimVRM] Material processing completed.");
+        }
+
         private void CalculateSourceBytesHash()
         {
+            SourceHashIsDirty = true;
             Task.Run(() =>
             {
                 using (var md5 = System.Security.Cryptography.MD5.Create())
@@ -187,6 +358,7 @@ namespace EnhancedValheimVRM
                     lock (this)
                     {
                         _sourceHash = hash;
+                        SourceHashIsDirty = false;
                     }
                 }
             });
@@ -197,13 +369,16 @@ namespace EnhancedValheimVRM
         {
             Task.Run(() =>
             {
+                SettingsHashIsDirty = true;
                 using (var md5 = System.Security.Cryptography.MD5.Create())
                 {
                     byte[] bytes = System.Text.Encoding.ASCII.GetBytes(_settings.ToString());
+                    byte[] hash = md5.ComputeHash(bytes);
 
                     lock (this)
                     {
-                        _settingsHash = md5.ComputeHash(bytes);
+                        _settingsHash = hash;
+                        SettingsHashIsDirty = false;
                     }
                 }
             });

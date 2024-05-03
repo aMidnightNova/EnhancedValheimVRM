@@ -16,14 +16,15 @@ namespace EnhancedValheimVRM
             startTime = DateTime.UtcNow;
             lastAccessTime = DateTime.UtcNow;
             isStartTimeSet = true;
+            Debug.Log("Start time set.");
         }
 
         public static string GetElapsedTime()
         {
             if (!isStartTimeSet)
             {
-                Debug.LogError("Start time not set. Call SetStartTime() before getting elapsed time.");
-                return "Error: Start time not set.";
+                Debug.LogWarning("Start time not set. Automatically calling SetStartTime().");
+                SetStartTime();
             }
 
             DateTime currentTime = DateTime.UtcNow;

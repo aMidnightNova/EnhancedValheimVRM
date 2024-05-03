@@ -1,10 +1,13 @@
-﻿using BepInEx.Configuration;
+﻿using System;
+using System.IO;
+using BepInEx.Configuration;
 
 namespace EnhancedValheimVRM
 {
     public static class Settings
     {
         private static ConfigEntry<bool> _reloadInMenu;
+        private static ConfigEntry<bool> _useDefaultVrm;
         private static ConfigEntry<bool> _enableVrmSharing;
         private static ConfigEntry<string> _shaderBundle;
 
@@ -14,7 +17,14 @@ namespace EnhancedValheimVRM
             public static string Current => "current";
             public static string Old => "old";
         }
-
+ 
+        public static class Constants
+        {
+            public static readonly string VrmGoName = "VRM_Visual";
+            public static readonly string DefaultVrmName = "___Default.vrm";
+            public static readonly string VrmDir = Path.Combine(Environment.CurrentDirectory, "EnhancedValheimVRM");
+            public static readonly string DefaultVrmPath = Path.Combine(VrmDir, DefaultVrmName);
+        }
 
         public static void Init(ConfigFile config)
         {
@@ -22,6 +32,10 @@ namespace EnhancedValheimVRM
                 "ReloadInMenu",
                 false,
                 "Reload your VRM in the menu.");
+            _useDefaultVrm = config.Bind("General",
+                "UseDefaultVrm",
+                false,
+                "Use the Default VRM file. ___Default.");
             _enableVrmSharing = config.Bind("General",
                 "EnableVrmSharing",
                 false,
@@ -33,6 +47,8 @@ namespace EnhancedValheimVRM
         }
 
         internal static bool ReloadInMenu => _reloadInMenu.Value;
+        
+        internal static bool UseDefaultVrm => _useDefaultVrm.Value;
 
         internal static bool EnableVrmSharing => _enableVrmSharing.Value;
 

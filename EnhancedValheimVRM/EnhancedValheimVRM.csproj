@@ -42,8 +42,11 @@
     <ItemGroup>
         <Compile Include="Compression.cs" />
         <Compile Include="ConsoleCommands.cs" />
-        <Compile Include="Constants.cs" />
         <Compile Include="CoroutineHelper.cs" />
+        <Compile Include="ExtensionMethods.cs" />
+        <Compile Include="PatchDebug.cs" />
+        <Compile Include="PatchPlayerOnDestroy.cs" />
+        <Compile Include="PatchVisEquipmentUpdateLodgroup.cs" />
         <Compile Include="Plugin.cs" />
         <Compile Include="PatchShaderFind.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
@@ -55,6 +58,7 @@
         <Compile Include="VrmInstance.cs" />
         <Compile Include="VrmSettings.cs" />
         <Compile Include="VrmTransferController.cs" />
+        <Compile Include="Utils.cs" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
 

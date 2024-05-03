@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
 
 namespace EnhancedValheimVRM
 {
-    [HarmonyPatch(typeof(Shader))]
-    [HarmonyPatch("Find")]
+    [HarmonyPatch(typeof(Shader), "Find")]
+    [HarmonyPriority(Priority.VeryHigh)]
     internal static class PatchShaderFind
     {
         private static readonly Dictionary<string, Shader> ShaderDictionary = new Dictionary<string, Shader>();
@@ -27,7 +26,7 @@ namespace EnhancedValheimVRM
                 }
             }
 
-            Debug.Log("[EnhancedValheimVRM ShaderPatch] All shaders loaded into ShaderDictionary.");
+            Debug.Log("[ShaderPatch] All shaders loaded into ShaderDictionary.");
 
 
             var shaderFile = "";
@@ -42,10 +41,10 @@ namespace EnhancedValheimVRM
             }
             else
             {
-                Debug.LogError("[EnhancedValheimVRM ShaderPatch] Invalid ShaderBundle; old, current");
+                Debug.LogError("[ShaderPatch] Invalid ShaderBundle; old, current");
             }
 
-            var shaderPath = Path.Combine(Constants.VrmDir, shaderFile);
+            var shaderPath = Path.Combine(Settings.Constants.VrmDir, shaderFile);
 
 
             if (File.Exists(shaderPath))
@@ -54,7 +53,7 @@ namespace EnhancedValheimVRM
                 var shaders = assetBundle.LoadAllAssets<Shader>();
                 foreach (var shader in shaders)
                 {
-                    Debug.Log("[EnhancedValheimVRM ShaderPatch] Add Shader: " + shader.name);
+                    Debug.Log("[ShaderPatch] Add Shader: " + shader.name);
                     VRMShaderDictionary.Add(shader.name, shader);
                 }
             }
@@ -66,19 +65,19 @@ namespace EnhancedValheimVRM
 
             if (VRMShaderDictionary.TryGetValue(name, out shader))
             {
-                Debug.Log("[EnhancedValheimVRM ShaderPatch] Shader '" + name + "' found in VRMShaders.Shaders");
+                Debug.Log("[ShaderPatch] Shader '" + name + "' found in VRMShaders.Shaders");
                 _shader = shader;
                 return false;
             }
 
             if (ShaderDictionary.TryGetValue(name, out shader))
             {
-                Debug.Log("[EnhancedValheimVRM ShaderPatch] Shader '" + name + "' found in preloaded ShaderDictionary.");
+                Debug.Log("[ShaderPatch] Shader '" + name + "' found in preloaded ShaderDictionary.");
                 _shader = shader;
                 return false;
             }
 
-            Debug.Log("[EnhancedValheimVRM ShaderPatch] Shader '" + name + "' NOT FOUND in ShaderDictionary. passing method to original Shader.Find.");
+            Debug.Log("[ShaderPatch] Shader '" + name + "' NOT FOUND in ShaderDictionary. passing method to original Shader.Find.");
             return true;
         }
     }

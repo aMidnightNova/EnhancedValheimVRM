@@ -67,6 +67,9 @@ namespace EnhancedValheimVRM
 
 
         [NonSerializedAttribute] public string Name;
+
+
+        private bool canReload = true;
         private string _path;
 
         private Dictionary<string, PropertyInfo> _properties = new Dictionary<string, PropertyInfo>();
@@ -76,9 +79,17 @@ namespace EnhancedValheimVRM
         {
             Name = playerName;
 
-            _path = Path.Combine(Constants.VrmDir, $"{playerName}.vrm");
+            _path = Path.Combine(Settings.Constants.VrmDir, $"{playerName}.vrm");
 
-            Load();
+            if (File.Exists(_path))
+            {
+                Load();
+            }
+            else
+            {
+                canReload = false;
+                Debug.LogWarning($"No Settings file found for '{playerName}', using defaults.");
+            }
         }
 
         private void InitializePropertyTracking()
@@ -106,15 +117,9 @@ namespace EnhancedValheimVRM
 
         private void Load()
         {
-            Debug.Log($"[EnhancedValheimVRM] readings settings.");
+            Debug.Log($"Reading settings.");
+
             InitializePropertyTracking();
-
-
-            if (!File.Exists(_path))
-            {
-                Debug.LogError($"[EnhancedValheimVRM] Settings file not found: {_path}");
-                return;
-            }
 
             var lines = File.ReadAllLines(_path);
 
@@ -143,7 +148,7 @@ namespace EnhancedValheimVRM
                     if (valueOut != null)
                     {
                         property.SetValue(this, valueOut, null);
-                        Debug.Log($"[EnhancedValheimVRM] Setting '{key}' To -> {valueOut}");
+                        Debug.Log($"Setting '{key}' To -> {valueOut}");
                     }
                     else
                     {
@@ -208,7 +213,10 @@ namespace EnhancedValheimVRM
 
         public void Reload()
         {
-            Load();
+            if (canReload)
+            {
+                Load();
+            }
         }
     }
 }
