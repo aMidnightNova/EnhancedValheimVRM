@@ -32,7 +32,7 @@ namespace EnhancedValheimVRM
 
  
 
-        public static VrmInstance GetVrmInstance(Player player)
+        public static VrmInstance GetVrmInstance(this Player player)
         {
             if (_vrmInstances.TryGetValue(player, out var instance))
             {
@@ -42,7 +42,7 @@ namespace EnhancedValheimVRM
             return null;
         }
 
-         public static bool HasVrmForPlayer(Player player)
+        public static bool HasVrmForPlayer(Player player)
         {
             return _vrmInstances.ContainsKey(player);
         }

@@ -10,36 +10,41 @@ namespace EnhancedValheimVRM
         static void Postfix(VisEquipment __instance)
         {
             if (!__instance.m_isPlayer) return;
-            var player = __instance.GetComponent<Player>();
 
 
-            if (player == null) return;
-
-            var vrmInstance = VrmController.GetVrmInstance(player);
-
-            var settings = vrmInstance.GetSettings();
-
-
-            var hair = __instance.GetField<VisEquipment, GameObject>("m_hairItemInstance");
-
-            if (hair != null) hair.SetVisible(false);
-
-            var beard = __instance.GetField<VisEquipment, GameObject>("m_beardItemInstance");
-
-            if (beard != null) beard.SetVisible(false);
-
-            var chestList = __instance.GetField<VisEquipment, List<GameObject>>("m_chestItemInstances");
-
-            if (chestList != null)
+            Player player;
+            if (!__instance.TryGetComponent<Player>(out player))
             {
+                return;
+            }
+
+
+            var settings = player.GetVrmInstance().GetSettings();
+
+
+            if (__instance.TryGetField<VisEquipment, GameObject>("m_hairItemInstance", out var hair))
+            {
+                hair.SetVisible(false);
+            }
+
+
+            if (__instance.TryGetField<VisEquipment, GameObject>("m_beardItemInstance", out var beard))
+            {
+                beard.SetVisible(false);
+            }
+
+
+            if (__instance.TryGetField<VisEquipment, List<GameObject>>("m_chestItemInstances", out var chestList))
+            {
+                //TODO: settings.ChestVisible can probably be out outside of the if
                 if (!settings.ChestVisible)
                 {
                     foreach (var chest in chestList) chest.SetVisible(false);
                 }
             }
 
-            var legList = __instance.GetField<VisEquipment, List<GameObject>>("m_legItemInstances");
-            if (legList != null)
+
+            if (__instance.TryGetField<VisEquipment, List<GameObject>>("m_legItemInstances", out var legList))
             {
                 if (!settings.LegsVisible)
                 {
@@ -47,21 +52,16 @@ namespace EnhancedValheimVRM
                 }
             }
 
-            var shoulderList = __instance.GetField<VisEquipment, List<GameObject>>("m_shoulderItemInstances");
 
-            if (shoulderList != null)
+            if (__instance.TryGetField<VisEquipment, List<GameObject>>("m_shoulderItemInstances", out var shoulderList))
             {
-                if (shoulderList != null)
+                if (!settings.ShouldersVisible)
                 {
-                    if (!settings.ShouldersVisible)
-                    {
-                        foreach (var shoulder in shoulderList) shoulder.SetVisible(false);
-                    }
+                    foreach (var shoulder in shoulderList) shoulder.SetVisible(false);
                 }
             }
 
-            var utilityList = __instance.GetField<VisEquipment, List<GameObject>>("m_utilityItemInstances");
-            if (utilityList != null)
+            if (__instance.TryGetField<VisEquipment, List<GameObject>>("m_utilityItemInstances", out var utilityList))
             {
                 if (!settings.UtilityVisible)
                 {
@@ -69,8 +69,8 @@ namespace EnhancedValheimVRM
                 }
             }
 
-            var helmet = __instance.GetField<VisEquipment, GameObject>("m_helmetItemInstance");
-            if (helmet != null)
+
+            if (__instance.TryGetField<VisEquipment, GameObject>("m_helmetItemInstance", out var helmet))
             {
                 if (!settings.HelmetVisible)
                 {
@@ -83,27 +83,26 @@ namespace EnhancedValheimVRM
                 }
             }
 
-            // 武器位置合わせ
             float equipmentScale = settings.EquipmentScale;
             Vector3 equipmentScaleVector = new Vector3(equipmentScale, equipmentScale, equipmentScale);
 
-            var leftItem = __instance.GetField<VisEquipment, GameObject>("m_leftItemInstance");
-            if (leftItem != null)
+
+            if (__instance.TryGetField<VisEquipment, GameObject>("m_leftItemInstance", out var leftItem))
             {
                 leftItem.transform.localPosition = settings.LeftHandItemPos;
                 leftItem.transform.localScale = equipmentScaleVector;
             }
 
-            var rightItem = __instance.GetField<VisEquipment, GameObject>("m_rightItemInstance");
-            if (rightItem != null)
+
+            if (__instance.TryGetField<VisEquipment, GameObject>("m_rightItemInstance", out var rightItem))
             {
                 rightItem.transform.localPosition = settings.RightHandItemPos;
                 rightItem.transform.localScale = equipmentScaleVector;
             }
 
             // divided  by 100 to keep the settings file positions in the same number range. (position offset appears to be on the world, not local)
-            var rightBackItem = __instance.GetField<VisEquipment, GameObject>("m_rightBackItemInstance");
-            if (rightBackItem != null)
+
+            if (__instance.TryGetField<VisEquipment, GameObject>("m_rightBackItemInstance", out var rightBackItem))
             {
                 var rightBackName = __instance.GetFieldValue<VisEquipment>("m_rightBackItem");
 
@@ -124,18 +123,19 @@ namespace EnhancedValheimVRM
                 }
                 else
                 {
-                    offset = rightBackItem.transform.parent == __instance.m_backTool ? settings.RightHandBackItemToolPos : settings.RightHandBackItemPos;
+                    offset = rightBackItem.transform.parent == __instance.m_backTool
+                        ? settings.RightHandBackItemToolPos
+                        : settings.RightHandBackItemPos;
                 }
 
                 rightBackItem.transform.localPosition = offset / 100.0f;
                 rightBackItem.transform.localScale = equipmentScaleVector / 100.0f;
             }
 
-            var leftBackItem = __instance.GetField<VisEquipment, GameObject>("m_leftBackItemInstance");
-            if (leftBackItem != null)
+
+            if (__instance.TryGetField<VisEquipment, GameObject>("m_leftBackItemInstance", out var leftBackItem))
             {
                 var leftBackName = __instance.GetFieldValue<VisEquipment>("m_leftBackItem");
-                //Debug.Log(leftBackName.ToString());
 
                 var isBow = leftBackName.ToString().Substring(0, 3) == "Bow";
                 var isStaffSkeleton = leftBackName.ToString() == "StaffSkeleton";

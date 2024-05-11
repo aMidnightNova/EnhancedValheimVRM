@@ -19,7 +19,20 @@ namespace EnhancedValheimVRM
         {
             return AccessTools.FieldRefAccess<Tin, Tout>(fieldName).Invoke(self);
         }
-        
+        public static bool TryGetField<Tin, Tout>(this Tin self, string fieldName, out Tout result)
+        {
+            try
+            {
+                result = AccessTools.FieldRefAccess<Tin, Tout>(fieldName).Invoke(self);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to access field '{fieldName}': {ex.Message}");
+            }
+            result = default(Tout);
+            return false;
+        }
         public static void SetVisible(this GameObject obj, bool flag)
         {
             foreach (var mr in obj.GetComponentsInChildren<MeshRenderer>()) mr.enabled = flag;
