@@ -13,7 +13,7 @@ namespace EnhancedValheimVRM
 
 
             Player player;
-            if (!__instance.TryGetComponent<Player>(out player))
+            if (!__instance.TryGetComponent(out player))
             {
                 return;
             }

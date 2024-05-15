@@ -9,12 +9,7 @@ namespace EnhancedValheimVRM
     {
         static void Prefix(Player player)
         {
-            var vrmGo = VrmController.GetVrmInstanceGameObject(player);
-            
-            if (vrmGo != null)
-            {
-                vrmGo.transform.parent = null;
-            }
+            VrmController.DetachVrmFromPlayer(player);
         }
     }
 }

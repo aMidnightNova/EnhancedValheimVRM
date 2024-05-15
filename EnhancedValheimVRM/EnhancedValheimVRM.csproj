@@ -45,7 +45,9 @@
         <Compile Include="CoroutineHelper.cs" />
         <Compile Include="ExtensionMethods.cs" />
         <Compile Include="PatchDebug.cs" />
+        <Compile Include="PatchPlayerAwake.cs" />
         <Compile Include="PatchPlayerOnDestroy.cs" />
+        <Compile Include="PatchUnityUpdates.cs" />
         <Compile Include="PatchVisEquipmentUpdateLodgroup.cs" />
         <Compile Include="Plugin.cs" />
         <Compile Include="PatchShaderFind.cs" />
@@ -53,7 +55,7 @@
         <Compile Include="Settings.cs" />
         <Compile Include="TextureDeserializer.cs" />
         <Compile Include="TimeElapsedHelper.cs" />
-        <Compile Include="VrmAnimationSync.cs" />
+        <Compile Include="VrmAnimationController.cs" />
         <Compile Include="VrmController.cs" />
         <Compile Include="VrmInstance.cs" />
         <Compile Include="VrmSettings.cs" />

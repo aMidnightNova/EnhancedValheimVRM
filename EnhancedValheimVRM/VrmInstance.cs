@@ -243,11 +243,6 @@ namespace EnhancedValheimVRM
 
             CoroutineHelper.Instance.StartCoroutine(ProcessMaterialsCoroutine());
 
-
-            var animator = _player.GetComponentInChildren<Animator>();
-
-            _vrmGo.transform.SetParent(animator.transform.parent, false);
-            //_player.gameObject.AddComponent<VrmController>();
         }
 
         private IEnumerator ProcessMaterialsCoroutine()
