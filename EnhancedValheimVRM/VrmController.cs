@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using VRM;
 
 namespace EnhancedValheimVRM
 {
@@ -13,8 +15,9 @@ namespace EnhancedValheimVRM
         {
             VrmInstance vrmInstance;
 
+            var exists = _vrmInstances.TryGetValue(player, out vrmInstance);
 
-            if (!_vrmInstances.TryGetValue(player, out vrmInstance))
+            if (!exists)
             {
                 try
                 {
@@ -28,9 +31,8 @@ namespace EnhancedValheimVRM
 
             if (vrmInstance != null)
             {
-                _vrmInstances.Add(player,vrmInstance);
-
-                VrmSetup(player, vrmInstance);
+                if(!exists) _vrmInstances.Add(player,vrmInstance);
+                CoroutineHelper.Instance.StartCoroutine(VrmSetup(player, vrmInstance));
             }
             
         }
@@ -49,12 +51,99 @@ namespace EnhancedValheimVRM
                 {
                     UnityEngine.Object.Destroy(vrmAnimationController);
                 }
+                
+                var vrmEyeController = player.GetComponent<VrmEyeController>();
+                if (vrmEyeController != null)
+                {
+                    UnityEngine.Object.Destroy(vrmEyeController);
+                }
+                
+                var mToonController = player.GetComponent<MToonController>();
+                if (mToonController != null)
+                {
+                    UnityEngine.Object.Destroy(mToonController);
+                }
             }
         }
 
-        private static void VrmSetup(Player player, VrmInstance vrmInstance)
+        private static IEnumerator VrmSetup(Player player, VrmInstance vrmInstance)
         {
-            player.gameObject.AddComponent<VrmAnimationController>().Setup(player, vrmInstance);
+            var vrmGo = vrmInstance.GetGameObject();
+            var settings = vrmInstance.GetSettings();
+            
+            vrmGo.SetActive(true);
+            
+            player.m_maxInteractDistance *= settings.InteractionDistanceScale;
+            
+            
+            
+            var animator = player.GetComponentInChildren<Animator>(); 
+            vrmGo.transform.SetParent(animator.transform.parent, false);
+            
+            
+            float newHeight = settings.PlayerHeight;
+            float newRadius = settings.PlayerRadius;
+
+            var rigidBody = player.GetComponent<Rigidbody>();
+            var collider = player.GetComponent<CapsuleCollider>();
+			
+            collider.height = newHeight;
+            collider.radius = newRadius;
+            collider.center = new Vector3(0, newHeight / 2, 0);
+			
+			
+            rigidBody.centerOfMass = collider.center;
+            
+            yield return null;
+            
+            foreach (var smr in player.GetVisual().GetComponentsInChildren<SkinnedMeshRenderer>())
+            {
+                smr.forceRenderingOff = true;
+                smr.updateWhenOffscreen = true;
+                yield return null;
+            }
+            
+            if (player.TryGetField<Player,Animator>("m_animator", out var playerAnimator))
+            {
+                playerAnimator.keepAnimatorStateOnDisable = true;
+                playerAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                
+                yield return null;
+                
+                vrmGo.transform.localPosition = playerAnimator.transform.localPosition;
+                
+                player.gameObject.AddComponent<VrmAnimationController>().Setup(player, playerAnimator, vrmInstance);
+                
+                yield return null;
+                
+                if (settings.FixCameraHeight)
+                {
+                    player.gameObject.AddComponent<VrmEyeController>().Setup(player, playerAnimator, vrmInstance);
+                }
+            }
+            else
+            {
+                Debug.LogError("playerAnimator Not found.");
+            }
+            
+            
+            if (settings.UseMToonShader)
+            {
+                vrmGo.AddComponent<MToonController>().Setup(vrmGo);
+            }
+            yield return null;
+
+ 
+            foreach (var springBone in vrmGo.GetComponentsInChildren<VRMSpringBone>())
+            {
+                springBone.m_stiffnessForce *= settings.SpringBoneStiffness;
+                springBone.m_gravityPower *= settings.SpringBoneGravityPower;
+                springBone.m_updateType = VRMSpringBone.SpringBoneUpdateType.FixedUpdate;
+                springBone.m_center = null;
+                yield return null;
+            }
+
+
         }
 
         public static VrmInstance GetVrmInstance(this Player player)

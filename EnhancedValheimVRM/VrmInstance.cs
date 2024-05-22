@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UniGLTF;
 using UnityEngine;
+using UniVRM10;
 using VRM;
 using VRMShaders;
 using Object = UnityEngine.Object;
@@ -107,26 +108,47 @@ namespace EnhancedValheimVRM
         {
             byte[] bytes = File.ReadAllBytes(_vrmPath);
             _sourceBytes = Compression.CompressBytes(bytes);
-
-
+            
             try
             {
                 var data = new GlbBinaryParser(bytes, _vrmPath).Parse();
                 bytes = null;
-
-                var vrm = new VRMData(data);
-                var context = new VRMImporterContext(vrm);
+                
                 var loaded = default(RuntimeGltfInstance);
 
                 try
                 {
-                    loaded = context.Load();
+                    var vrm = new VRMData(data);
+                    var context = new VRMImporterContext(vrm);
+                    try
+                    {
+                        loaded = context.Load();
+                    }
+                    catch (TypeLoadException ex)
+                    {
+                        Debug.LogError("Failed to load type: " + ex.TypeName);
+                        Debug.LogError(ex);
+                    }
+
                 }
-                catch (TypeLoadException ex)
+                catch (NotVrm0Exception)
                 {
-                    Debug.LogError("Failed to load type: " + ex.TypeName);
-                    Debug.LogError(ex);
+                    Debug.Log("Not Vrm0, Trying VRM10");
+                    var vrm = Vrm10Data.Parse(data);
+                    var context = new Vrm10Importer(vrm);
+                    try
+                    {
+                        loaded = context.Load();
+                    }
+                    catch (TypeLoadException ex)
+                    {
+                        Debug.LogError("Failed to load type: " + ex.TypeName);
+                        Debug.LogError(ex);
+                    }
                 }
+                
+                
+
 
                 if (loaded != null)
                 {
@@ -173,43 +195,93 @@ namespace EnhancedValheimVRM
 
             _sourceBytes = compressTask.Result;
 
+            
+            var dataTask = Task.Run(() => new GlbBinaryParser(bytesTask.Result, _vrmPath).Parse());
+            
+            while (!dataTask.IsCompleted)
+            {
+                yield return new WaitUntil(() => dataTask.IsCompleted);
+            }
 
-            var data = new GlbBinaryParser(bytesTask.Result, _vrmPath).Parse();
+            if (dataTask.IsFaulted)
+            {
+                Debug.LogError($"Error parsing GLB: {dataTask.Exception.Flatten().InnerException}");
+                yield break;
+            }
+
+ 
             bytesTask = null;
 
-
             yield return null;
 
-            var vrm = new VRMData(data);
+            Task<RuntimeGltfInstance> loader = null;
+            bool maybeVrm10 = false;
 
-            yield return null;
+            Task<VRMData> vrm0Task = Task.Run(() => new VRMData(dataTask.Result));
+            while (!vrm0Task.IsCompleted)
+            {
+                yield return new WaitUntil(() => vrm0Task.IsCompleted);
+            }
 
+            if (vrm0Task.IsFaulted)
+            {
+                if (vrm0Task.Exception.InnerException is NotVrm0Exception)
+                {
+                    maybeVrm10 = true;
+                }
+            }
+            else
+            {
+                var context = new VRMImporterContext(vrm0Task.Result, null, new TextureDeserializerAsync());
+                loader = context.LoadAsync(new RuntimeOnlyAwaitCaller(0.001f));
+            }
 
-            var context = new VRMImporterContext(vrm, null, new TextureDeserializerAsync());
+            if (maybeVrm10)
+            {
+                Debug.Log("Not Vrm0, Trying VRM10");
+                var vrmTask = Task.Run(() => Vrm10Data.Parse(dataTask.Result));
+                while (!vrmTask.IsCompleted)
+                {
+                    yield return new WaitUntil(() => vrmTask.IsCompleted);
+                }
 
-            //var loader = context.LoadAsync(new RuntimeOnlyAwaitCaller(0.001f), name => new Timer(name));					
-            var loader = context.LoadAsync(new RuntimeOnlyAwaitCaller(0.001f));
+                var context = new Vrm10Importer(vrmTask.Result, null, new TextureDeserializerAsync());
+                loader = context.LoadAsync(new RuntimeOnlyAwaitCaller(0.001f));
+            }
+
+            if (loader == null)
+            {
+                Debug.LogError("Loader was not initialized.");
+                yield break;
+            }
+
             while (!loader.IsCompleted)
             {
                 yield return new WaitUntil(() => loader.IsCompleted);
             }
 
-            try
+            if (loader.IsFaulted)
             {
-                var loaded = loader.Result;
-
-                loaded.ShowMeshes();
-
-                loaded.Root.transform.localScale = Vector3.one * _settings.ModelScale;
-                _instance = loaded;
-
-                SetupVrm();
+                Debug.LogError("Error during VRM loading: " + loader.Exception.Flatten());
+                yield break;
             }
-            catch (Exception ex)
+
+            var loaded = loader.Result;
+
+            //this is what .LoadMeshes() does
+            // we are just yielding between each mesh.
+            foreach (Renderer visibleRenderer in loaded.VisibleRenderers)
             {
-                Debug.LogError("Error during VRM loading: " + ex);
+                visibleRenderer.enabled = true;
+                yield return null;
             }
+
+            loaded.Root.transform.localScale = Vector3.one * _settings.ModelScale;
+            _instance = loaded;
+
+            SetupVrm();
         }
+
 
         private void SetupVrm()
         {

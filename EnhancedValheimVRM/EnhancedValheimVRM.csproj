@@ -44,6 +44,7 @@
         <Compile Include="ConsoleCommands.cs" />
         <Compile Include="CoroutineHelper.cs" />
         <Compile Include="ExtensionMethods.cs" />
+        <Compile Include="MToonController.cs" />
         <Compile Include="PatchDebug.cs" />
         <Compile Include="PatchPlayerAwake.cs" />
         <Compile Include="PatchPlayerOnDestroy.cs" />
@@ -57,6 +58,7 @@
         <Compile Include="TimeElapsedHelper.cs" />
         <Compile Include="VrmAnimationController.cs" />
         <Compile Include="VrmController.cs" />
+        <Compile Include="VrmEyeController.cs" />
         <Compile Include="VrmInstance.cs" />
         <Compile Include="VrmSettings.cs" />
         <Compile Include="VrmTransferController.cs" />
