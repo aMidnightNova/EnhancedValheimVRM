@@ -47,6 +47,7 @@
         <Compile Include="MToonController.cs" />
         <Compile Include="PatchDebug.cs" />
         <Compile Include="PatchPlayerAwake.cs" />
+        <Compile Include="PatchPlayerGetPlayerName.cs" />
         <Compile Include="PatchPlayerOnDestroy.cs" />
         <Compile Include="PatchUnityUpdates.cs" />
         <Compile Include="PatchVisEquipmentUpdateLodgroup.cs" />
@@ -249,6 +250,10 @@
 
         <!-- COPY FILES TO LOCAL VALHIEM -->
         <Copy SourceFiles="@(LibFiles)" DestinationFolder="$(ManagedPath)" />
+
+        <MakeDir Directories="$(ValheimInstallPath)EnhancedValheimVRM\" Condition=" '$(Configuration)' == 'Debug' " />
+        <MakeDir Directories="$(ValheimInstallPath)EnhancedValheimVRM\shaders\" Condition=" '$(Configuration)' == 'Debug' " />
+        
         <Exec Command="copy &quot;$(SolutionDir)shaders\UniVrm.shaders&quot; &quot;$(ValheimInstallPath)EnhancedValheimVRM\shaders\UniVrm.shaders&quot;" />
         <Exec Command="copy &quot;$(SolutionDir)shaders\OldUniVrm.shaders&quot; &quot;$(ValheimInstallPath)EnhancedValheimVRM\shaders\OldUniVrm.shaders&quot;" />
 

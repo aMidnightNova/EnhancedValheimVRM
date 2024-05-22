@@ -13,7 +13,9 @@ namespace EnhancedValheimVRM
         
         private static ConfigEntry<bool> _enableProfileCode;
         private static ConfigEntry<int> _profileLogThresholdMs;
-
+        private static ConfigEntry<int> _callThreshold;
+        private static ConfigEntry<int> _timeWindowMs;
+ 
 
         public static class ShaderOptions
         {
@@ -61,6 +63,16 @@ namespace EnhancedValheimVRM
                 "ProfileLogThresholdMs",
                 20,
                 "the amount of time in ms to alert on if exceeded.");
+            
+            _callThreshold = config.Bind("General",
+                "CallThreshold",
+                20,
+                "how many times does the method need to be called in TimeWindowMs for it to log.");
+            
+            _timeWindowMs = config.Bind("General",
+                "TimeWindowMs",
+                100,
+                "the time frame in which to count how many time a method was called.");
         }
 
         internal static bool ReloadInMenu => _reloadInMenu.Value;
@@ -72,5 +84,7 @@ namespace EnhancedValheimVRM
         internal static string ShaderBundle => _shaderBundle.Value;
         internal static bool EnableProfileCode => _enableProfileCode.Value;
         internal static int ProfileLogThresholdMs => _profileLogThresholdMs.Value;
+        internal static int CallThreshold => _callThreshold.Value;
+        internal static int TimeWindowMs => _timeWindowMs.Value;
     }
 }

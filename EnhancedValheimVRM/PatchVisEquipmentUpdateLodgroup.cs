@@ -19,7 +19,11 @@ namespace EnhancedValheimVRM
             }
 
 
-            var settings = player.GetVrmInstance().GetSettings();
+            var vrmInstance = player.GetVrmInstance();
+            
+            if(vrmInstance == null) return;
+            
+            var settings = vrmInstance.GetSettings();
 
 
             if (__instance.TryGetField<VisEquipment, GameObject>("m_hairItemInstance", out var hair))

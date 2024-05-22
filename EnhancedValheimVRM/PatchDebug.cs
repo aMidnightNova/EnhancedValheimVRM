@@ -8,7 +8,7 @@ namespace EnhancedValheimVRM
     {
         private const string Prepend = "[EnhancedValheimVRM]";
 
-        [HarmonyPatch(typeof(Debug), "Log")]
+        [HarmonyPatch(typeof(Debug), "Log",  typeof(object))]
         [HarmonyPriority(Priority.First)]
         public class DebugLogPatch
         {
@@ -19,7 +19,7 @@ namespace EnhancedValheimVRM
             }
         }
 
-        [HarmonyPatch(typeof(Debug), "LogError")]
+        [HarmonyPatch(typeof(Debug), "LogError", typeof(object))]
         [HarmonyPriority(Priority.First)]
         public class DebugLogErrorPatch
         {
@@ -30,7 +30,7 @@ namespace EnhancedValheimVRM
             }
         }
 
-        [HarmonyPatch(typeof(Debug), "LogWarning")]
+        [HarmonyPatch(typeof(Debug), "LogWarning", typeof(object))]
         [HarmonyPriority(Priority.First)]
         public class DebugLogWarningPatch
         {
@@ -41,5 +41,4 @@ namespace EnhancedValheimVRM
             }
         }
     }
-
 }

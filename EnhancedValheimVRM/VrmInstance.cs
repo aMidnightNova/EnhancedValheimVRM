@@ -33,8 +33,8 @@ namespace EnhancedValheimVRM
         {
             _player = player;
 
-            _playerName = player.name;
-            _playerSettingsName = player.name;
+            _playerName = player.GetPlayerName();
+            _playerSettingsName = player.GetPlayerName();
 
             _vrmPath = Path.Combine(Settings.Constants.VrmDir, $"{_playerName}.vrm");
 
@@ -66,9 +66,9 @@ namespace EnhancedValheimVRM
             CalculateSettingsHash();
 
             Debug.Log("loading vrm");
+ 
 
-            // this will determine if the player is local, basically loading at the start screen needs to be sync.
-            if (Player.m_localPlayer.name == player.name)
+            if (IsLocalPlayer(player))
             {
                 LoadVrm();
             }
@@ -77,7 +77,19 @@ namespace EnhancedValheimVRM
                 CoroutineHelper.Instance.StartCoroutine(LoadVrmAsync());
             }
         }
+        private static bool IsLocalPlayer(Player player)
+        {
+            if (Game.instance != null)
+            {
+                var localPlayerName = Game.instance.GetPlayerProfile().GetName();
+                var playerName = player.GetPlayerName();
+                return string.IsNullOrEmpty(playerName) || playerName == "..." || playerName == localPlayerName;
+            }
 
+            var index = FejdStartup.instance.GetField<FejdStartup, int>("m_profileIndex");
+            var profiles = FejdStartup.instance.GetField<FejdStartup, List<PlayerProfile>>("m_profiles");
+            return index >= 0 && index < profiles.Count;
+        }
         ~VrmInstance()
         {
             if (_vrmGo != null)

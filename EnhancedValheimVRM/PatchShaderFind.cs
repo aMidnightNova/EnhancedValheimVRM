@@ -59,21 +59,21 @@ namespace EnhancedValheimVRM
             }
         }
 
-        static bool Prefix(ref Shader _shader, string name)
+        static bool Prefix(ref Shader __result, string name)
         {
             Shader shader;
 
             if (VRMShaderDictionary.TryGetValue(name, out shader))
             {
                 Debug.Log("[ShaderPatch] Shader '" + name + "' found in VRMShaders.Shaders");
-                _shader = shader;
+                __result = shader;
                 return false;
             }
 
             if (ShaderDictionary.TryGetValue(name, out shader))
             {
                 Debug.Log("[ShaderPatch] Shader '" + name + "' found in preloaded ShaderDictionary.");
-                _shader = shader;
+                __result = shader;
                 return false;
             }
 

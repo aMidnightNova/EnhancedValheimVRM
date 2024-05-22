@@ -1,4 +1,6 @@
-﻿using HarmonyLib;
+﻿using System;
+using System.Reflection;
+using HarmonyLib;
 using UnityEngine;
 
 
@@ -7,9 +9,9 @@ namespace EnhancedValheimVRM
     [HarmonyPatch(typeof(Player), "OnDestroy")]
     public class PatchPlayerOnDestroy
     {
-        static void Prefix(Player player)
+        static void Prefix(Player __instance)
         {
-            VrmController.DetachVrmFromPlayer(player);
+            VrmController.DetachVrmFromPlayer(__instance);
         }
     }
 }
