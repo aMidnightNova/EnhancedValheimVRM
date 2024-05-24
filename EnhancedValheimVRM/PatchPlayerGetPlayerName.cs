@@ -12,6 +12,12 @@ namespace EnhancedValheimVRM
     {
         static bool Prefix(Player __instance, ref string __result)
         {
+ 
+            // see comments in PatchPlayerAwake for the reason this exists.
+            if (__instance.m_customData.TryGetValue(Constants.Keys.NameKey, out __result))
+            {
+                return false;
+            }
      
             if (Game.instance != null)
             {

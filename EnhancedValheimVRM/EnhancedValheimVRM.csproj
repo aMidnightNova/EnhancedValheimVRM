@@ -42,8 +42,10 @@
     <ItemGroup>
         <Compile Include="Compression.cs" />
         <Compile Include="ConsoleCommands.cs" />
+        <Compile Include="Constants.cs" />
         <Compile Include="CoroutineHelper.cs" />
         <Compile Include="ExtensionMethods.cs" />
+        <Compile Include="Logger.cs" />
         <Compile Include="MToonController.cs" />
         <Compile Include="PatchDebug.cs" />
         <Compile Include="PatchPlayerAwake.cs" />

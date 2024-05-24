@@ -26,7 +26,7 @@ namespace EnhancedValheimVRM
                 }
             }
 
-            Debug.Log("[ShaderPatch] All shaders loaded into ShaderDictionary.");
+            Logger.Log("[ShaderPatch] All shaders loaded into ShaderDictionary.");
 
 
             var shaderFile = "";
@@ -41,10 +41,10 @@ namespace EnhancedValheimVRM
             }
             else
             {
-                Debug.LogError("[ShaderPatch] Invalid ShaderBundle; old, current");
+                Logger.LogError("[ShaderPatch] Invalid ShaderBundle; old, current");
             }
 
-            var shaderPath = Path.Combine(Settings.Constants.VrmDir, shaderFile);
+            var shaderPath = Path.Combine(Constants.Shaders.Dir, shaderFile);
 
 
             if (File.Exists(shaderPath))
@@ -53,9 +53,13 @@ namespace EnhancedValheimVRM
                 var shaders = assetBundle.LoadAllAssets<Shader>();
                 foreach (var shader in shaders)
                 {
-                    Debug.Log("[ShaderPatch] Add Shader: " + shader.name);
+                    Logger.Log("[ShaderPatch] Add Shader: " + shader.name);
                     VRMShaderDictionary.Add(shader.name, shader);
                 }
+            }
+            else
+            {
+                Logger.Log("[ShaderPatch] No Shader file found at path." + shaderPath);
             }
         }
 
@@ -65,19 +69,19 @@ namespace EnhancedValheimVRM
 
             if (VRMShaderDictionary.TryGetValue(name, out shader))
             {
-                Debug.Log("[ShaderPatch] Shader '" + name + "' found in VRMShaders.Shaders");
+                Logger.Log("[ShaderPatch] Shader '" + name + "' found in VRMShaders.Shaders");
                 __result = shader;
                 return false;
             }
 
             if (ShaderDictionary.TryGetValue(name, out shader))
             {
-                Debug.Log("[ShaderPatch] Shader '" + name + "' found in preloaded ShaderDictionary.");
+                Logger.Log("[ShaderPatch] Shader '" + name + "' found in preloaded ShaderDictionary.");
                 __result = shader;
                 return false;
             }
 
-            Debug.Log("[ShaderPatch] Shader '" + name + "' NOT FOUND in ShaderDictionary. passing method to original Shader.Find.");
+            Logger.Log("[ShaderPatch] Shader '" + name + "' NOT FOUND in ShaderDictionary. passing method to original Shader.Find.");
             return true;
         }
     }

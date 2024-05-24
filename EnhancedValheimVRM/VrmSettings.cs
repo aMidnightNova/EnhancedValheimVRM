@@ -9,13 +9,12 @@ namespace EnhancedValheimVRM
 {
     public class VrmSettings
     {
+        // Writable Settings Fields
         public float ModelScale = 1.1f;
         public float ModelOffsetY = 0.0f;
         public float PlayerHeight = 1.85f;
         public float PlayerRadius = 0.5f;
 
-        public float HeightAspect => PlayerHeight / 1.85f;
-        public float RadiusAspect => PlayerRadius / 0.5f;
 
         public Vector3 SittingOnChairOffset = Vector3.zero;
         public Vector3 SittingOnThroneOffset = Vector3.zero;
@@ -63,23 +62,25 @@ namespace EnhancedValheimVRM
         public bool AttemptTextureFix = false;
 
 
-        // everything above is settings file properties.
+        // END - Writable Settings Properties
 
+        // COMPUTED Settings Properties
+        // should be private or a property {get set}
+        private float HeightAspect => PlayerHeight / 1.85f;
+        private float RadiusAspect => PlayerRadius / 0.5f;
+        private string _name;
 
-        [NonSerializedAttribute] public string Name;
-
-
-        private bool canReload = true;
+        private bool _canReload = true;
         private string _path;
 
-        private Dictionary<string, PropertyInfo> _properties = new Dictionary<string, PropertyInfo>();
-        private Dictionary<string, bool> _updatedProperties = new Dictionary<string, bool>();
+        private Dictionary<string, FieldInfo> _fields = new Dictionary<string, FieldInfo>();
+        private Dictionary<string, bool> _updatedFields = new Dictionary<string, bool>();
 
         public VrmSettings(string playerName)
         {
-            Name = playerName;
+            _name = playerName;
 
-            _path = Path.Combine(Settings.Constants.VrmDir, $"{playerName}.vrm");
+            _path = Path.Combine(Constants.Vrm.Dir, $"settings_{playerName}.txt");
 
             if (File.Exists(_path))
             {
@@ -87,45 +88,41 @@ namespace EnhancedValheimVRM
             }
             else
             {
-                canReload = false;
-                Debug.LogWarning($"No Settings file found for '{playerName}', using defaults.");
+                _canReload = false;
+                Logger.LogWarning($"No Settings file found for '{playerName}', using defaults.");
             }
         }
 
         private void InitializePropertyTracking()
         {
-            foreach (var prop in typeof(VrmSettings).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            foreach (var field in typeof(VrmSettings).GetFields(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (prop.CanWrite)
-                {
-                    _properties[prop.Name] = prop;
-                    _updatedProperties[prop.Name] = false;
-                }
+                _fields[field.Name] = field;
+                _updatedFields[field.Name] = false;
             }
         }
 
         private void CheckIfSettingsFileHasMissingProperties()
         {
-            foreach (var entry in _updatedProperties)
+            foreach (var entry in _updatedFields)
             {
                 if (!entry.Value)
                 {
-                    Debug.LogWarning($"No setting found in the settings file for: {entry.Key}. Using default value.");
+                    Logger.LogWarning($"No setting found in the settings file for: {entry.Key}. Using default value.");
                 }
             }
         }
 
         private void Load()
         {
-            Debug.Log($"Reading settings.");
-
+            Logger.Log($"Reading settings. -> {_name}");
             InitializePropertyTracking();
 
             var lines = File.ReadAllLines(_path);
 
             foreach (var line in lines)
             {
-                if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
+                if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#") || line.StartsWith("//"))
                 {
                     continue;
                 }
@@ -141,18 +138,20 @@ namespace EnhancedValheimVRM
                 string key = parts[0].Trim();
                 string value = parts[1].Trim();
 
-                if (_properties.TryGetValue(key, out PropertyInfo property) && property.CanWrite)
+
+                if (_fields.TryGetValue(key, out FieldInfo field))
                 {
-                    object valueOut = ParseValue(property.PropertyType, value);
+                    object valueOut = ParseValue(field.FieldType, value);
 
                     if (valueOut != null)
                     {
-                        property.SetValue(this, valueOut, null);
-                        Debug.Log($"Setting '{key}' To -> {valueOut}");
+                        field.SetValue(this, valueOut);
+                        Logger.Log($"Setting '{key}' To -> {valueOut}");
+                        _updatedFields[key] = true;
                     }
                     else
                     {
-                        Debug.LogWarning($"Unable to Parse : {key}. Bad value {value}. Using Default Value {property.GetValue(this)}");
+                        Logger.LogWarning($"Unable to Parse : {key}. Bad value {value}. Using Default Value {field.GetValue(this)}");
                     }
                 }
             }
@@ -189,8 +188,8 @@ namespace EnhancedValheimVRM
 
         private static Vector3? ParseVector3(string vectorString)
         {
-            //vectorString = vectorString.Trim('(', ')');
             vectorString = vectorString.Trim('<', '>').Trim();
+            vectorString = vectorString.Trim('(', ')');
             string[] components = vectorString.Split(',');
 
             if (components.Length == 3)
@@ -213,7 +212,7 @@ namespace EnhancedValheimVRM
 
         public void Reload()
         {
-            if (canReload)
+            if (_canReload)
             {
                 Load();
             }

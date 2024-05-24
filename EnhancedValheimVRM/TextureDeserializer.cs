@@ -24,11 +24,11 @@ namespace EnhancedValheimVRM
                 default:
                     if (string.IsNullOrEmpty(textureInfo.DataMimeType))
                     {
-                        Debug.Log($"Texture image MIME type is empty.");
+                        Logger.Log($"Texture image MIME type is empty.");
                     }
                     else
                     {
-                        Debug.Log($"Texture image MIME type `{textureInfo.DataMimeType}` is not supported.");
+                        Logger.Log($"Texture image MIME type `{textureInfo.DataMimeType}` is not supported.");
                     }
 
                     break;
@@ -67,11 +67,11 @@ namespace EnhancedValheimVRM
                 default:
                     if (string.IsNullOrEmpty(textureInfo.DataMimeType))
                     {
-                        Debug.Log($"Texture image MIME type is empty.");
+                        Logger.Log($"Texture image MIME type is empty.");
                     }
                     else
                     {
-                        Debug.Log($"Texture image MIME type `{textureInfo.DataMimeType}` is not supported.");
+                        Logger.Log($"Texture image MIME type `{textureInfo.DataMimeType}` is not supported.");
                     }
 
                     break;

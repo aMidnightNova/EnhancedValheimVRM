@@ -32,7 +32,7 @@ namespace EnhancedValheimVRM
             }
             else
             {
-                Debug.LogError("Player component or m_eye is null. Ensure the component exists.");
+                Logger.LogError("Player component or m_eye is null. Ensure the component exists.");
             }
         }
 

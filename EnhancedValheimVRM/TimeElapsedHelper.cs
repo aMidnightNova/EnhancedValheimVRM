@@ -16,14 +16,14 @@ namespace EnhancedValheimVRM
             startTime = DateTime.UtcNow;
             lastAccessTime = DateTime.UtcNow;
             isStartTimeSet = true;
-            Debug.Log("Start time set.");
+            Logger.Log("Start time set.");
         }
 
         public static string GetElapsedTime()
         {
             if (!isStartTimeSet)
             {
-                Debug.LogWarning("Start time not set. Automatically calling SetStartTime().");
+                Logger.LogWarning("Start time not set. Automatically calling SetStartTime().");
                 SetStartTime();
             }
 
@@ -43,19 +43,19 @@ namespace EnhancedValheimVRM
 
     public class Timer : IDisposable
     {
-        private Stopwatch stopwatch;
-        private string name;
+        private Stopwatch _stopwatch;
+        private string _name;
 
         public Timer(string name)
         {
-            this.name = name;
-            this.stopwatch = Stopwatch.StartNew();
+            _name = name;
+            _stopwatch = Stopwatch.StartNew();
         }
 
         public void Dispose()
         {
-            stopwatch.Stop();
-            Debug.Log($"{name} took {stopwatch.ElapsedMilliseconds} ms");
+            _stopwatch.Stop();
+            Logger.Log($"{_name} took {_stopwatch.ElapsedMilliseconds} ms");
         }
     }
 }

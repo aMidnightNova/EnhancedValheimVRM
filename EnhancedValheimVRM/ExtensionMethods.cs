@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
@@ -19,25 +20,48 @@ namespace EnhancedValheimVRM
         {
             return AccessTools.FieldRefAccess<Tin, Tout>(fieldName).Invoke(self);
         }
+
         public static bool TryGetField<Tin, Tout>(this Tin self, string fieldName, out Tout result)
         {
             try
             {
-                result = AccessTools.FieldRefAccess<Tin, Tout>(fieldName).Invoke(self);
+                result = GetField<Tin, Tout>(self, fieldName);
+                if (result == null)
+                {
+                   // Logger.Log($"Field '{fieldName}' exists but is null");
+                    return false;
+                }
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Failed to access field '{fieldName}': {ex.Message}");
+                Logger.LogError($"Failed to access field '{fieldName}': {ex.Message}");
             }
             result = default(Tout);
             return false;
         }
+
+        
         public static void SetVisible(this GameObject obj, bool flag)
         {
             foreach (var mr in obj.GetComponentsInChildren<MeshRenderer>()) mr.enabled = flag;
             foreach (var smr in obj.GetComponentsInChildren<SkinnedMeshRenderer>()) smr.enabled = flag;
         }
-
+        
+        
+        public static void Set<T1, T2>(this Dictionary<T1, T2> dict, T1 key, T2 value)
+        {
+            if (value == null)
+            {
+                dict.Remove(key);
+            }
+            else
+            {
+                dict[key] = value;
+            }
+        }
+        
+        
+        
     }
 }

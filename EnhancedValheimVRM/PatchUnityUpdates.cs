@@ -45,13 +45,13 @@ namespace EnhancedValheimVRM
                         }
                         catch (Exception ex)
                         {
-                            Debug.Log($"Error patching type {type.FullName}: {ex.Message}");
+                            Logger.Log($"Error patching type {type.FullName}: {ex.Message}");
                         }
                     }
                 }
                 catch (ReflectionTypeLoadException ex)
                 {
-                    Debug.Log($"Error loading types from {assembly.FullName}: {ex.LoaderExceptions[0].Message}");
+                    Logger.Log($"Error loading types from {assembly.FullName}: {ex.LoaderExceptions[0].Message}");
                 }
             }
         }
@@ -72,11 +72,11 @@ namespace EnhancedValheimVRM
                     harmony.Patch(method,
                         prefix: new HarmonyMethod(typeof(PatchAllUpdateMethods), nameof(GenericPrefix)),
                         postfix: new HarmonyMethod(typeof(PatchAllUpdateMethods), nameof(GenericPostfix)));
-                    //Debug.Log($"Patched {methodName} in {type.FullName}");
+                    //Logger.Log($"Patched {methodName} in {type.FullName}");
                 }
                 catch (Exception ex)
                 {
-                    Debug.Log($"Failed to patch method {methodName} in {type.FullName}: {ex.Message}");
+                    Logger.Log($"Failed to patch method {methodName} in {type.FullName}: {ex.Message}");
                 }
             }
         }
@@ -98,7 +98,7 @@ namespace EnhancedValheimVRM
                 CallingMethod = method
             };
             __state.Stopwatch.Start();
-            // Debug.Log($"Before {method.DeclaringType.FullName}.{method.Name}");
+            // Logger.Log($"Before {method.DeclaringType.FullName}.{method.Name}");
         }
 
         public static void GenericPostfix(GenericPState __state)
@@ -121,12 +121,12 @@ namespace EnhancedValheimVRM
 
             if (methodCallTimestamps[methodName].Count > Settings.CallThreshold)
             {
-                Debug.Log($"{methodName} called {methodCallTimestamps[methodName].Count} times in the last {Settings.TimeWindowMs} ms");
+                Logger.Log($"{methodName} called {methodCallTimestamps[methodName].Count} times in the last {Settings.TimeWindowMs} ms");
             }
 
             if (elapsedMilliseconds > Settings.ProfileLogThresholdMs)
             {
-                Debug.Log($"{methodName} | Runtime -> {elapsedMilliseconds} ms | Call Count -> {methodCallTimestamps[methodName].Count}");
+                Logger.Log($"{methodName} | Runtime -> {elapsedMilliseconds} ms | Call Count -> {methodCallTimestamps[methodName].Count}");
             }
         }
     }

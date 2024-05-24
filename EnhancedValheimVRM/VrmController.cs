@@ -9,14 +9,15 @@ namespace EnhancedValheimVRM
     public static class VrmController
     {
         
-        private static Dictionary<Player, VrmInstance> _vrmInstances = new Dictionary<Player, VrmInstance>();
+        private static Dictionary<string, VrmInstance> _vrmInstances = new Dictionary<string, VrmInstance>();
 
+ 
         public static void AttachVrmToPlayer(Player player)
         {
+
             VrmInstance vrmInstance;
-
-            var exists = _vrmInstances.TryGetValue(player, out vrmInstance);
-
+            var playerName = player.GetPlayerName();
+            var exists = _vrmInstances.TryGetValue(playerName, out vrmInstance);
             if (!exists)
             {
                 try
@@ -25,24 +26,37 @@ namespace EnhancedValheimVRM
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError(ex.Message);
+                    Logger.LogError(ex.Message);
                 }
+            }
+            else
+            {
+                vrmInstance.SetPlayer(player);
             }
 
             if (vrmInstance != null)
             {
-                if(!exists) _vrmInstances.Add(player,vrmInstance);
+                if (!exists)
+                {
+                    _vrmInstances.Add(playerName,vrmInstance);
+                }
                 CoroutineHelper.Instance.StartCoroutine(VrmSetup(player, vrmInstance));
             }
             
         }
         public static void DetachVrmFromPlayer(Player player)
         {
-            if (_vrmInstances.TryGetValue(player, out var instance))
+            var playerName = player.GetPlayerName();
+ 
+            
+            Logger.Log($"Player Destroyed ->  {playerName} ");
+
+            if (_vrmInstances.TryGetValue(playerName, out var instance))
             {
                 var vrmGo = instance.GetGameObject();
                 if (vrmGo != null)
                 {
+                    vrmGo.SetActive(false);
                     vrmGo.transform.parent = null;
                 }
 
@@ -69,6 +83,13 @@ namespace EnhancedValheimVRM
         private static IEnumerator VrmSetup(Player player, VrmInstance vrmInstance)
         {
             var vrmGo = vrmInstance.GetGameObject();
+
+            if (vrmGo == null)
+            {
+                Logger.LogError("VrmGo is null");
+                yield break;
+            }
+            
             var settings = vrmInstance.GetSettings();
             
             vrmGo.SetActive(true);
@@ -123,7 +144,7 @@ namespace EnhancedValheimVRM
             }
             else
             {
-                Debug.LogError("playerAnimator Not found.");
+                Logger.LogError("playerAnimator Not found.");
             }
             
             
@@ -148,7 +169,8 @@ namespace EnhancedValheimVRM
 
         public static VrmInstance GetVrmInstance(this Player player)
         {
-            if (_vrmInstances.TryGetValue(player, out var instance))
+            var playerName = player.GetPlayerName();
+            if (_vrmInstances.TryGetValue(playerName, out var instance))
             {
                 return instance;
             }
@@ -158,12 +180,14 @@ namespace EnhancedValheimVRM
 
         public static bool HasVrmForPlayer(Player player)
         {
-            return _vrmInstances.ContainsKey(player);
+            var playerName = player.GetPlayerName();
+            return _vrmInstances.ContainsKey(playerName);
         }
 
         public static GameObject GetVrmInstanceGameObject(Player player)
         {
-            if (_vrmInstances.TryGetValue(player, out var instance))
+            var playerName = player.GetPlayerName();
+            if (_vrmInstances.TryGetValue(playerName, out var instance))
             {
                 return instance.GetGameObject();
             }

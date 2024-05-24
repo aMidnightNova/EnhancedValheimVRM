@@ -23,14 +23,7 @@ namespace EnhancedValheimVRM
             public static string Old => "old";
         }
  
-        public static class Constants
-        {
-            public static readonly string VrmGoName = "VRM_Visual";
-            public static readonly string DefaultVrmName = "___Default.vrm";
-            public static readonly string DefaultVrmSettings = "settings____Default.vrm";
-            public static readonly string VrmDir = Path.Combine(Environment.CurrentDirectory, "EnhancedValheimVRM");
-            public static readonly string DefaultVrmPath = Path.Combine(VrmDir, DefaultVrmName);
-        }
+
 
         public static void Init(ConfigFile config)
         {

@@ -69,6 +69,11 @@ namespace EnhancedValheimVRM
             CreateBoneRatios();
         }
 
+        public Animator GetPlayerAnimator()
+        {
+            return _playerAnimator;
+        }
+
         private void CreatePoseHandlers()
         {
             OnDestroy();

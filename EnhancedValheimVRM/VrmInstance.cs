@@ -27,7 +27,8 @@ namespace EnhancedValheimVRM
         private readonly string _playerSettingsName;
         private readonly VrmSettings _settings;
         private readonly string _vrmPath;
-        private readonly Player _player;
+        
+        private Player _player;
 
         public VrmInstance(Player player)
         {
@@ -36,22 +37,22 @@ namespace EnhancedValheimVRM
             _playerName = player.GetPlayerName();
             _playerSettingsName = player.GetPlayerName();
 
-            _vrmPath = Path.Combine(Settings.Constants.VrmDir, $"{_playerName}.vrm");
+            _vrmPath = Path.Combine(Constants.Vrm.Dir, $"{_playerName}.vrm");
 
             if (!File.Exists(_vrmPath))
             {
-                if (Settings.UseDefaultVrm && File.Exists(Settings.Constants.DefaultVrmPath))
+                if (Settings.UseDefaultVrm && File.Exists(Constants.Vrm.DefaultPath))
                 {
-                    _vrmPath = Settings.Constants.DefaultVrmPath;
-                    _playerSettingsName = Settings.Constants.DefaultVrmName;
+                    _vrmPath = Constants.Vrm.DefaultPath;
+                    _playerSettingsName = Constants.Vrm.DefaultName;
                 }
                 else
                 {
                     var exMsg = $"No Vrm file found for {_playerName}.vrm";
 
-                    if (Settings.UseDefaultVrm && !File.Exists(Settings.Constants.DefaultVrmPath))
+                    if (Settings.UseDefaultVrm && !File.Exists(Constants.Vrm.DefaultPath))
                     {
-                        exMsg += $" and no Vrm file found for {Settings.Constants.DefaultVrmName}";
+                        exMsg += $" and no Vrm file found for {Constants.Vrm.DefaultName}";
                     }
 
                     exMsg += ".";
@@ -65,7 +66,7 @@ namespace EnhancedValheimVRM
 
             CalculateSettingsHash();
 
-            Debug.Log("loading vrm");
+            Logger.Log("loading vrm");
  
 
             if (IsLocalPlayer(player))
@@ -89,6 +90,18 @@ namespace EnhancedValheimVRM
             var index = FejdStartup.instance.GetField<FejdStartup, int>("m_profileIndex");
             var profiles = FejdStartup.instance.GetField<FejdStartup, List<PlayerProfile>>("m_profiles");
             return index >= 0 && index < profiles.Count;
+        }
+
+        public void SetPlayer(Player player)
+        {
+            Logger.LogWarning("NEW PLAYER SET");
+            _player = player;
+            
+            // _vrmGo = Object.Instantiate(_instance.Root);
+            //
+            // Object.DontDestroyOnLoad(_vrmGo);
+            //
+            // _vrmGo.name = Settings.Constants.Vrm.VrmGoName;
         }
         ~VrmInstance()
         {
@@ -138,14 +151,14 @@ namespace EnhancedValheimVRM
                     }
                     catch (TypeLoadException ex)
                     {
-                        Debug.LogError("Failed to load type: " + ex.TypeName);
-                        Debug.LogError(ex);
+                        Logger.LogError("Failed to load type: " + ex.TypeName);
+                        Logger.LogError(ex);
                     }
 
                 }
                 catch (NotVrm0Exception)
                 {
-                    Debug.Log("Not Vrm0, Trying VRM10");
+                    Logger.Log("Not Vrm0, Trying VRM10");
                     var vrm = Vrm10Data.Parse(data);
                     var context = new Vrm10Importer(vrm);
                     try
@@ -154,8 +167,8 @@ namespace EnhancedValheimVRM
                     }
                     catch (TypeLoadException ex)
                     {
-                        Debug.LogError("Failed to load type: " + ex.TypeName);
-                        Debug.LogError(ex);
+                        Logger.LogError("Failed to load type: " + ex.TypeName);
+                        Logger.LogError(ex);
                     }
                 }
                 
@@ -167,18 +180,18 @@ namespace EnhancedValheimVRM
                     loaded.ShowMeshes();
                     loaded.Root.transform.localScale = Vector3.one * _settings.ModelScale;
 
-                    Debug.Log("VRM read successful");
+                    Logger.Log("VRM read successful");
 
                     _instance = loaded;
                 }
                 else
                 {
-                    Debug.LogError("loading vrm Failed.");
+                    Logger.LogError("loading vrm Failed.");
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError(ex);
+                Logger.LogError(ex);
             }
 
             SetupVrm();
@@ -195,7 +208,7 @@ namespace EnhancedValheimVRM
 
             if (bytesTask.IsFaulted)
             {
-                Debug.LogError($"Error loading VRM: {bytesTask.Exception.Flatten().InnerException}");
+                Logger.LogError($"Error loading VRM: {bytesTask.Exception.Flatten().InnerException}");
                 yield break;
             }
 
@@ -217,7 +230,7 @@ namespace EnhancedValheimVRM
 
             if (dataTask.IsFaulted)
             {
-                Debug.LogError($"Error parsing GLB: {dataTask.Exception.Flatten().InnerException}");
+                Logger.LogError($"Error parsing GLB: {dataTask.Exception.Flatten().InnerException}");
                 yield break;
             }
 
@@ -250,7 +263,7 @@ namespace EnhancedValheimVRM
 
             if (maybeVrm10)
             {
-                Debug.Log("Not Vrm0, Trying VRM10");
+                Logger.Log("Not Vrm0, Trying VRM10");
                 var vrmTask = Task.Run(() => Vrm10Data.Parse(dataTask.Result));
                 while (!vrmTask.IsCompleted)
                 {
@@ -263,7 +276,7 @@ namespace EnhancedValheimVRM
 
             if (loader == null)
             {
-                Debug.LogError("Loader was not initialized.");
+                Logger.LogError("Loader was not initialized.");
                 yield break;
             }
 
@@ -274,7 +287,7 @@ namespace EnhancedValheimVRM
 
             if (loader.IsFaulted)
             {
-                Debug.LogError("Error during VRM loading: " + loader.Exception.Flatten());
+                Logger.LogError("Error during VRM loading: " + loader.Exception.Flatten());
                 yield break;
             }
 
@@ -303,7 +316,7 @@ namespace EnhancedValheimVRM
 
             Object.DontDestroyOnLoad(_vrmGo);
 
-            _vrmGo.name = Settings.Constants.VrmGoName;
+            _vrmGo.name = Constants.Vrm.GoName;
             
             
             
@@ -423,7 +436,7 @@ namespace EnhancedValheimVRM
                 yield return null;
             }
 
-            Debug.Log("[ValheimVRM] Material processing completed.");
+            Logger.Log("Material processing completed.");
         }
 
         private void CalculateSourceBytesHash()
