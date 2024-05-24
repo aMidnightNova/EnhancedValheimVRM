@@ -72,7 +72,7 @@ namespace EnhancedValheimVRM
                     UnityEngine.Object.Destroy(vrmEyeController);
                 }
                 
-                var mToonController = player.GetComponent<MToonController>();
+                var mToonController = player.GetComponent<VrmMToonController>();
                 if (mToonController != null)
                 {
                     UnityEngine.Object.Destroy(mToonController);
@@ -150,7 +150,7 @@ namespace EnhancedValheimVRM
             
             if (settings.UseMToonShader)
             {
-                vrmGo.AddComponent<MToonController>().Setup(vrmGo);
+                vrmGo.AddComponent<VrmMToonController>().Setup(vrmGo);
             }
             yield return null;
 

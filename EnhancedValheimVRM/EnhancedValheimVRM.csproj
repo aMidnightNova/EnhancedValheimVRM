@@ -46,7 +46,7 @@
         <Compile Include="CoroutineHelper.cs" />
         <Compile Include="ExtensionMethods.cs" />
         <Compile Include="Logger.cs" />
-        <Compile Include="MToonController.cs" />
+        <Compile Include="VrmMToonController.cs" />
         <Compile Include="PatchDebug.cs" />
         <Compile Include="PatchPlayerAwake.cs" />
         <Compile Include="PatchPlayerGetPlayerName.cs" />

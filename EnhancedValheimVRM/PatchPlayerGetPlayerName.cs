@@ -14,7 +14,7 @@ namespace EnhancedValheimVRM
         {
  
             // see comments in PatchPlayerAwake for the reason this exists.
-            if (__instance.m_customData.TryGetValue(Constants.Keys.NameKey, out __result))
+            if (__instance.m_customData.TryGetValue(Constants.Keys.PlayerNameKey, out __result))
             {
                 return false;
             }
