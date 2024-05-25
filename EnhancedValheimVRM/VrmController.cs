@@ -57,7 +57,7 @@ namespace EnhancedValheimVRM
                 if (vrmGo != null)
                 {
                     vrmGo.SetActive(false);
-                    vrmGo.transform.parent = null;
+                    vrmGo.transform.SetParent(null, false);
                 }
 
                 var vrmAnimationController = player.GetComponent<VrmAnimationController>();

@@ -23,7 +23,7 @@ namespace EnhancedValheimVRM
         public static class Keys
         {
             private const string Prefix = "evv_";
-            public static readonly string PlayerNameKey = $"{Prefix}name";
+            public static readonly string PlayerName = $"{Prefix}name";
         }
     }
 }

@@ -14,7 +14,7 @@ namespace EnhancedValheimVRM
             // so when you switch characters and teh destroy method is called and the keys are the name. its wrong 
             // this insures access to the correct player name always.
             
-            __instance.m_customData.Set(Constants.Keys.PlayerNameKey, __instance.GetPlayerName());
+            __instance.m_customData.Set(Constants.Keys.PlayerName, __instance.GetPlayerName());
 
             VrmController.AttachVrmToPlayer(__instance);
         }
