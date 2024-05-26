@@ -60,7 +60,41 @@ namespace EnhancedValheimVRM
                 dict[key] = value;
             }
         }
-        
+
+        public static string GetPlayerDisplayName(this Player player)
+        {
+            // cannot patch GetPlayerName - it causes the game to crash, use this in its place.
+
+            var playerName = "";
+            
+            // see comments in PatchPlayerAwake for the reason this exists.
+            if (player.m_customData.TryGetValue(Constants.Keys.PlayerName, out playerName))
+            {
+                return playerName;
+            }
+     
+            if (Game.instance != null)
+            {
+                playerName = player.GetPlayerName();
+                if (playerName == "" || playerName == "...")
+                {
+                    playerName = Game.instance.GetPlayerProfile().GetName();
+                    return playerName;
+                }
+            }
+            else
+            {
+                var index = FejdStartup.instance.GetField<FejdStartup, int>("m_profileIndex");
+                var profiles = FejdStartup.instance.GetField<FejdStartup, List<PlayerProfile>>("m_profiles");
+                if (index >= 0 && index < profiles.Count)
+                {
+                    playerName = profiles[index].GetName();
+                    return playerName;
+                }
+            }
+
+            return playerName;
+        }
         
         
     }

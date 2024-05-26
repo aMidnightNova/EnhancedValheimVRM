@@ -2,9 +2,9 @@
 
 namespace EnhancedValheimVRM
 {
-    public class Logger
+    public static class Logger
     {
-        private const string Prepend = "[EnhancedValheimVRM]";
+        private static readonly string Prepend = $"[{Constants.PluginName}]";
 
         public static void Log(object message)
         {

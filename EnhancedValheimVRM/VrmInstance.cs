@@ -34,8 +34,8 @@ namespace EnhancedValheimVRM
         {
             _player = player;
 
-            _playerName = player.GetPlayerName();
-            _playerSettingsName = player.GetPlayerName();
+            _playerName = player.GetPlayerDisplayName();
+            _playerSettingsName = player.GetPlayerDisplayName();
 
             _vrmPath = Path.Combine(Constants.Vrm.Dir, $"{_playerName}.vrm");
 
@@ -83,7 +83,7 @@ namespace EnhancedValheimVRM
             if (Game.instance != null)
             {
                 var localPlayerName = Game.instance.GetPlayerProfile().GetName();
-                var playerName = player.GetPlayerName();
+                var playerName = player.GetPlayerDisplayName();
                 return string.IsNullOrEmpty(playerName) || playerName == "..." || playerName == localPlayerName;
             }
 
@@ -101,7 +101,7 @@ namespace EnhancedValheimVRM
             //
             // Object.DontDestroyOnLoad(_vrmGo);
             //
-            // _vrmGo.name = Settings.Constants.Vrm.VrmGoName;
+            // _vrmGo.name = Constants.Vrm.GoName;
         }
         ~VrmInstance()
         {
@@ -311,7 +311,7 @@ namespace EnhancedValheimVRM
         private void SetupVrm()
         {
             CalculateSourceBytesHash();
-
+           // Object.DontDestroyOnLoad(_instance.Root);
             _vrmGo = Object.Instantiate(_instance.Root);
 
             Object.DontDestroyOnLoad(_vrmGo);
@@ -324,7 +324,7 @@ namespace EnhancedValheimVRM
             
             var lodGroup = _vrmGo.AddComponent<LODGroup>();
             if (_settings.EnablePlayerFade)
-            {
+            { //TODO: determine if regular Renders need to be put into the lod group. and then any armors added 
                 lodGroup.SetLODs(new LOD[]
                 {
                     new LOD(0.1f, _vrmGo.GetComponentsInChildren<SkinnedMeshRenderer>())

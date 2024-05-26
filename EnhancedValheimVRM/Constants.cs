@@ -5,7 +5,8 @@ namespace EnhancedValheimVRM
 {
     public static class Constants
     {
-        private static readonly string PluginDir = Path.Combine(Environment.CurrentDirectory, "EnhancedValheimVRM");
+        public const string PluginName = "EnhancedValheimVRM";
+        private static readonly string PluginDir = Path.Combine(Environment.CurrentDirectory, PluginName);
 
         public static class Vrm
         {
@@ -23,7 +24,7 @@ namespace EnhancedValheimVRM
         public static class Keys
         {
             private const string Prefix = "evv_";
-            public static readonly string PlayerName = $"{Prefix}name";
+            public static readonly string PlayerName = $"{Prefix}PlayerName";
         }
     }
 }

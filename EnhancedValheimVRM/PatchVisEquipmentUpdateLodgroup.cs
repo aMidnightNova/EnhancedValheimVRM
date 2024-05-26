@@ -5,9 +5,9 @@ using UnityEngine;
 namespace EnhancedValheimVRM
 {
     [HarmonyPatch(typeof(VisEquipment), "UpdateLodgroup")]
-    static class PatchVisEquipmentUpdateLodgroup
+    internal static class PatchVisEquipmentUpdateLodgroup
     {
-        static void Postfix(VisEquipment __instance)
+        private static void Postfix(VisEquipment __instance)
         {
             if (!__instance.m_isPlayer) return;
 

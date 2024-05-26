@@ -63,7 +63,7 @@ namespace EnhancedValheimVRM
             }
         }
 
-        static bool Prefix(ref Shader __result, string name)
+        private static bool Prefix(ref Shader __result, string name)
         {
             Shader shader;
 

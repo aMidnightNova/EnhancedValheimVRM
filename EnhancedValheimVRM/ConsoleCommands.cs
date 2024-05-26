@@ -14,7 +14,7 @@ namespace EnhancedValheimVRM
                 "reload VRM settings for your character",
                 args =>
                 {
-                    VrmController.GetVrmInstance(Player.m_localPlayer).ReloadSettings();
+                    Player.m_localPlayer.GetVrmInstance().ReloadSettings();
 
                     args.Context.AddString("Settings for " + Player.m_localPlayer.name + " were reloaded");
                 }

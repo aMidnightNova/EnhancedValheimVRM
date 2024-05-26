@@ -46,10 +46,12 @@
         <Compile Include="CoroutineHelper.cs" />
         <Compile Include="ExtensionMethods.cs" />
         <Compile Include="Logger.cs" />
+        <Compile Include="PatchGetHeadPoint.cs" />
+        <Compile Include="PatchOnRagdollCreated.cs" />
+        <Compile Include="PatchSetVisible.cs" />
         <Compile Include="VrmMToonController.cs" />
         <Compile Include="PatchDebug.cs" />
         <Compile Include="PatchPlayerAwake.cs" />
-        <Compile Include="PatchPlayerGetPlayerName.cs" />
         <Compile Include="PatchPlayerOnDestroy.cs" />
         <Compile Include="PatchUnityUpdates.cs" />
         <Compile Include="PatchVisEquipmentUpdateLodgroup.cs" />

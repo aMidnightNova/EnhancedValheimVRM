@@ -51,10 +51,12 @@ namespace EnhancedValheimVRM
             _playerAnimator = playerAnimator;
             _vrmInstance = vrmInstance;
 
+            
+            Logger.Log("__________VRM Animation Controller SETUP");
 
-            var vrmGo = _vrmInstance.GetGameObject();
+           // var vrmGo = _vrmInstance.GetGameObject();
 
-            _vrmAnimator = vrmGo.GetComponentInChildren<Animator>();
+            _vrmAnimator = GetComponent<Animator>();
             _vrmAnimator.applyRootMotion = true;
             _vrmAnimator.updateMode = _playerAnimator.updateMode;
             _vrmAnimator.feetPivotActive = _playerAnimator.feetPivotActive;
@@ -76,6 +78,7 @@ namespace EnhancedValheimVRM
 
         private void CreatePoseHandlers()
         {
+            Logger.LogWarning("_______ CreatePoseHandlers");
             OnDestroy();
             _playerPoseHandler = new HumanPoseHandler(_playerAnimator.avatar, _playerAnimator.transform);
             _vrmPoseHandler = new HumanPoseHandler(_vrmAnimator.avatar, _vrmAnimator.transform);

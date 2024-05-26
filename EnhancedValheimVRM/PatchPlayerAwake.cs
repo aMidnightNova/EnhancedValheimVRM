@@ -4,9 +4,9 @@ using UnityEngine;
 namespace EnhancedValheimVRM
 {
     [HarmonyPatch(typeof(Player), "Awake")]
-    public class PatchPlayerAwake
+    internal static class PatchPlayerAwake
     {
-        static void Postfix(Player __instance)
+        private static void Postfix(Player __instance)
         {
             // this insures the name is set to the object, and can be accessed later. 
             // the reason for this is Game.instance.GetPlayerProfile().GetName() ise used to get a name
@@ -14,7 +14,7 @@ namespace EnhancedValheimVRM
             // so when you switch characters and teh destroy method is called and the keys are the name. its wrong 
             // this insures access to the correct player name always.
             
-            __instance.m_customData.Set(Constants.Keys.PlayerName, __instance.GetPlayerName());
+            __instance.m_customData.Set(Constants.Keys.PlayerName, __instance.GetPlayerDisplayName());
 
             VrmController.AttachVrmToPlayer(__instance);
         }

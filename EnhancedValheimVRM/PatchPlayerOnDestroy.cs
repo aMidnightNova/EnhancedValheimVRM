@@ -7,9 +7,9 @@ using UnityEngine;
 namespace EnhancedValheimVRM
 {
     [HarmonyPatch(typeof(Player), "OnDestroy")]
-    public class PatchPlayerOnDestroy
+    internal static class PatchPlayerOnDestroy
     {
-        static void Prefix(Player __instance)
+        private static void Prefix(Player __instance)
         {
             VrmController.DetachVrmFromPlayer(__instance);
         }
