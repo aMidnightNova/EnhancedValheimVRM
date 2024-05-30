@@ -10,8 +10,8 @@ namespace EnhancedValheimVRM
     public class VrmSettings
     {
         // Writable Settings Fields
-        public float ModelScale = 1.1f;
-        public float ModelOffsetY = 0.0f;
+        public float ModelScale = 1.0f;
+
         public float PlayerHeight = 1.85f;
         public float PlayerRadius = 0.5f;
 
@@ -60,16 +60,25 @@ namespace EnhancedValheimVRM
         public float SwimDepthScale = 1.0f;
 
         public bool AttemptTextureFix = false;
-
-
         // END - Writable Settings Properties
 
+        
+        
         // COMPUTED Settings Properties
         // should be private or a property {get set}
         private float HeightAspect => PlayerHeight / 1.85f;
         private float RadiusAspect => PlayerRadius / 0.5f;
+        
+        // END - COMPUTED Settings Properties
+        
+        
+        //Internal computed properties
+        public float HeightOffsetY { get; set; } = 0f;
+        public float PlayerVrmScale { get; set; } = 0f;
+        //Internal computed properties
+        
+        
         private string _name;
-
         private bool _canReload = true;
         private string _path;
 
@@ -91,6 +100,8 @@ namespace EnhancedValheimVRM
                 _canReload = false;
                 Logger.LogWarning($"No Settings file found for '{playerName}', using defaults.");
             }
+
+            ApplyScaling();
         }
 
         private void InitializePropertyTracking()
@@ -216,6 +227,24 @@ namespace EnhancedValheimVRM
             {
                 Load();
             }
+        }
+
+        private void ApplyScaling()
+        {
+            // EquipmentScale /= 100.0f;
+            // KnifeSidePos /= 100.0f;
+            // StaffPos /= 100.0f;
+            // RightHandBackItemToolPos /= 100.0f;
+            // RightHandBackItemPos /= 100.0f;
+            // BowBackPos /= 100.0f;
+            // StaffSkeletonPos /= 100.0f;
+            // LeftHandBackItemPos /= 100.0f;
+            
+            //
+            //
+            // RightHandItemPos /= 100.0f;
+            // LeftHandItemPos /= 100.0f;
+ 
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using VRM;
 
@@ -8,13 +9,11 @@ namespace EnhancedValheimVRM
 {
     public static class VrmController
     {
-        
         private static Dictionary<string, VrmInstance> _vrmInstances = new Dictionary<string, VrmInstance>();
 
- 
+
         public static void AttachVrmToPlayer(Player player)
         {
-
             VrmInstance vrmInstance;
             var playerName = player.GetPlayerDisplayName();
             var exists = _vrmInstances.TryGetValue(playerName, out vrmInstance);
@@ -41,17 +40,18 @@ namespace EnhancedValheimVRM
                 if (!exists)
                 {
                     Logger.LogWarning("VRM ADD INSTANCE");
-                    _vrmInstances.Add(playerName,vrmInstance);
+                    _vrmInstances.Add(playerName, vrmInstance);
                 }
+
                 CoroutineHelper.Instance.StartCoroutine(VrmSetup(player, vrmInstance));
             }
-            
         }
+
         public static void DetachVrmFromPlayer(Player player)
         {
             var playerName = player.GetPlayerDisplayName();
- 
-            
+
+
             Logger.Log($"Player Destroyed ->  {playerName} ");
 
             if (_vrmInstances.TryGetValue(playerName, out var instance))
@@ -65,18 +65,19 @@ namespace EnhancedValheimVRM
                     vrmGo.SetActive(false);
                 }
 
+
                 // var vrmAnimationController = player.GetComponent<VrmAnimationController>();
                 // if (vrmAnimationController != null)
                 // {
                 //     UnityEngine.Object.Destroy(vrmAnimationController);
                 // }
-                
-                var vrmEyeController = vrmGo.GetComponent<VrmEyeController>();
+
+                var vrmEyeController = player.gameObject.GetComponent<VrmEyeController>();
                 if (vrmEyeController != null)
                 {
                     UnityEngine.Object.Destroy(vrmEyeController);
                 }
-                
+
                 var mToonController = vrmGo.GetComponent<VrmMToonController>();
                 if (mToonController != null)
                 {
@@ -95,52 +96,63 @@ namespace EnhancedValheimVRM
                 Logger.LogError("VrmGo is null");
                 yield break;
             }
-            
+
             var settings = vrmInstance.GetSettings();
-            
+
             vrmGo.SetActive(true);
-            
+
             player.m_maxInteractDistance *= settings.InteractionDistanceScale;
-            
-            
-            
-            var animator = player.GetComponentInChildren<Animator>(); 
+
+
+            var animator = player.GetComponentInChildren<Animator>();
+
+            var oldModel = animator.transform.parent.Find(Constants.Vrm.GoName);
+            if (oldModel != null)
+            {
+                UnityEngine.Object.Destroy(oldModel);
+            }
+
             vrmGo.transform.SetParent(animator.transform.parent, false);
-            
-            
+
+
             float newHeight = settings.PlayerHeight;
             float newRadius = settings.PlayerRadius;
 
             var rigidBody = player.GetComponent<Rigidbody>();
             var collider = player.GetComponent<CapsuleCollider>();
-			
+
             collider.height = newHeight;
             collider.radius = newRadius;
             collider.center = new Vector3(0, newHeight / 2, 0);
-			
-			
+
+
             rigidBody.centerOfMass = collider.center;
-            
+
             yield return null;
-            
+
             foreach (var smr in player.GetVisual().GetComponentsInChildren<SkinnedMeshRenderer>())
             {
-                smr.forceRenderingOff = true;
-                smr.updateWhenOffscreen = true;
+                //smr.forceRenderingOff = true;
+                //smr.updateWhenOffscreen = true;
+                
+                foreach (var mat in smr.materials)
+                {
+                    Logger.Log($"Mat Name: -> {mat.name} Mat Shader: -> {mat.shader.name}");
+                }
                 yield return null;
             }
-            
-            if (player.TryGetField<Player,Animator>("m_animator", out var playerAnimator))
+
+            if (player.TryGetField<Player, Animator>("m_animator", out var playerAnimator))
             {
                 playerAnimator.keepAnimatorStateOnDisable = true;
                 playerAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-                
+
                 yield return null;
-                
+
                 vrmGo.transform.localPosition = playerAnimator.transform.localPosition;
-                
+
                 var animationController = vrmGo.GetComponent<VrmAnimationController>();
-			
+
                 if (animationController == null)
                 {
                     animationController = vrmGo.AddComponent<VrmAnimationController>();
@@ -150,29 +162,46 @@ namespace EnhancedValheimVRM
                 {
                     animationController.Setup(player, playerAnimator, vrmInstance);
                 }
-                
-                
-                
+
+
                 yield return null;
-                
+
                 if (settings.FixCameraHeight)
                 {
-                    vrmGo.AddComponent<VrmEyeController>().Setup(player, playerAnimator, vrmInstance);
+                    var vrmEyeController = player.gameObject.GetComponent<VrmEyeController>();
+                    if (vrmEyeController == null)
+                    {
+                        player.gameObject.AddComponent<VrmEyeController>().Setup(player, playerAnimator, vrmInstance);
+                    }
+                    else
+                    {
+                        vrmEyeController.Setup(player, playerAnimator, vrmInstance);
+                    }
                 }
             }
             else
             {
                 Logger.LogError("playerAnimator Not found.");
             }
-            
-            
+
+
             if (settings.UseMToonShader)
             {
-                vrmGo.AddComponent<VrmMToonController>().Setup(vrmGo);
+                var vrmMToonControler = vrmGo.GetComponent<VrmMToonController>();
+
+                if (vrmMToonControler == null)
+                {
+                    vrmGo.AddComponent<VrmMToonController>().Setup(vrmGo);
+                }
+                else
+                {
+                    vrmMToonControler.Setup(vrmGo);
+                }
             }
+
             yield return null;
 
- 
+
             foreach (var springBone in vrmGo.GetComponentsInChildren<VRMSpringBone>())
             {
                 springBone.m_stiffnessForce *= settings.SpringBoneStiffness;
@@ -183,6 +212,31 @@ namespace EnhancedValheimVRM
             }
 
 
+            //SetupBones(player, vrmInstance);
+            //SetupAttachPoints(player, vrmInstance);
+        }
+
+ 
+
+        private static void SetupAttachPoints(Player player, VrmInstance vrmInstance)
+        {
+            if (player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
+            {
+                var vrmAnimator = vrmInstance.GetAnimator();
+
+
+                visEquipment.m_leftHand = vrmAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
+                visEquipment.m_rightHand = vrmAnimator.GetBoneTransform(HumanBodyBones.RightHand);
+
+                visEquipment.m_helmet = vrmAnimator.GetBoneTransform(HumanBodyBones.Head);
+                visEquipment.m_backShield = vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
+                visEquipment.m_backMelee = vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
+
+                visEquipment.m_backTwohandedMelee = vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
+                visEquipment.m_backBow = vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
+                visEquipment.m_backTool = vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
+                visEquipment.m_backAtgeir = vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
+            }
         }
 
         public static VrmInstance GetVrmInstance(this Player player)
@@ -191,6 +245,17 @@ namespace EnhancedValheimVRM
             if (_vrmInstances.TryGetValue(playerName, out var instance))
             {
                 return instance;
+            }
+
+            return null;
+        }
+
+        public static Animator GetVrmGoAnimator(this Player player)
+        {
+            var playerName = player.GetPlayerDisplayName();
+            if (_vrmInstances.TryGetValue(playerName, out var instance))
+            {
+                return instance.GetAnimator();
             }
 
             return null;
@@ -209,6 +274,7 @@ namespace EnhancedValheimVRM
             {
                 return instance.GetGameObject();
             }
+
             return null;
         }
     }

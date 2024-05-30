@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UniGLTF;
 using UnityEngine;
@@ -21,13 +22,13 @@ namespace EnhancedValheimVRM
         public bool SettingsHashIsDirty = false;
         public bool SourceHashIsDirty = false;
 
-        private RuntimeGltfInstance _instance;
+        private GameObject _instance;
         private GameObject _vrmGo;
         private readonly string _playerName;
         private readonly string _playerSettingsName;
         private readonly VrmSettings _settings;
         private readonly string _vrmPath;
-        
+
         private Player _player;
 
         public VrmInstance(Player player)
@@ -67,7 +68,7 @@ namespace EnhancedValheimVRM
             CalculateSettingsHash();
 
             Logger.Log("loading vrm");
- 
+
 
             if (IsLocalPlayer(player))
             {
@@ -78,6 +79,7 @@ namespace EnhancedValheimVRM
                 CoroutineHelper.Instance.StartCoroutine(LoadVrmAsync());
             }
         }
+
         private static bool IsLocalPlayer(Player player)
         {
             if (Game.instance != null)
@@ -94,15 +96,10 @@ namespace EnhancedValheimVRM
 
         public void SetPlayer(Player player)
         {
-            Logger.LogWarning("NEW PLAYER SET");
             _player = player;
-            
-            // _vrmGo = Object.Instantiate(_instance.Root);
-            //
-            // Object.DontDestroyOnLoad(_vrmGo);
-            //
-            // _vrmGo.name = Constants.Vrm.GoName;
+            CreateVrmGo();
         }
+
         ~VrmInstance()
         {
             if (_vrmGo != null)
@@ -111,34 +108,37 @@ namespace EnhancedValheimVRM
             }
         }
 
-        public RuntimeGltfInstance GetGltfInstance()
-        {
-            return _instance;
-        }
 
         public GameObject GetGameObject()
         {
             return _vrmGo;
         }
 
+        public Animator GetAnimator()
+        {
+            return _vrmGo.GetComponentInChildren<Animator>();
+        }
+
         public void ReloadSettings()
         {
             _settings.Reload();
         }
+
         public VrmSettings GetSettings()
         {
             return _settings;
         }
+
         private void LoadVrm()
         {
             byte[] bytes = File.ReadAllBytes(_vrmPath);
             _sourceBytes = Compression.CompressBytes(bytes);
-            
+
             try
             {
                 var data = new GlbBinaryParser(bytes, _vrmPath).Parse();
                 bytes = null;
-                
+
                 var loaded = default(RuntimeGltfInstance);
 
                 try
@@ -154,7 +154,6 @@ namespace EnhancedValheimVRM
                         Logger.LogError("Failed to load type: " + ex.TypeName);
                         Logger.LogError(ex);
                     }
-
                 }
                 catch (NotVrm0Exception)
                 {
@@ -171,8 +170,6 @@ namespace EnhancedValheimVRM
                         Logger.LogError(ex);
                     }
                 }
-                
-                
 
 
                 if (loaded != null)
@@ -182,7 +179,7 @@ namespace EnhancedValheimVRM
 
                     Logger.Log("VRM read successful");
 
-                    _instance = loaded;
+                    _instance = loaded.Root;
                 }
                 else
                 {
@@ -220,9 +217,9 @@ namespace EnhancedValheimVRM
 
             _sourceBytes = compressTask.Result;
 
-            
+
             var dataTask = Task.Run(() => new GlbBinaryParser(bytesTask.Result, _vrmPath).Parse());
-            
+
             while (!dataTask.IsCompleted)
             {
                 yield return new WaitUntil(() => dataTask.IsCompleted);
@@ -234,7 +231,7 @@ namespace EnhancedValheimVRM
                 yield break;
             }
 
- 
+
             bytesTask = null;
 
             yield return null;
@@ -302,34 +299,29 @@ namespace EnhancedValheimVRM
             }
 
             loaded.Root.transform.localScale = Vector3.one * _settings.ModelScale;
-            _instance = loaded;
+            _instance = loaded.Root;
 
             SetupVrm();
         }
 
 
-        private void SetupVrm()
+        private void CreateVrmGo()
         {
-            CalculateSourceBytesHash();
-           // Object.DontDestroyOnLoad(_instance.Root);
-            _vrmGo = Object.Instantiate(_instance.Root);
-
-            Object.DontDestroyOnLoad(_vrmGo);
-
+            _vrmGo = Object.Instantiate(_instance);
             _vrmGo.name = Constants.Vrm.GoName;
-            
-            
-            
-           var lodGroupPlayer = _player.GetComponentInChildren<LODGroup>();
-            
+
+            var lodGroupPlayer = _player.GetComponentInChildren<LODGroup>();
+
             var lodGroup = _vrmGo.AddComponent<LODGroup>();
             if (_settings.EnablePlayerFade)
-            { //TODO: determine if regular Renders need to be put into the lod group. and then any armors added 
+            {
+                //TODO: determine if regular Renders need to be put into the lod group. and then any armors added 
                 lodGroup.SetLODs(new LOD[]
                 {
                     new LOD(0.1f, _vrmGo.GetComponentsInChildren<SkinnedMeshRenderer>())
                 });
             }
+
             lodGroup.RecalculateBounds();
 
             lodGroup.fadeMode = lodGroupPlayer.fadeMode;
@@ -337,18 +329,67 @@ namespace EnhancedValheimVRM
 
             _vrmGo.SetActive(false);
 
-
-            CoroutineHelper.Instance.StartCoroutine(ProcessMaterialsCoroutine());
-
+            if (_player.TryGetField<Player, Animator>("m_animator", out var playerAnimator))
+            {
+                //BoneTransforms.CopyBoneTransforms(playerAnimator);
+                //BoneTransforms.SetupBones(_player,_vrmGo);
+            }
         }
+        
+
+        private void ReconfigureAnimator(Animator playerAnimator)
+        {
+            // Reconfigure the SkinnedMeshRenderer to ensure it reflects the updated bone transforms
+            SkinnedMeshRenderer skinnedMeshRenderer = playerAnimator.GetComponentInChildren<SkinnedMeshRenderer>();
+            if (skinnedMeshRenderer == null)
+            {
+                Debug.LogError("SkinnedMeshRenderer not found on player animator.");
+                return;
+            }
+
+            // Force the SkinnedMeshRenderer to update
+            skinnedMeshRenderer.sharedMesh.RecalculateBounds();
+            skinnedMeshRenderer.sharedMesh.RecalculateNormals();
+
+            // Ensure the bones array in SkinnedMeshRenderer is set to the current bones
+            skinnedMeshRenderer.bones = skinnedMeshRenderer.bones;
+        }
+
+
+        private void SetupVrm()
+        {
+            CalculateSourceBytesHash();
+            // Object.DontDestroyOnLoad(_instance.Root);
+            Object.DontDestroyOnLoad(_instance);
+
+            CreateVrmGo();
+
+
+            if (_player.TryGetField<Player, GameObject>("m_visual", out var playerVisual))
+            {
+                var vrmAnimator = GetAnimator();
+                float playerHeight = Utils.GetModelHeight(playerVisual);
+                
+                float vrmHeight =  Utils.GetModelHeight(_vrmGo);
+
+                _settings.HeightOffsetY = playerHeight - vrmHeight;
+                
+                _settings.PlayerVrmScale = vrmHeight / playerHeight;
+                Logger.Log($"vrmHeight {vrmHeight} -- playerHeight {playerHeight} -- _settings.PlayerVrmScale {_settings.PlayerVrmScale}");
+
+            }
+
+
+            Logger.Log($"_settings.HeightOffsetY -> {_settings.HeightOffsetY} _settings.PlayerVrmScale -> {_settings.PlayerVrmScale}");
+            CoroutineHelper.Instance.StartCoroutine(ProcessMaterialsCoroutine());
+        }
+
 
         private IEnumerator ProcessMaterialsCoroutine()
         {
-            
-            
             var materials = new List<Material>();
 
-            foreach (var smr in _vrmGo.GetComponentsInChildren<SkinnedMeshRenderer>())
+            foreach (var smr in _instance.GetComponentsInChildren<SkinnedMeshRenderer>())
             {
                 foreach (var mat in smr.materials)
                 {
@@ -356,7 +397,7 @@ namespace EnhancedValheimVRM
                 }
             }
 
-            foreach (var mr in _vrmGo.GetComponentsInChildren<MeshRenderer>())
+            foreach (var mr in _instance.GetComponentsInChildren<MeshRenderer>())
             {
                 foreach (var mat in mr.materials)
                 {

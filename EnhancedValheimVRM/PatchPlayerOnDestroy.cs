@@ -11,7 +11,7 @@ namespace EnhancedValheimVRM
     {
         private static void Prefix(Player __instance)
         {
-            VrmController.DetachVrmFromPlayer(__instance);
+            //VrmController.DetachVrmFromPlayer(__instance);
         }
     }
 }

@@ -7,10 +7,11 @@ namespace EnhancedValheimVRM
     {
         public const string PluginName = "EnhancedValheimVRM";
         private static readonly string PluginDir = Path.Combine(Environment.CurrentDirectory, PluginName);
+        private const string Prefix = "evv_";
 
         public static class Vrm
         {
-            public static readonly string GoName = "VRM_Visual";
+            public static readonly string GoName = $"{Prefix}_vrm";
             public static readonly string DefaultName = "___Default.vrm";
             public static readonly string DefaultSettings = "settings____Default.vrm";
             public static readonly string Dir = PluginDir;
@@ -23,7 +24,6 @@ namespace EnhancedValheimVRM
         }
         public static class Keys
         {
-            private const string Prefix = "evv_";
             public static readonly string PlayerName = $"{Prefix}PlayerName";
         }
     }

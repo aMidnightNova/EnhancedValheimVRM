@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace EnhancedValheimVRM
 {
-    static class ExtensionMethods
+    internal static class ExtensionMethods
     {
         public static FieldInfo GetFieldValue<T>(this object instance, string fieldName)
         {

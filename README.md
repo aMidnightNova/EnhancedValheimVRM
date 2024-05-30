@@ -1,5 +1,9 @@
-There is no release yet, this is in active development.
-# ValheimVRM
+# There is no release yet, this is in active development.
+
+You can use my fork of ValheimVRM in the meantime. It has a lot of the important bits from here backported.
+[found here](https://github.com/aMidnightNova/ValheimVRM/releases/latest)
+
+# EnhancedValheimVRM
 
 **This mod requires BepInEx to be installed.**
 

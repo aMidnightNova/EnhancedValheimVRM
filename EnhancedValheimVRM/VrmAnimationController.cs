@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace EnhancedValheimVRM
@@ -38,12 +39,12 @@ namespace EnhancedValheimVRM
         private Animator _playerAnimator;
         private Animator _vrmAnimator;
 
-        private float _playerScaleFactor;
 
         private HumanPose _humanPose = new HumanPose();
         private HumanPoseHandler _playerPoseHandler, _vrmPoseHandler;
 
         private readonly Dictionary<HumanBodyBones, float> _boneLengthRatios = new Dictionary<HumanBodyBones, float>();
+        private float offset;
 
         public void Setup(Player player, Animator playerAnimator, VrmInstance vrmInstance)
         {
@@ -51,10 +52,10 @@ namespace EnhancedValheimVRM
             _playerAnimator = playerAnimator;
             _vrmInstance = vrmInstance;
 
-            
+
             Logger.Log("__________VRM Animation Controller SETUP");
 
-           // var vrmGo = _vrmInstance.GetGameObject();
+            // var vrmGo = _vrmInstance.GetGameObject();
 
             _vrmAnimator = GetComponent<Animator>();
             _vrmAnimator.applyRootMotion = true;
@@ -63,14 +64,20 @@ namespace EnhancedValheimVRM
             _vrmAnimator.layersAffectMassCenter = _playerAnimator.layersAffectMassCenter;
             _vrmAnimator.stabilizeFeet = _playerAnimator.stabilizeFeet;
 
+
+            Transform vrmLeftFoot = _vrmAnimator.GetBoneTransform(HumanBodyBones.LeftFoot);
+            Transform vrmRightFoot = _vrmAnimator.GetBoneTransform(HumanBodyBones.RightFoot);
+
+
+            offset = ((vrmLeftFoot.position.y - _vrmAnimator.transform.position.y) +
+                      (vrmRightFoot.position.y - _vrmAnimator.transform.position.y)) / 2.0f;
             //_player.gameObject.AddComponent<VrmController>();
             CreatePoseHandlers();
-
-            CreatePlayerScaleFactor();
-
+ 
             CreateBoneRatios();
         }
 
+ 
         public Animator GetPlayerAnimator()
         {
             return _playerAnimator;
@@ -84,14 +91,6 @@ namespace EnhancedValheimVRM
             _vrmPoseHandler = new HumanPoseHandler(_vrmAnimator.avatar, _vrmAnimator.transform);
         }
 
-        void CreatePlayerScaleFactor()
-        {
-            float playerHeight = Vector3.Distance(_playerAnimator.GetBoneTransform(HumanBodyBones.Head).position,
-                _playerAnimator.GetBoneTransform(HumanBodyBones.LeftFoot).position);
-            float vrmHeight = Vector3.Distance(_vrmAnimator.GetBoneTransform(HumanBodyBones.Head).position, _vrmAnimator.GetBoneTransform(HumanBodyBones.LeftFoot).position);
-
-            _playerScaleFactor = vrmHeight / playerHeight;
-        }
 
         void CreateBoneRatios()
         {
@@ -146,61 +145,35 @@ namespace EnhancedValheimVRM
             }
         }
 
+
+        private void Update()
+        {
+        }
+
         private void LateUpdate()
         {
-            if (_player.IsDead()) return;
+            var settings = _vrmInstance.GetSettings();
+
 
             _vrmAnimator.transform.localPosition = Vector3.zero;
-
             _playerPoseHandler.GetHumanPose(ref _humanPose);
             _vrmPoseHandler.SetHumanPose(ref _humanPose);
 
+
             Transform playerHips = _playerAnimator.GetBoneTransform(HumanBodyBones.Hips);
             Transform vrmHips = _vrmAnimator.GetBoneTransform(HumanBodyBones.Hips);
+            Transform vrmLeftFoot = _vrmAnimator.GetBoneTransform(HumanBodyBones.LeftFoot);
+            Transform vrmRightFoot = _vrmAnimator.GetBoneTransform(HumanBodyBones.RightFoot);
 
-            if (playerHips && vrmHips)
+
+            if (playerHips)
             {
-                int currentStateHash = _playerAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
-
-                Vector3 currentAdjustedHipPosition;
-
-                if (!_adjustHipHashes.Contains(currentStateHash))
-                {
-                    var curOrgHipPos = playerHips.position - playerHips.parent.position;
-                    var curVrmHipPos = curOrgHipPos * _playerScaleFactor;
-
-                    currentAdjustedHipPosition = curVrmHipPos - curOrgHipPos;
-                }
-                else
-                {
-                    currentAdjustedHipPosition = (playerHips.position * _playerScaleFactor) - playerHips.position;
-                }
-                
-                var currentStateOffset = StateHashToOffset(currentStateHash);
-
-                if (currentStateOffset != Vector3.zero) currentAdjustedHipPosition += playerHips.transform.rotation * currentStateOffset;
-
-                vrmHips.position += currentAdjustedHipPosition;
-                
-                foreach (HumanBodyBones bone in Enum.GetValues(typeof(HumanBodyBones)))
-                {
-                    if (bone == HumanBodyBones.LastBone) continue;
-
-                    var playerBone = _playerAnimator.GetBoneTransform(bone);
-                    var vrmBone = _vrmAnimator.GetBoneTransform(bone);
-
-                    if (playerBone != null && vrmBone != null)
-                    {
-                        if (_boneLengthRatios.TryGetValue(bone, out var boneLengthRatio))
-                        {
-                            var relativePosition = playerBone.position - playerBone.parent.position;
-                            var adjustedPosition = vrmBone.parent.position + (relativePosition * boneLengthRatio);
-
-                            playerBone.position = adjustedPosition;
-                            playerBone.rotation = vrmBone.rotation;
-                        }
-                    }
-                }
+                // vrmHips.position = new Vector3(vrmHips.position.x, playerHips.position.y, vrmHips.position.z);
+                //
+                // float groundOffset = Mathf.Min(vrmLeftFoot.position.y - _vrmAnimator.transform.position.y, 
+                //     vrmRightFoot.position.y - _vrmAnimator.transform.position.y, 0);
+                //
+                // vrmHips.Translate(0, -groundOffset + footOffset, 0, Space.World);
             }
         }
 

@@ -1,8 +1,8 @@
-﻿using System.Globalization;
+﻿using System.Collections;
+using System.Globalization;
 using BepInEx;
 using HarmonyLib;
-using System.Reflection;
-
+using UnityEngine;
 
 namespace EnhancedValheimVRM
 {
@@ -20,8 +20,18 @@ namespace EnhancedValheimVRM
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
             Settings.Init(Config);
 
+            // Start the coroutine to delay patching
+            StartCoroutine(DelayedPatch(10f));
+        }
+        
+        IEnumerator DelayedPatch(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+
+            // Apply Harmony patches after the delay
             var harmony = new Harmony(PluginGuid);
             harmony.PatchAll();
+ 
         }
     }
 }

@@ -19,6 +19,11 @@ namespace EnhancedValheimVRM
             if (vrmInstance != null)
             {
                 var vrmGo = vrmInstance.GetGameObject();
+                if (vrmGo == null)
+                {
+                    Logger.LogError("VrmGo Is Null");
+                    return true;
+                }
                 var vrmAnimator = vrmGo.GetComponentInChildren<Animator>();
 
                 if (vrmAnimator == null || vrmAnimator.avatar == null)
