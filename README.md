@@ -5,7 +5,7 @@ You can use my fork of ValheimVRM in the meantime. It has a lot of the important
 
 # EnhancedValheimVRM
 
-**This mod requires BepInEx to be installed.**
+**This mod requires [BepInEx](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/) to be installed.**
 
 ### How to install
 [Download](https://github.com/aMidnightNova/EnhancedValheimVRM/releases/latest) the latest release and extract it. There will be a folder called release, copy the folders inside (BepInEx,valheim_Data) into your valheim install directory.
@@ -19,7 +19,7 @@ The folders are set up to put the files where they need to go.
 The name of the character in the game needs to correspond to a VRM and settings file like so.
 
 **Character**: Midnight Nova \
-**Settings File**: Midnight Nova_settings.txt \
+**Settings File**: settings_Midnight Nova.txt \
 **VRM**: Midnight Nova.vrm
 
 

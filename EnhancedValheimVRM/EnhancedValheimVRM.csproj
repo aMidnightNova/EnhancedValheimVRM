@@ -40,37 +40,38 @@
         <Reference Include="System.Xml"/>
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="BoneTransforms.cs" />
-        <Compile Include="Compression.cs" />
-        <Compile Include="ConsoleCommands.cs" />
         <Compile Include="Constants.cs" />
-        <Compile Include="CoroutineHelper.cs" />
-        <Compile Include="ExtensionMethods.cs" />
-        <Compile Include="Logger.cs" />
-        <Compile Include="PatchGetHeadPoint.cs" />
-        <Compile Include="PatchOnRagdollCreated.cs" />
-        <Compile Include="PatchSetVisible.cs" />
-        <Compile Include="VrmMToonController.cs" />
-        <Compile Include="PatchDebug.cs" />
-        <Compile Include="PatchPlayerAwake.cs" />
-        <Compile Include="PatchPlayerOnDestroy.cs" />
-        <Compile Include="PatchUnityUpdates.cs" />
-        <Compile Include="PatchVisEquipmentUpdateLodgroup.cs" />
+        <Compile Include="Controllers\VrmAnimationController.cs" />
+        <Compile Include="Controllers\VrmController.cs" />
+        <Compile Include="Controllers\VrmEyeController.cs" />
+        <Compile Include="Controllers\VrmMToonController.cs" />
+        <Compile Include="Controllers\VrmTransferController.cs" />
+        <Compile Include="Patches\PatchDebug.cs" />
+        <Compile Include="Patches\PatchFejdStartup.cs" />
+        <Compile Include="Patches\PatchGetHeadPoint.cs" />
+        <Compile Include="Patches\PatchOnRagdollCreated.cs" />
+        <Compile Include="Patches\PatchPlayerAwake.cs" />
+        <Compile Include="Patches\PatchPlayerOnDestroy.cs" />
+        <Compile Include="Patches\PatchSetVisible.cs" />
+        <Compile Include="Patches\PatchShaderFind.cs" />
+        <Compile Include="Patches\PatchUnityUpdates.cs" />
+        <Compile Include="Patches\PatchVisEquipmentUpdateLodgroup.cs" />
         <Compile Include="Plugin.cs" />
-        <Compile Include="PatchShaderFind.cs" />
-        <Compile Include="Properties\AssemblyInfo.cs"/>
+        <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="Settings.cs" />
-        <Compile Include="TextureDeserializer.cs" />
-        <Compile Include="TimeElapsedHelper.cs" />
-        <Compile Include="VrmAnimationController.cs" />
-        <Compile Include="VrmController.cs" />
-        <Compile Include="VrmEyeController.cs" />
-        <Compile Include="VrmInstance.cs" />
-        <Compile Include="VrmSettings.cs" />
-        <Compile Include="VrmTransferController.cs" />
-        <Compile Include="Utils.cs" />
+        <Compile Include="Utility\BoneTransforms.cs" />
+        <Compile Include="Utility\Compression.cs" />
+        <Compile Include="Utility\ConsoleCommands.cs" />
+        <Compile Include="Utility\CoroutineHelper.cs" />
+        <Compile Include="Utility\ExtensionMethods.cs" />
+        <Compile Include="Utility\Logger.cs" />
+        <Compile Include="Utility\TextureDeserializer.cs" />
+        <Compile Include="Utility\TimeElapsedHelper.cs" />
+        <Compile Include="Utility\Utils.cs" />
+        <Compile Include="Vrm\VrmInstance.cs" />
+        <Compile Include="Vrm\VrmSettings.cs" />
     </ItemGroup>
-    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 
 
 

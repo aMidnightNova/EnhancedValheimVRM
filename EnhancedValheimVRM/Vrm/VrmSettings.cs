@@ -73,6 +73,7 @@ namespace EnhancedValheimVRM
         
         
         //Internal computed properties
+        // a property {get set}
         public float HeightOffsetY { get; set; } = 0f;
         public float PlayerVrmScale { get; set; } = 0f;
         //Internal computed properties
@@ -102,6 +103,11 @@ namespace EnhancedValheimVRM
             }
 
             ApplyScaling();
+        }
+
+        public string GetSettingsFilePath()
+        {
+            return _path;
         }
 
         private void InitializePropertyTracking()

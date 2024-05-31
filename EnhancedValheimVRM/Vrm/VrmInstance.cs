@@ -80,6 +80,14 @@ namespace EnhancedValheimVRM
             }
         }
 
+        public string GetSettingsFilePath()
+        {
+            return _settings.GetSettingsFilePath();
+        }
+        public string GetVrmFilePath()
+        {
+            return _vrmPath;
+        }
         private static bool IsLocalPlayer(Player player)
         {
             if (Game.instance != null)

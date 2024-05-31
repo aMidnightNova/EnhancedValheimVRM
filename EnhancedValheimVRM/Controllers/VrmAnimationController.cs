@@ -55,9 +55,10 @@ namespace EnhancedValheimVRM
 
             Logger.Log("__________VRM Animation Controller SETUP");
 
-            // var vrmGo = _vrmInstance.GetGameObject();
-
-            _vrmAnimator = GetComponent<Animator>();
+             var vrmGo = _vrmInstance.GetGameObject();
+             _vrmAnimator = vrmGo.GetComponent<Animator>();
+             // this is attached to vrmGo, this the below is the same as above, but the above is more clear.
+            //_vrmAnimator = GetComponent<Animator>();
             _vrmAnimator.applyRootMotion = true;
             _vrmAnimator.updateMode = _playerAnimator.updateMode;
             _vrmAnimator.feetPivotActive = _playerAnimator.feetPivotActive;
@@ -74,7 +75,7 @@ namespace EnhancedValheimVRM
             //_player.gameObject.AddComponent<VrmController>();
             CreatePoseHandlers();
  
-            CreateBoneRatios();
+            //CreateBoneRatios();
         }
 
  

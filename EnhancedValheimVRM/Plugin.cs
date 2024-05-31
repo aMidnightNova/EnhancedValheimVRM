@@ -8,11 +8,13 @@ namespace EnhancedValheimVRM
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
     [BepInProcess("valheim.exe")]
-    public class Initialization : BaseUnityPlugin
+    public class EnhancedValheimVrmPlugin : BaseUnityPlugin
     {
         private const string PluginGuid = "com.rawrtastic.plugins.enhancedvalheimvrm";
         private const string PluginName = "EnhancedValheimVRM";
         private const string PluginVersion = "1.0.0.0";
+
+        private static Harmony _harmony = new Harmony(PluginGuid);
 
         private void Awake()
         {
@@ -20,18 +22,14 @@ namespace EnhancedValheimVRM
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
             Settings.Init(Config);
 
-            // Start the coroutine to delay patching
-            StartCoroutine(DelayedPatch(10f));
+            // this make it so that the VRM patch is applied after the game loads a lot of itself.
+            PatchFejdStartup.Apply(_harmony);
+            if (Settings.EnableProfileCode) PatchAllUpdateMethods.ApplyPatches(_harmony);
         }
-        
-        IEnumerator DelayedPatch(float delay)
-        {
-            yield return new WaitForSeconds(delay);
 
-            // Apply Harmony patches after the delay
-            var harmony = new Harmony(PluginGuid);
-            harmony.PatchAll();
- 
+        internal static void PatchAll()
+        {
+            _harmony.PatchAll();
         }
     }
 }
