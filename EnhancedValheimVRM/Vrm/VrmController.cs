@@ -31,7 +31,7 @@ namespace EnhancedValheimVRM
             }
             else
             {
-                Logger.LogWarning("VRM EXISTS");
+                Logger.Log("vrm exists", Logger.LogLevel.All);
                 vrmInstance.SetPlayer(player);
             }
 
@@ -39,7 +39,7 @@ namespace EnhancedValheimVRM
             {
                 if (!exists)
                 {
-                    Logger.LogWarning("VRM ADD INSTANCE");
+                    Logger.Log("add vrm instance", Logger.LogLevel.Info);
                     _vrmInstances.Add(playerName, vrmInstance);
                 }
 
@@ -66,19 +66,19 @@ namespace EnhancedValheimVRM
                 }
 
 
-                // var vrmAnimationController = player.GetComponent<VrmAnimationController>();
+                // var vrmAnimationController = player.GetComponent<VrmAnimator>();
                 // if (vrmAnimationController != null)
                 // {
                 //     UnityEngine.Object.Destroy(vrmAnimationController);
                 // }
 
-                var vrmEyeController = player.gameObject.GetComponent<VrmEyeController>();
+                var vrmEyeController = player.gameObject.GetComponent<VrmEyeAnimator>();
                 if (vrmEyeController != null)
                 {
                     UnityEngine.Object.Destroy(vrmEyeController);
                 }
 
-                var mToonController = vrmGo.GetComponent<VrmMToonController>();
+                var mToonController = vrmGo.GetComponent<VrmMToonFix>();
                 if (mToonController != null)
                 {
                     UnityEngine.Object.Destroy(mToonController);
@@ -151,11 +151,11 @@ namespace EnhancedValheimVRM
 
                 vrmGo.transform.localPosition = playerAnimator.transform.localPosition;
 
-                var animationController = vrmGo.GetComponent<VrmAnimationController>();
+                var animationController = vrmGo.GetComponent<VrmAnimator>();
 
                 if (animationController == null)
                 {
-                    animationController = vrmGo.AddComponent<VrmAnimationController>();
+                    animationController = vrmGo.AddComponent<VrmAnimator>();
                     animationController.Setup(player, playerAnimator, vrmInstance);
                 }
                 else
@@ -168,10 +168,10 @@ namespace EnhancedValheimVRM
 
                 if (settings.FixCameraHeight)
                 {
-                    var vrmEyeController = player.gameObject.GetComponent<VrmEyeController>();
+                    var vrmEyeController = player.gameObject.GetComponent<VrmEyeAnimator>();
                     if (vrmEyeController == null)
                     {
-                        player.gameObject.AddComponent<VrmEyeController>().Setup(player, playerAnimator, vrmInstance);
+                        player.gameObject.AddComponent<VrmEyeAnimator>().Setup(player, playerAnimator, vrmInstance);
                     }
                     else
                     {
@@ -187,11 +187,11 @@ namespace EnhancedValheimVRM
 
             if (settings.UseMToonShader)
             {
-                var vrmMToonControler = vrmGo.GetComponent<VrmMToonController>();
+                var vrmMToonControler = vrmGo.GetComponent<VrmMToonFix>();
 
                 if (vrmMToonControler == null)
                 {
-                    vrmGo.AddComponent<VrmMToonController>().Setup(vrmGo);
+                    vrmGo.AddComponent<VrmMToonFix>().Setup(vrmGo);
                 }
                 else
                 {

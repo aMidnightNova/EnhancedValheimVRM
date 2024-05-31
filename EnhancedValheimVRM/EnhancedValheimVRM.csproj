@@ -41,11 +41,9 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="Constants.cs" />
-        <Compile Include="Controllers\VrmAnimationController.cs" />
-        <Compile Include="Controllers\VrmController.cs" />
-        <Compile Include="Controllers\VrmEyeController.cs" />
-        <Compile Include="Controllers\VrmMToonController.cs" />
-        <Compile Include="Controllers\VrmTransferController.cs" />
+        <Compile Include="Components\VrmAnimator.cs" />
+        <Compile Include="Components\VrmEyeAnimator.cs" />
+        <Compile Include="Components\VrmMToonFix.cs" />
         <Compile Include="Patches\PatchDebug.cs" />
         <Compile Include="Patches\PatchFejdStartup.cs" />
         <Compile Include="Patches\PatchGetHeadPoint.cs" />
@@ -68,6 +66,8 @@
         <Compile Include="Utility\TextureDeserializer.cs" />
         <Compile Include="Utility\TimeElapsedHelper.cs" />
         <Compile Include="Utility\Utils.cs" />
+        <Compile Include="Utility\FileTransferController.cs" />
+        <Compile Include="Vrm\VrmController.cs" />
         <Compile Include="Vrm\VrmInstance.cs" />
         <Compile Include="Vrm\VrmSettings.cs" />
     </ItemGroup>

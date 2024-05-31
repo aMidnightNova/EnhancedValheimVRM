@@ -230,7 +230,7 @@ namespace EnhancedValheimVRM
                 go.transform.localPosition = settings.LeftHandBackItemPos;
             }
 
-           // go.transform.SetParent(vrmAnimator.GetBoneTransform(HumanBodyBones.Chest), false);
+            // go.transform.SetParent(vrmAnimator.GetBoneTransform(HumanBodyBones.Chest), false);
             go.transform.localScale = Vector3.one * settings.EquipmentScale;
         }
     }

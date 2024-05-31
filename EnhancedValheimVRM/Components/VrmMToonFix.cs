@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace EnhancedValheimVRM
 {
-	public class VrmMToonController : MonoBehaviour
+	public class VrmMToonFix : MonoBehaviour
 	{
 		class MatColor
 		{

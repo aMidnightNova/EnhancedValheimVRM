@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace EnhancedValheimVRM
 {
-    public class VrmAnimationController : MonoBehaviour
+    public class VrmAnimator : MonoBehaviour
     {
         const int FirstTime = -161139084;
         const int Usually = 229373857; // standing idle

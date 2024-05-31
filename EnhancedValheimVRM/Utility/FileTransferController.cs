@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace EnhancedValheimVRM
 {
-    public class VrmTransferController
+    public class FileTransferController
     {
         public void GetVrmFromPlayer()
         {

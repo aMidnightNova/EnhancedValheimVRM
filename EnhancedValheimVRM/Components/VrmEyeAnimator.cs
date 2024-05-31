@@ -2,7 +2,7 @@
 
 namespace EnhancedValheimVRM
 {
-    public class VrmEyeController : MonoBehaviour
+    public class VrmEyeAnimator : MonoBehaviour
     {
         private Transform _vrmEyes;
         private Transform _playerEyes;
