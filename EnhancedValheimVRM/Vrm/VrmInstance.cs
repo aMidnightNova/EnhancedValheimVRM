@@ -30,7 +30,12 @@ namespace EnhancedValheimVRM
         private readonly string _vrmPath;
 
         private Player _player;
-
+        private  BoneTransformer _boneTransformer;
+        
+        
+ 
+ 
+        
         public VrmInstance(Player player)
         {
             _player = player;
@@ -342,26 +347,26 @@ namespace EnhancedValheimVRM
                 //BoneTransforms.CopyBoneTransforms(playerAnimator);
                 //BoneTransforms.SetupBones(_player,_vrmGo);
             }
+            
+            _boneTransformer = new BoneTransformer(_player, _vrmGo);
+            // var vrmBodySmr = _vrmGo.GetComponentsInChildren<SkinnedMeshRenderer>().FirstOrDefault(smr => smr.name == "Body");
+            //
+            // if (vrmBodySmr != null)
+            // {
+            //     _boneTransformer.RenameVrmBones(vrmBodySmr.bones);
+            // }
+
+            //_boneTransformer.CopyBoneTransforms(_player, this);
+            _boneTransformer.ResizePlayerAvatarToVrmSize(_player);
+        }
+
+        public BoneTransformer GetBoneTransformer()
+        {
+            return _boneTransformer;
         }
         
 
-        private void ReconfigureAnimator(Animator playerAnimator)
-        {
-            // Reconfigure the SkinnedMeshRenderer to ensure it reflects the updated bone transforms
-            SkinnedMeshRenderer skinnedMeshRenderer = playerAnimator.GetComponentInChildren<SkinnedMeshRenderer>();
-            if (skinnedMeshRenderer == null)
-            {
-                Debug.LogError("SkinnedMeshRenderer not found on player animator.");
-                return;
-            }
-
-            // Force the SkinnedMeshRenderer to update
-            skinnedMeshRenderer.sharedMesh.RecalculateBounds();
-            skinnedMeshRenderer.sharedMesh.RecalculateNormals();
-
-            // Ensure the bones array in SkinnedMeshRenderer is set to the current bones
-            skinnedMeshRenderer.bones = skinnedMeshRenderer.bones;
-        }
+ 
 
 
         private void SetupVrm()
@@ -371,6 +376,8 @@ namespace EnhancedValheimVRM
             Object.DontDestroyOnLoad(_instance);
 
             CreateVrmGo();
+
+            
 
 
             if (_player.TryGetField<Player, GameObject>("m_visual", out var playerVisual))

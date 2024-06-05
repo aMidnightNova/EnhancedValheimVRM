@@ -15,7 +15,7 @@ namespace EnhancedValheimVRM
 
             return instance.GetType().GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
         }
-        
+
         public static Tout GetField<Tin, Tout>(this Tin self, string fieldName)
         {
             return AccessTools.FieldRefAccess<Tin, Tout>(fieldName).Invoke(self);
@@ -28,7 +28,7 @@ namespace EnhancedValheimVRM
                 result = GetField<Tin, Tout>(self, fieldName);
                 if (result == null)
                 {
-                   // Logger.Log($"Field '{fieldName}' exists but is null");
+                    // Logger.Log($"Field '{fieldName}' exists but is null");
                     return false;
                 }
                 return true;
@@ -47,8 +47,7 @@ namespace EnhancedValheimVRM
             foreach (var mr in obj.GetComponentsInChildren<MeshRenderer>()) mr.enabled = flag;
             foreach (var smr in obj.GetComponentsInChildren<SkinnedMeshRenderer>()) smr.enabled = flag;
         }
-        
-        
+
         public static void Set<T1, T2>(this Dictionary<T1, T2> dict, T1 key, T2 value)
         {
             if (value == null)
@@ -66,13 +65,13 @@ namespace EnhancedValheimVRM
             // cannot patch GetPlayerName - it causes the game to crash, use this in its place.
 
             var playerName = "";
-            
+
             // see comments in PatchPlayerAwake for the reason this exists.
             if (player.m_customData.TryGetValue(Constants.Keys.PlayerName, out playerName))
             {
                 return playerName;
             }
-     
+
             if (Game.instance != null)
             {
                 playerName = player.GetPlayerName();
@@ -95,7 +94,41 @@ namespace EnhancedValheimVRM
 
             return playerName;
         }
-        
-        
+
+        public static void SetField<Tin, Tvalue>(this Tin self, string fieldName, Tvalue value)
+        {
+            var field = self.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            if (field == null)
+                throw new ArgumentException($"Field '{fieldName}' not found in type '{typeof(Tin).FullName}'");
+            
+            field.SetValue(self, value);
+        }
+        public static void SetProperty<Tin, Tvalue>(this Tin self, string propertyName, Tvalue value)
+        {
+            var property = self.GetType().GetProperty(propertyName, BindingFlags.NonPublic | BindingFlags.Instance);
+            if (property == null)
+                throw new ArgumentException($"Property '{propertyName}' not found in type '{typeof(Tin).FullName}'");
+
+            property.SetValue(self, value);
+        }
+        public static Tvalue GetProperty<Tin, Tvalue>(this Tin self, string propertyName)
+        {
+            var property = self.GetType().GetProperty(propertyName, BindingFlags.NonPublic | BindingFlags.Instance);
+            if (property == null)
+                throw new ArgumentException($"Property '{propertyName}' not found in type '{typeof(Tin).FullName}'");
+
+            return (Tvalue)property.GetValue(self);
+        }
+        public static object InvokePrivateMethod(this object instance, string methodName, params object[] parameters)
+        {
+            if (instance == null)
+                throw new ArgumentNullException(nameof(instance));
+
+            var method = instance.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            if (method == null)
+                throw new ArgumentException($"Method '{methodName}' not found in type '{instance.GetType().FullName}'");
+
+            return method.Invoke(instance, parameters);
+        }
     }
 }

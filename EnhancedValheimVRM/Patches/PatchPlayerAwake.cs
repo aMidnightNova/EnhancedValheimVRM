@@ -6,6 +6,10 @@ namespace EnhancedValheimVRM
     [HarmonyPatch(typeof(Player), "Awake")]
     internal static class PatchPlayerAwake
     {
+        private static void Prefix(Player __instance)
+        {
+ 
+        }
         private static void Postfix(Player __instance)
         {
             // this insures the name is set to the object, and can be accessed later. 

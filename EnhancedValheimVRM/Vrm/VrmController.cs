@@ -11,7 +11,6 @@ namespace EnhancedValheimVRM
     {
         private static Dictionary<string, VrmInstance> _vrmInstances = new Dictionary<string, VrmInstance>();
 
-
         public static void AttachVrmToPlayer(Player player)
         {
             VrmInstance vrmInstance;
@@ -211,33 +210,16 @@ namespace EnhancedValheimVRM
                 yield return null;
             }
 
-
-            //SetupBones(player, vrmInstance);
+            //player.gameObject.AddComponent<BoneGizmos>().Setup(player, vrmInstance);
+ 
+            //BoneTransforms.CopyBoneTransforms(player, vrmInstance);
+            //BoneTransforms.CopyBoneTransforms(player, vrmInstance.GetGameObject());
             //SetupAttachPoints(player, vrmInstance);
         }
 
  
 
-        private static void SetupAttachPoints(Player player, VrmInstance vrmInstance)
-        {
-            if (player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
-            {
-                var vrmAnimator = vrmInstance.GetAnimator();
 
-
-                visEquipment.m_leftHand = vrmAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
-                visEquipment.m_rightHand = vrmAnimator.GetBoneTransform(HumanBodyBones.RightHand);
-
-                visEquipment.m_helmet = vrmAnimator.GetBoneTransform(HumanBodyBones.Head);
-                visEquipment.m_backShield = vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
-                visEquipment.m_backMelee = vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
-
-                visEquipment.m_backTwohandedMelee = vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
-                visEquipment.m_backBow = vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
-                visEquipment.m_backTool = vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
-                visEquipment.m_backAtgeir = vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
-            }
-        }
 
         public static VrmInstance GetVrmInstance(this Player player)
         {

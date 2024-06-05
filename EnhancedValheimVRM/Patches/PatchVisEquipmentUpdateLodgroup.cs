@@ -39,6 +39,7 @@ namespace EnhancedValheimVRM
         {
             if (instance.TryGetField<VisEquipment, GameObject>(fieldName, out var go))
             {
+                // gets the field like so m_hairItem~~Instance~~ -> m_hairItem
                 var itemName = instance.GetFieldValue<FieldInfo>(fieldName.Replace("Instance", ""))?.GetValue(instance) as string;
                 Logger.Log($"Handling item: {fieldName}, Item Name: {itemName}");
                 HandleItemInstance(go, vrmAnimator, false, false);
