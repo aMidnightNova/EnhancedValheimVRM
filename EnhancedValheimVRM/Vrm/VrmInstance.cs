@@ -349,6 +349,7 @@ namespace EnhancedValheimVRM
             }
             
             _boneTransformer = new BoneTransformer(_player, _vrmGo);
+            
             // var vrmBodySmr = _vrmGo.GetComponentsInChildren<SkinnedMeshRenderer>().FirstOrDefault(smr => smr.name == "Body");
             //
             // if (vrmBodySmr != null)

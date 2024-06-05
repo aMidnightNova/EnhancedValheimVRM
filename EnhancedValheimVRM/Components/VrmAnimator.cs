@@ -243,7 +243,7 @@ namespace EnhancedValheimVRM
 
         private void Update()
         {
-            UpdateBones();
+            //UpdateBones();
         }
 
 

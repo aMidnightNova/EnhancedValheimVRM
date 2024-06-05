@@ -145,13 +145,13 @@ namespace EnhancedValheimVRM
             { Bones.RightLowerLeg, new List<string> { "RightLowerLeg", "rightLowerLeg", "shin.R", "Right knee" } },
             { Bones.LeftFoot, new List<string> { "LeftFoot", "leftFoot", "foot.L", "Left ankle" } },
             { Bones.RightFoot, new List<string> { "RightFoot", "rightFoot", "foot.R", "Right ankle" } },
-            { Bones.LeftToes, new List<string> { "LeftToes", "leftToes", "toe.L", "Left toe" } },
+            { Bones.LeftToes, new List<string> { "LeftToes", "leftToes", "toe.L", "toe.l", "Left toe" } },
             { Bones.LeftHallux, new List<string> { "LeftHallux", "ToeIndex1_L", "toe.01.L" } },
             { Bones.LeftToe2, new List<string> { "LeftToe2", "ToeMid1_L", "toe.02.L" } },
             { Bones.LeftToe3, new List<string> { "LeftToe3", "ToeRing1_L", "toe.03.L" } },
             { Bones.LeftToe4, new List<string> { "LeftToe4", "ToePinky1_L", "toe.04.L" } },
             { Bones.LeftToe5, new List<string> { "LeftToe5", "ToePinky1_L" } },
-            { Bones.RightToes, new List<string> { "RightToes", "righttoes", "toe.R", "Right toe" } },
+            { Bones.RightToes, new List<string> { "RightToes", "righttoes", "toe.R", "toe.r","Right toe" } },
             { Bones.RightHallux, new List<string> { "RightHallux", "ToeIndex1_R", "toe.01.R" } },
             { Bones.RightToe2, new List<string> { "RightToe2", "ToeMid1_R", "toe.02.R" } },
             { Bones.RightToe3, new List<string> { "RightToe3", "ToeRing1_R", "toe.03.R" } },
@@ -161,7 +161,7 @@ namespace EnhancedValheimVRM
 
         public static Dictionary<Bones, List<string>> playerBoneMap = new Dictionary<Bones, List<string>>
         {
-            { Bones.Head, new List<string> { "Head" } },
+            { Bones.Head, new List<string> { "Head", "head" } },
             { Bones.LeftEye, new List<string> { "LeftEye" } },
             { Bones.RightEye, new List<string> { "RightEye" } },
             { Bones.Jaw, new List<string> { "Jaw", "Jaw_end" } },
@@ -226,76 +226,74 @@ namespace EnhancedValheimVRM
             HumanBodyBoneToVrmBone = new Dictionary<HumanBodyBones, Transform>();
 
             // Find the VRM's SkinnedMeshRenderer for the body
-            var smrs = vrmGo.GetComponentsInChildren<SkinnedMeshRenderer>();
-            SkinnedMeshRenderer vrmSmrBody = smrs.FirstOrDefault(smr => smr.name == "Body");
+
+
+            var vrmSmrBody = vrmGo.GetComponentsInChildren<SkinnedMeshRenderer>().FirstOrDefault(smr => smr.name == "Body");
+
 
             if (vrmSmrBody != null)
             {
-                var visual = player.GetField<Player, GameObject>("m_visual");
-                var body = visual?.transform.Find("body")?.gameObject;
+                var playerSmrBody = player.GetField<Player, GameObject>("m_visual")
+                    .GetComponentsInChildren<SkinnedMeshRenderer>().FirstOrDefault(smr => smr.name == "body");
 
-                if (body != null)
+
+                if (playerSmrBody != null)
                 {
-                    var playerSmrBody = visual.GetComponentInChildren<SkinnedMeshRenderer>();
+                    // Set root bones
+                    PlayerRootBone = playerSmrBody.rootBone;
+                    VrmRootBone = vrmSmrBody.rootBone;
 
-                    if (playerSmrBody != null)
+                    PlayerBones = playerSmrBody.bones;
+                    VrmBones = vrmSmrBody.bones;
+
+                    // Create dictionaries to map bone names to their Transform objects
+                    PlayerBoneDict = playerSmrBody.bones.ToDictionary(b => b.name, b => b);
+                    VrmBoneDict = vrmSmrBody.bones.ToDictionary(b => b.name, b => b);
+
+                    // Create a dictionary to map VRM bone names to their Transform objects
+                    Dictionary<string, Transform> vrmBoneDictionary = vrmSmrBody.bones.ToDictionary(b => b.name, b => b);
+
+                    // Populate PlayerToVrmBones and VrmToPlayerBones
+                    foreach (var bone in playerSmrBody.bones)
                     {
-                        // Set root bones
-                        PlayerRootBone = playerSmrBody.rootBone;
-                        VrmRootBone = vrmSmrBody.rootBone;
-
-                        PlayerBones = playerSmrBody.bones;
-                        VrmBones = vrmSmrBody.bones;
-
-                        // Create dictionaries to map bone names to their Transform objects
-                        PlayerBoneDict = playerSmrBody.bones.ToDictionary(b => b.name, b => b);
-                        VrmBoneDict = vrmSmrBody.bones.ToDictionary(b => b.name, b => b);
-
-                        // Create a dictionary to map VRM bone names to their Transform objects
-                        Dictionary<string, Transform> vrmBoneDictionary = vrmSmrBody.bones.ToDictionary(b => b.name, b => b);
-
-                        // Populate PlayerToVrmBones and VrmToPlayerBones
-                        foreach (var bone in playerSmrBody.bones)
+                        foreach (var playerBoneEntry in playerBoneMap)
                         {
-                            foreach (var playerBoneEntry in playerBoneMap)
+                            if (playerBoneEntry.Value.Contains(bone.name))
                             {
-                                if (playerBoneEntry.Value.Contains(bone.name))
+                                Bones boneEnum = playerBoneEntry.Key;
+                                foreach (var vrmBoneName in vrmBoneMap[boneEnum])
                                 {
-                                    Bones boneEnum = playerBoneEntry.Key;
-                                    foreach (var vrmBoneName in vrmBoneMap[boneEnum])
+                                    if (vrmBoneDictionary.TryGetValue(vrmBoneName, out var vrmBone))
                                     {
-                                        if (vrmBoneDictionary.TryGetValue(vrmBoneName, out var vrmBone))
-                                        {
-                                            PlayerBoneToVrmBone[bone.name] = vrmBone;
-                                            VrmBoneToPlayerBone[vrmBone.name] = bone;
-                                            break;
-                                        }
+                                        PlayerBoneToVrmBone[bone.name] = vrmBone;
+                                        VrmBoneToPlayerBone[vrmBone.name] = bone;
+                                        break;
                                     }
                                 }
                             }
                         }
+                    }
 
-                        // Populate HumanBodyBoneToPlayerBone and HumanBodyBoneToVrmBone
-                        foreach (HumanBodyBones humanBone in Enum.GetValues(typeof(HumanBodyBones)))
+                    // Populate HumanBodyBoneToPlayerBone and HumanBodyBoneToVrmBone
+                    foreach (HumanBodyBones humanBone in Enum.GetValues(typeof(HumanBodyBones)))
+                    {
+                        if (humanBone == HumanBodyBones.LastBone) continue;
+
+                        // Convert HumanBodyBones to custom Bones enum
+                        if (Enum.TryParse(humanBone.ToString(), out Bones boneEnum))
                         {
-                            if (humanBone == HumanBodyBones.LastBone) continue;
-
-                            // Convert HumanBodyBones to custom Bones enum
-                            if (Enum.TryParse(humanBone.ToString(), out Bones boneEnum))
+                            // Get player bone transform
+                            Transform playerBoneTransform = playerSmrBody.bones.FirstOrDefault(b => playerBoneMap[boneEnum].Contains(b.name));
+                            if (playerBoneTransform != null)
                             {
-                                // Get player bone transform
-                                Transform playerBoneTransform = playerSmrBody.bones.FirstOrDefault(b => playerBoneMap[boneEnum].Contains(b.name));
-                                if (playerBoneTransform != null)
-                                {
-                                    HumanBodyBoneToPlayerBone[humanBone] = playerBoneTransform;
-                                }
+                                HumanBodyBoneToPlayerBone[humanBone] = playerBoneTransform;
+                            }
 
-                                // Get VRM bone transform
-                                Transform vrmBoneTransform = vrmSmrBody.bones.FirstOrDefault(b => vrmBoneMap[boneEnum].Contains(b.name));
-                                if (vrmBoneTransform != null)
-                                {
-                                    HumanBodyBoneToVrmBone[humanBone] = vrmBoneTransform;
-                                }
+                            // Get VRM bone transform
+                            Transform vrmBoneTransform = vrmSmrBody.bones.FirstOrDefault(b => vrmBoneMap[boneEnum].Contains(b.name));
+                            if (vrmBoneTransform != null)
+                            {
+                                HumanBodyBoneToVrmBone[humanBone] = vrmBoneTransform;
                             }
                         }
                     }
@@ -326,7 +324,7 @@ namespace EnhancedValheimVRM
             };
         }
 
-        private static HumanBone CreateHumanBoneFromBone(string boneName, string humanName)
+        private static HumanBone CreateHumanBoneFromBone(string humanName, string boneName)
         {
             HumanBone bone = new HumanBone
             {
@@ -371,21 +369,23 @@ namespace EnhancedValheimVRM
                 }
             }
 
-            // Now set the correct parent bones
-            for (int i = 0; i < skeleton.Count; i++)
-            {
-                var skeletonBone = skeleton[i];
-
-                // Use the PlayerBoneDict to find the parent relationship
-                if (PlayerBoneDict.TryGetValue(skeletonBone.name, out var playerBone))
-                {
-                    if (playerBone.parent != null && skeletonBoneMap.TryGetValue(playerBone.parent.name, out var parentBone))
-                    {
-                        skeletonBone.SetField("parentName", parentBone.name);
-                        skeleton[i] = skeletonBone;
-                    }
-                }
-            }
+            skeleton.Add(CreateSkeletonBoneFromBone(VrmRootBone.parent, PlayerRootBone.parent.name));
+            // // Now set the correct parent bones
+            // for (int i = 0; i < skeleton.Count; i++)
+            // {
+            //     var skeletonBone = skeleton[i];
+            //
+            //     // Use the PlayerBoneDict to find the parent relationship
+            //     if (PlayerBoneDict.TryGetValue(skeletonBone.name, out var playerBone))
+            //     {
+            //         if (playerBone.parent != null && skeletonBoneMap.TryGetValue(playerBone.parent.name, out var parentBone))
+            //         {
+            //             skeletonBone.SetField("parentName", parentBone.name);
+            //             skeleton[i] = skeletonBone;
+            //         }
+            //         skeleton[i] = skeletonBone;
+            //     }
+            // }
 
             return skeleton.ToArray();
         }
@@ -411,30 +411,18 @@ namespace EnhancedValheimVRM
         {
             List<HumanBone> human = new List<HumanBone>();
 
-
-            foreach (Transform vrmBone in VrmBones)
+            foreach (Transform playerBone in PlayerBones)
             {
-                // Try to get the HumanBodyBones enum value from the VRM bone name
-                if (vrmBoneMap.Values.SelectMany(v => v).Contains(vrmBone.name))
+                // Try to get the corresponding HumanBodyBones enum value from the player bone
+                if (HumanBodyBoneToPlayerBone.Values.Contains(playerBone))
                 {
-                    // Find the corresponding custom Bones enum
-                    var boneEnum = vrmBoneMap.FirstOrDefault(v => v.Value.Contains(vrmBone.name)).Key;
-                    if (boneEnum != default)
-                    {
-                        // Find the corresponding HumanBodyBones enum
-                        if (Enum.TryParse(boneEnum.ToString(), out HumanBodyBones humanBodyBone))
-                        {
-                            // Find the corresponding player bone name
-                            if (playerBoneMap.TryGetValue(boneEnum, out List<string> playerBoneNames))
-                            {
-                                foreach (var playerBoneName in playerBoneNames)
-                                {
-                                    HumanBone bone = CreateHumanBoneFromBone(humanBodyBone.ToString(), playerBoneName);
+                    var humanBodyBone = HumanBodyBoneToPlayerBone.FirstOrDefault(x => x.Value == playerBone).Key;
 
-                                    human.Add(bone);
-                                }
-                            }
-                        }
+                    // Ensure the HumanBodyBones enum value is valid
+                    if (humanBodyBone != HumanBodyBones.LastBone)
+                    {
+                        HumanBone bone = CreateHumanBoneFromBone(humanBodyBone.ToString(), playerBone.name);
+                        human.Add(bone);
                     }
                 }
             }
