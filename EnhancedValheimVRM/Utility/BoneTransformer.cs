@@ -14,10 +14,10 @@ namespace EnhancedValheimVRM
 
         public Dictionary<HumanBodyBones, Transform> HumanBodyBoneToPlayerBone { get; set; }
         public Dictionary<HumanBodyBones, Transform> HumanBodyBoneToVrmBone { get; set; }
-        
+
         private Dictionary<string, Transform> PlayerBoneDict { get; set; }
         private Dictionary<string, Transform> VrmBoneDict { get; set; }
-        
+
         private Transform[] PlayerBones { get; set; }
         private Transform[] VrmBones { get; set; }
 
@@ -243,14 +243,14 @@ namespace EnhancedValheimVRM
                         // Set root bones
                         PlayerRootBone = playerSmrBody.rootBone;
                         VrmRootBone = vrmSmrBody.rootBone;
-                        
+
                         PlayerBones = playerSmrBody.bones;
                         VrmBones = vrmSmrBody.bones;
-                        
+
                         // Create dictionaries to map bone names to their Transform objects
                         PlayerBoneDict = playerSmrBody.bones.ToDictionary(b => b.name, b => b);
                         VrmBoneDict = vrmSmrBody.bones.ToDictionary(b => b.name, b => b);
-                        
+
                         // Create a dictionary to map VRM bone names to their Transform objects
                         Dictionary<string, Transform> vrmBoneDictionary = vrmSmrBody.bones.ToDictionary(b => b.name, b => b);
 
@@ -314,6 +314,7 @@ namespace EnhancedValheimVRM
                 scale = bone.localScale
             };
         }
+
         private static SkeletonBone CreateSkeletonBoneFromBone(Transform bone, string boneName)
         {
             return new SkeletonBone
@@ -324,6 +325,7 @@ namespace EnhancedValheimVRM
                 scale = bone.localScale
             };
         }
+
         private static HumanBone CreateHumanBoneFromBone(string boneName, string humanName)
         {
             HumanBone bone = new HumanBone
@@ -338,6 +340,7 @@ namespace EnhancedValheimVRM
 
             return bone;
         }
+
         private static SkeletonBone[] CreateSkeletonFromAvatar(GameObject avatar)
         {
             List<SkeletonBone> skeleton = new List<SkeletonBone>();
@@ -347,15 +350,16 @@ namespace EnhancedValheimVRM
             {
                 skeleton.Add(CreateSkeletonBoneFromBone(avatarBone));
             }
+
             return skeleton.ToArray();
         }
-        
-        
+
+
         private SkeletonBone[] CreateSkeletonBonesFromVrm()
         {
             List<SkeletonBone> skeleton = new List<SkeletonBone>();
             Dictionary<string, SkeletonBone> skeletonBoneMap = new Dictionary<string, SkeletonBone>();
- 
+
             foreach (Transform vrmBone in VrmBones)
             {
                 if (VrmBoneToPlayerBone.TryGetValue(vrmBone.name, out var playerBone))
@@ -371,13 +375,13 @@ namespace EnhancedValheimVRM
             for (int i = 0; i < skeleton.Count; i++)
             {
                 var skeletonBone = skeleton[i];
-            
+
                 // Use the PlayerBoneDict to find the parent relationship
                 if (PlayerBoneDict.TryGetValue(skeletonBone.name, out var playerBone))
                 {
                     if (playerBone.parent != null && skeletonBoneMap.TryGetValue(playerBone.parent.name, out var parentBone))
-                    { 
-                        skeletonBone.SetField("parentName",parentBone.name);
+                    {
+                        skeletonBone.SetField("parentName", parentBone.name);
                         skeleton[i] = skeletonBone;
                     }
                 }
@@ -387,10 +391,6 @@ namespace EnhancedValheimVRM
         }
 
 
-
-
-        
-        
         private SkeletonBone[] CreatePlayerNamedSkeletonBonesFromVrm(GameObject avatar)
         {
             List<SkeletonBone> skeleton = new List<SkeletonBone>();
@@ -400,17 +400,18 @@ namespace EnhancedValheimVRM
             {
                 if (VrmBoneToPlayerBone.TryGetValue(vrmBone.name, out var playerBone))
                 {
-                     skeleton.Add(CreateSkeletonBoneFromBone(vrmBone, playerBone.name));
+                    skeleton.Add(CreateSkeletonBoneFromBone(vrmBone, playerBone.name));
                 }
             }
+
             return skeleton.ToArray();
         }
-        
+
         private HumanBone[] CreatePlayerNamedHumanBonesFromVrm()
         {
             List<HumanBone> human = new List<HumanBone>();
 
- 
+
             foreach (Transform vrmBone in VrmBones)
             {
                 // Try to get the HumanBodyBones enum value from the VRM bone name
@@ -429,7 +430,7 @@ namespace EnhancedValheimVRM
                                 foreach (var playerBoneName in playerBoneNames)
                                 {
                                     HumanBone bone = CreateHumanBoneFromBone(humanBodyBone.ToString(), playerBoneName);
-                                    
+
                                     human.Add(bone);
                                 }
                             }
@@ -437,15 +438,13 @@ namespace EnhancedValheimVRM
                     }
                 }
             }
+
             return human.ToArray();
         }
 
-        
+
         public HumanDescription CreateHumanDescription(HumanDescription humanDescription)
         {
- 
-            
-            
             HumanDescription description = new HumanDescription()
             {
                 armStretch = humanDescription.armStretch,
@@ -461,34 +460,33 @@ namespace EnhancedValheimVRM
             };
             return description;
         }
-        
-public void ResizePlayerAvatarToVrmSize(Player player)
-{
-    var playerAnimator = player.GetField<Player, Animator>("m_animator");
 
-    // Get the root GameObject of the player's bone structure
-    GameObject playerRootGameObject = playerAnimator.gameObject;
+        public void ResizePlayerAvatarToVrmSize(Player player)
+        {
+            var playerAnimator = player.GetField<Player, Animator>("m_animator");
 
-    // Create the HumanDescription from the current bone mappings
-    HumanDescription description = CreateHumanDescription(playerAnimator.avatar.humanDescription);
+            // Get the root GameObject of the player's bone structure
+            GameObject playerRootGameObject = playerAnimator.gameObject;
 
-    // Build the human avatar using the root GameObject and the human description
-    Avatar avatar = AvatarBuilder.BuildHumanAvatar(playerRootGameObject, description);
+            // Create the HumanDescription from the current bone mappings
+            HumanDescription description = CreateHumanDescription(playerAnimator.avatar.humanDescription);
 
-    // Ensure the avatar is correctly named and assigned to the player's animator
-    avatar.name = playerAnimator.avatar.name;
-    playerAnimator.avatar = avatar;
-}
+            // Build the human avatar using the root GameObject and the human description
+            Avatar avatar = AvatarBuilder.BuildHumanAvatar(playerRootGameObject, description);
+
+            // Ensure the avatar is correctly named and assigned to the player's animator
+            avatar.name = playerAnimator.avatar.name;
+            playerAnimator.avatar = avatar;
+        }
 
         //TODO: determin if anything below is worth keepign around,
-        
+
         public void CopyBoneTransforms2(Player player, VrmInstance vrmInstance)
         {
-
             var playerAnimator = player.GetField<Player, Animator>("m_animator");
             var vrmAnimator = vrmInstance.GetAnimator();
 
-            
+
             playerAnimator.enabled = false;
             vrmAnimator.enabled = false;
 
@@ -504,7 +502,7 @@ public void ResizePlayerAvatarToVrmSize(Player player)
                     targetBone.position = sourceBone.position;
                 }
             }
-            
+
             playerAnimator.Rebind();
 
             playerAnimator.enabled = true;
@@ -519,7 +517,7 @@ public void ResizePlayerAvatarToVrmSize(Player player)
 
             //var visEquipment = player.GetField<Player, VisEquipment>("m_visEquipment");
             //var playerSmr = visEquipment.m_bodyModel;
-            
+
             var playerSmr = playerAnimator.GetComponentInChildren<SkinnedMeshRenderer>();
             var vrmSmr = vrmAnimator.GetComponentInChildren<SkinnedMeshRenderer>();
 
@@ -531,8 +529,8 @@ public void ResizePlayerAvatarToVrmSize(Player player)
 
             // Disable animators during the transformation process
             playerAnimator.enabled = false;
-            vrmAnimator.enabled = false; 
-            
+            vrmAnimator.enabled = false;
+
             HumanBodyBones[] bones = (HumanBodyBones[])Enum.GetValues(typeof(HumanBodyBones));
 
             var bindposes = new Matrix4x4[bones.Length];
@@ -546,7 +544,7 @@ public void ResizePlayerAvatarToVrmSize(Player player)
                 Transform targetBone;
 
                 var playerAnimatorBone = playerAnimator.GetBoneTransform(bone);
-                
+
                 // Try to get the source and target bones from the dictionaries
                 if (!HumanBodyBoneToVrmBone.TryGetValue(bone, out sourceBone) || !HumanBodyBoneToPlayerBone.TryGetValue(bone, out targetBone))
                 {
@@ -559,7 +557,7 @@ public void ResizePlayerAvatarToVrmSize(Player player)
                     Logger.Log($"sourceBone.position: {sourceBone.position}");
                     Logger.Log($"sourceBone.rotation: {sourceBone.rotation}");
                     Logger.Log($"sourceBone.localScale: {sourceBone.localScale}");
-                    
+
                     Logger.Log($"targetBone.position: {targetBone.position}");
                     Logger.Log($"targetBone.rotation: {targetBone.rotation}");
                     Logger.Log($"targetBone.localScale: {targetBone.localScale}");
@@ -570,19 +568,17 @@ public void ResizePlayerAvatarToVrmSize(Player player)
                 }
 
                 // The bind pose is bone's inverse transformation matrix relative to the root.
-               // bindposes[i] = targetBone.worldToLocalMatrix * sourceBone.transform.parent.localToWorldMatrix;
+                // bindposes[i] = targetBone.worldToLocalMatrix * sourceBone.transform.parent.localToWorldMatrix;
             }
 
             //playerSmr.sharedMesh.bindposes = bindposes;
-            
- 
-            
+
+
             // Enable animators after the transformation process
             playerAnimator.enabled = true;
             vrmAnimator.enabled = true;
-            
-            playerAnimator.Rebind();
 
+            playerAnimator.Rebind();
         }
 
 
