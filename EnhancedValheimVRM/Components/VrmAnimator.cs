@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using HarmonyLib;
 using UnityEngine;
 
 namespace EnhancedValheimVRM
 {
     public class VrmAnimator : MonoBehaviour
     {
+        
+        public static List<VrmAnimator> Instances { get; private set; } = new List<VrmAnimator>();        
+        
         const int FirstTime = -161139084;
         const int Usually = 229373857; // standing idle
         const int FirstRise = -1536343465; // stand up upon login
@@ -87,7 +91,9 @@ namespace EnhancedValheimVRM
             
             //_player.gameObject.AddComponent<VrmController>();
             CreatePoseHandlers();
-
+            
+            Instances.Add(this);
+            
             //CreateBoneRatios();
             //SetupAttachPoints();
         }
@@ -163,7 +169,7 @@ namespace EnhancedValheimVRM
 
         private void CreatePoseHandlers()
         {
-            Logger.LogWarning("_______ CreatePoseHandlers");
+            Logger.LogWarning("CreatePoseHandlers");
             OnDestroy();
             _playerPoseHandler = new HumanPoseHandler(_playerAnimator.avatar, _playerAnimator.transform);
             _vrmPoseHandler = new HumanPoseHandler(_vrmAnimator.avatar, _vrmAnimator.transform);
@@ -247,8 +253,40 @@ namespace EnhancedValheimVRM
         }
 
 
-        private void LateUpdate()
+        // private void LateUpdate()
+        // {
+        //     var settings = _vrmInstance.GetSettings();
+        //
+        //
+        //     _vrmAnimator.transform.localPosition = Vector3.zero;
+        //     _playerAnimator.transform.localPosition = Vector3.zero;
+        //     
+        //     _playerPoseHandler.GetHumanPose(ref _humanPose);
+        //     _vrmPoseHandler.SetHumanPose(ref _humanPose);
+        //
+        //     var stateHash = _playerAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+        //
+        //     if (_runningSetupAttach2)
+        //     {
+        //         foreach (var attachmentPoint in _attachmentPoints)
+        //         {
+        //             attachmentPoint.Player.position = attachmentPoint.Vrm.position;
+        //             attachmentPoint.Player.rotation = attachmentPoint.Vrm.rotation;
+        //             attachmentPoint.Player.localScale = Vector3.Scale(attachmentPoint.Player.localScale, attachmentPoint.Vrm.localScale);
+        //         }
+        //     }
+        //
+        //
+        //
+        // }
+
+
+        
+        //Valheim has a Loop called CustomLateUpdate that is fired after LateUpdate but in such a way that you cant really create your own CustomLateUpdate
+        //instead have to use a HarmonyPatch on MonoUpdaters LateUpdate instead.
+        public void CustomLateUpdate()
         {
+            
             var settings = _vrmInstance.GetSettings();
 
 
@@ -259,36 +297,6 @@ namespace EnhancedValheimVRM
             _vrmPoseHandler.SetHumanPose(ref _humanPose);
 
             var stateHash = _playerAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
-
-            if (_runningSetupAttach2)
-            {
-                foreach (var attachmentPoint in _attachmentPoints)
-                {
-                    attachmentPoint.Player.position = attachmentPoint.Vrm.position;
-                    attachmentPoint.Player.rotation = attachmentPoint.Vrm.rotation;
-                    attachmentPoint.Player.localScale = Vector3.Scale(attachmentPoint.Player.localScale, attachmentPoint.Vrm.localScale);
-                }
-            }
- 
- 
- 
-        }
-
-
-        private void Working()
-        {
-            var settings = _vrmInstance.GetSettings();
-
-
-            _vrmAnimator.transform.localPosition = Vector3.zero;
-            _playerAnimator.transform.localPosition = Vector3.zero;
-            
-            _playerPoseHandler.GetHumanPose(ref _humanPose);
-            _vrmPoseHandler.SetHumanPose(ref _humanPose);
-
-            var stateHash = _playerAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
-
-
 
 
             if (_runningSetupAttach2)
@@ -304,10 +312,7 @@ namespace EnhancedValheimVRM
             Transform vrmHips = _vrmAnimator.GetBoneTransform(HumanBodyBones.Hips);
             Transform vrmLeftFoot = _vrmAnimator.GetBoneTransform(HumanBodyBones.LeftFoot);
             Transform vrmRightFoot = _vrmAnimator.GetBoneTransform(HumanBodyBones.RightFoot);
-
-
-
-
+            
             UpdateBones();
 
  
@@ -321,6 +326,9 @@ namespace EnhancedValheimVRM
 
         void OnDestroy()
         {
+            
+            Instances.Remove(this);
+            
             if (_playerPoseHandler != null)
             {
                 _playerPoseHandler.Dispose();

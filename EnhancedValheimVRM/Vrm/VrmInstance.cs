@@ -30,7 +30,7 @@ namespace EnhancedValheimVRM
         private readonly string _vrmPath;
 
         private Player _player;
-        private  BoneTransformer _boneTransformer;
+        //private  BoneTransformer _boneTransformer;
         
         
  
@@ -328,7 +328,7 @@ namespace EnhancedValheimVRM
             var lodGroup = _vrmGo.AddComponent<LODGroup>();
             if (_settings.EnablePlayerFade)
             {
-                //TODO: determine if regular Renders need to be put into the lod group. and then any armors added 
+                //TODO: determine if regular Renderers need to be put into the lod group. and then any armors added 
                 lodGroup.SetLODs(new LOD[]
                 {
                     new LOD(0.1f, _vrmGo.GetComponentsInChildren<SkinnedMeshRenderer>())
@@ -342,13 +342,13 @@ namespace EnhancedValheimVRM
 
             _vrmGo.SetActive(false);
 
-            if (_player.TryGetField<Player, Animator>("m_animator", out var playerAnimator))
-            {
-                //BoneTransforms.CopyBoneTransforms(playerAnimator);
-                //BoneTransforms.SetupBones(_player,_vrmGo);
-            }
+            // if (_player.TryGetField<Player, Animator>("m_animator", out var playerAnimator))
+            // {
+            //     //BoneTransforms.CopyBoneTransforms(playerAnimator);
+            //     //BoneTransforms.SetupBones(_player,_vrmGo);
+            // }
             
-            _boneTransformer = new BoneTransformer(_player, _vrmGo);
+            //_boneTransformer = new BoneTransformer(_player, _vrmGo);
             
             // var vrmBodySmr = _vrmGo.GetComponentsInChildren<SkinnedMeshRenderer>().FirstOrDefault(smr => smr.name == "Body");
             //
@@ -358,14 +358,17 @@ namespace EnhancedValheimVRM
             // }
 
             //_boneTransformer.CopyBoneTransforms(_player, this);
-            _boneTransformer.ResizePlayerAvatarToVrmSize(_player);
+            //_boneTransformer.ResizePlayerAvatarToVrmSize(_player);
+            
+            
+            
         }
 
-        public BoneTransformer GetBoneTransformer()
-        {
-            return _boneTransformer;
-        }
-        
+        // public BoneTransformer GetBoneTransformer()
+        // {
+        //     return _boneTransformer;
+        // }
+        //
 
  
 

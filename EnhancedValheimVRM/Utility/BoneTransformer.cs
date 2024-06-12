@@ -1,6 +1,10 @@
-﻿using System;
+﻿// failed attempts to modify the skeleton, will look at later, maybe.
+//TODO: see if we can modify the skeleton of the player character in game to avoid calling a loop of 55 updates per frame to modify the bone positions.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using UniHumanoid;
 using UnityEngine;
 
 namespace EnhancedValheimVRM
@@ -151,7 +155,7 @@ namespace EnhancedValheimVRM
             { Bones.LeftToe3, new List<string> { "LeftToe3", "ToeRing1_L", "toe.03.L" } },
             { Bones.LeftToe4, new List<string> { "LeftToe4", "ToePinky1_L", "toe.04.L" } },
             { Bones.LeftToe5, new List<string> { "LeftToe5", "ToePinky1_L" } },
-            { Bones.RightToes, new List<string> { "RightToes", "righttoes", "toe.R", "toe.r","Right toe" } },
+            { Bones.RightToes, new List<string> { "RightToes", "righttoes", "toe.R", "toe.r", "Right toe" } },
             { Bones.RightHallux, new List<string> { "RightHallux", "ToeIndex1_R", "toe.01.R" } },
             { Bones.RightToe2, new List<string> { "RightToe2", "ToeMid1_R", "toe.02.R" } },
             { Bones.RightToe3, new List<string> { "RightToe3", "ToeRing1_R", "toe.03.R" } },
@@ -250,9 +254,6 @@ namespace EnhancedValheimVRM
                     PlayerBoneDict = playerSmrBody.bones.ToDictionary(b => b.name, b => b);
                     VrmBoneDict = vrmSmrBody.bones.ToDictionary(b => b.name, b => b);
 
-                    // Create a dictionary to map VRM bone names to their Transform objects
-                    Dictionary<string, Transform> vrmBoneDictionary = vrmSmrBody.bones.ToDictionary(b => b.name, b => b);
-
                     // Populate PlayerToVrmBones and VrmToPlayerBones
                     foreach (var bone in playerSmrBody.bones)
                     {
@@ -263,7 +264,7 @@ namespace EnhancedValheimVRM
                                 Bones boneEnum = playerBoneEntry.Key;
                                 foreach (var vrmBoneName in vrmBoneMap[boneEnum])
                                 {
-                                    if (vrmBoneDictionary.TryGetValue(vrmBoneName, out var vrmBone))
+                                    if (VrmBoneDict.TryGetValue(vrmBoneName, out var vrmBone))
                                     {
                                         PlayerBoneToVrmBone[bone.name] = vrmBone;
                                         VrmBoneToPlayerBone[vrmBone.name] = bone;
@@ -302,25 +303,62 @@ namespace EnhancedValheimVRM
         }
 
 
-        private static SkeletonBone CreateSkeletonBoneFromBone(Transform bone)
+        private static SkeletonBone CreateSkeletonBoneFromBone(Transform vrmBone, Transform playerBone, Quaternion? rotationOverride = null)
         {
-            return new SkeletonBone
-            {
-                name = bone.name,
-                position = bone.localPosition,
-                rotation = bone.localRotation,
-                scale = bone.localScale
-            };
-        }
+            var rotation = playerBone.localRotation;
+            var scale = playerBone.localScale;
 
-        private static SkeletonBone CreateSkeletonBoneFromBone(Transform bone, string boneName)
-        {
+            if (rotationOverride.HasValue)
+            {
+                rotation = rotationOverride.Value;
+            }
+
+            if (rotationOverride.HasValue)
+            {
+                rotation = rotationOverride.Value;
+            }
+
+            //
+            if (playerBone.name == "Armature")
+            {
+                rotation = Quaternion.Euler(0, 0, 0); // this is the same as it is on the transform is just here for testing.
+                scale = Vector3.one;
+            }
+
+            // if (playerBone.name == "Hips")
+            // {
+            //     useRot = Quaternion.Euler(0, 0, 0); // removing 90 from x fixes the first rotation issue
+            // }
+            if (playerBone.name == "LeftShoulder")
+            {
+                //rotation = Quaternion.Euler(71.116f, 87.83f, -180.01f);
+                // rotation = Quaternion.Euler(0, 87.83f, -180.01f);
+            }
+            // if (playerBone.name == "RightShoulder")
+            // {
+            //     useRot = Quaternion.Euler(71.116f, -87.83f, 180.01f);
+            // }        
+            //
+            // if (playerBone.name == "LeftArm")
+            // {
+            //     useRot = Quaternion.Euler(39.356f, 5.767f, 0f);
+            // }    
+            // if (playerBone.name == "RightArm")
+            // {
+            //     useRot = Quaternion.Euler(39.356f, -5.767f, 0f);
+            // }    
+
+
+            //Logger.Log($"BONE: {vrmBone}, rotation.eulerAngles ->{rotation.eulerAngles}, rotation.localRotation.eulerAngles {vrmBone.localRotation.eulerAngles}");
+            //Logger.Log($"BONE: {vrmBone}, playerBone.localPosition ->{playerBone.localPosition} ");
+            //Logger.Log($"BONE: {vrmBone}, scale -> {scale} ");
+
             return new SkeletonBone
             {
-                name = boneName,
-                position = bone.localPosition,
-                rotation = bone.localRotation,
-                scale = bone.localScale
+                name = playerBone.name,
+                position = vrmBone.localPosition,
+                rotation = rotation,
+                scale = scale
             };
         }
 
@@ -339,37 +377,57 @@ namespace EnhancedValheimVRM
             return bone;
         }
 
-        private static SkeletonBone[] CreateSkeletonFromAvatar(GameObject avatar)
+        // private static SkeletonBone[] CreateSkeletonFromAvatar(GameObject avatar)
+        // {
+        //     List<SkeletonBone> skeleton = new List<SkeletonBone>();
+        //
+        //     Transform[] avatarBones = avatar.GetComponentsInChildren<Transform>();
+        //     foreach (Transform avatarBone in avatarBones)
+        //     {
+        //         skeleton.Add(CreateSkeletonBoneFromBone(avatarBone));
+        //     }
+        //
+        //     return skeleton.ToArray();
+        // }
+
+
+        private class SkeletonExtra
         {
-            List<SkeletonBone> skeleton = new List<SkeletonBone>();
-
-            Transform[] avatarBones = avatar.GetComponentsInChildren<Transform>();
-            foreach (Transform avatarBone in avatarBones)
-            {
-                skeleton.Add(CreateSkeletonBoneFromBone(avatarBone));
-            }
-
-            return skeleton.ToArray();
+            public SkeletonBone[] Skeleton;
+            public Dictionary<string, string> BoneNameToParentBoneName = new Dictionary<string, string>();
         }
 
-
-        private SkeletonBone[] CreateSkeletonBonesFromVrm()
+        private SkeletonExtra CreateSkeletonBonesFromVrm()
         {
-            List<SkeletonBone> skeleton = new List<SkeletonBone>();
-            Dictionary<string, SkeletonBone> skeletonBoneMap = new Dictionary<string, SkeletonBone>();
+            var skeletonExtra = new SkeletonExtra();
+
+            var skeleton = new List<SkeletonBone>();
+
+            //order matters root first
+
+            skeleton.Add(CreateSkeletonBoneFromBone(VrmRootBone.parent, PlayerRootBone.parent));
+
+
+            if (!skeletonExtra.BoneNameToParentBoneName.ContainsKey(PlayerRootBone.name))
+            {
+                skeletonExtra.BoneNameToParentBoneName.Add(PlayerRootBone.name, PlayerRootBone.parent.name);
+            }
 
             foreach (Transform vrmBone in VrmBones)
             {
                 if (VrmBoneToPlayerBone.TryGetValue(vrmBone.name, out var playerBone))
                 {
                     // Create the SkeletonBone using the new method
-                    SkeletonBone skeletonBone = CreateSkeletonBoneFromBone(vrmBone, playerBone.name);
+                    SkeletonBone skeletonBone = CreateSkeletonBoneFromBone(vrmBone, playerBone);
                     skeleton.Add(skeletonBone);
-                    skeletonBoneMap[skeletonBone.name] = skeletonBone;
+                    if (!skeletonExtra.BoneNameToParentBoneName.ContainsKey(playerBone.name))
+                    {
+                        skeletonExtra.BoneNameToParentBoneName.Add(playerBone.name, playerBone.parent.name);
+                    }
                 }
             }
 
-            skeleton.Add(CreateSkeletonBoneFromBone(VrmRootBone.parent, PlayerRootBone.parent.name));
+            //skeleton.Add(CreateSkeletonBoneFromBone(VrmRootBone.parent, PlayerRootBone.parent, Quaternion.Euler(180,0,0)));
             // // Now set the correct parent bones
             // for (int i = 0; i < skeleton.Count; i++)
             // {
@@ -386,21 +444,21 @@ namespace EnhancedValheimVRM
             //         skeleton[i] = skeletonBone;
             //     }
             // }
-
-            return skeleton.ToArray();
+            skeletonExtra.Skeleton = skeleton.ToArray();
+            return skeletonExtra;
         }
 
 
         private SkeletonBone[] CreatePlayerNamedSkeletonBonesFromVrm(GameObject avatar)
         {
-            List<SkeletonBone> skeleton = new List<SkeletonBone>();
+            var skeleton = new List<SkeletonBone>();
 
             Transform[] vrmBones = avatar.GetComponentsInChildren<Transform>();
             foreach (Transform vrmBone in vrmBones)
             {
                 if (VrmBoneToPlayerBone.TryGetValue(vrmBone.name, out var playerBone))
                 {
-                    skeleton.Add(CreateSkeletonBoneFromBone(vrmBone, playerBone.name));
+                    skeleton.Add(CreateSkeletonBoneFromBone(vrmBone, playerBone));
                 }
             }
 
@@ -409,7 +467,7 @@ namespace EnhancedValheimVRM
 
         private HumanBone[] CreatePlayerNamedHumanBonesFromVrm()
         {
-            List<HumanBone> human = new List<HumanBone>();
+            var human = new List<HumanBone>();
 
             foreach (Transform playerBone in PlayerBones)
             {
@@ -431,9 +489,9 @@ namespace EnhancedValheimVRM
         }
 
 
-        public HumanDescription CreateHumanDescription(HumanDescription humanDescription)
+        public HumanDescription CreateHumanDescription(HumanDescription humanDescription, SkeletonBone[] skeleton, HumanBone[] human)
         {
-            HumanDescription description = new HumanDescription()
+            var description = new HumanDescription
             {
                 armStretch = humanDescription.armStretch,
                 feetSpacing = humanDescription.feetSpacing,
@@ -443,29 +501,182 @@ namespace EnhancedValheimVRM
                 lowerLegTwist = humanDescription.lowerLegTwist,
                 upperArmTwist = humanDescription.upperArmTwist,
                 upperLegTwist = humanDescription.upperLegTwist,
-                skeleton = CreateSkeletonBonesFromVrm(),
-                human = CreatePlayerNamedHumanBonesFromVrm(),
+                skeleton = skeleton,
+                human = human
             };
             return description;
         }
 
         public void ResizePlayerAvatarToVrmSize(Player player)
         {
-            var playerAnimator = player.GetField<Player, Animator>("m_animator");
-
             // Get the root GameObject of the player's bone structure
-            GameObject playerRootGameObject = playerAnimator.gameObject;
+            var playerRootGameObject = player.GetField<Player, GameObject>("m_visual");
+            if (playerRootGameObject == null)
+            {
+                Logger.LogError("playerRootGameObject is null");
+                return;
+            }
+
+            var playerAnimator = playerRootGameObject.GetComponentInChildren<Animator>();
+            if (playerAnimator == null)
+            {
+                Logger.LogError("playerAnimator is null");
+                return;
+            }
+            
+            string GenerateRandomString(int length)
+            {
+                const string chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+                char[] stringChars = new char[length];
+
+                for (int i = 0; i < length; i++)
+                {
+                    stringChars[i] = chars[UnityEngine.Random.Range(0, chars.Length)];
+                }
+
+                return new string(stringChars);
+            }
+            
+            // Temporarily rename or disable conflicting Hips transforms 
+            //List<Transform> conflictingHips = new List<Transform>();
+
+            
+            // foreach (Transform child in playerRootGameObject.transform)
+            // {
+            //     Debug.Log($"_____________ child.name -> {child.name}");
+            //     
+            //     if(child.name == "Armature") continue;
+            //     
+            //     var allTransforms = child.GetComponentsInChildren<Transform>();
+            //     foreach (var transform in allTransforms)
+            //     {
+            //         Debug.Log($"_____________ transform.name -> {transform.name}");
+            //
+            //         if (transform.name == "Hips")
+            //         {
+            //             conflictingHips.Add(transform);
+            //             transform.name = GenerateRandomString(12); // Rename temporarily
+            //         }
+            //     }
+            // }
+            
+            
+
+            // Create the skeleton and human bones from VRM
+            var skeletonExtra = CreateSkeletonBonesFromVrm();
+            if (skeletonExtra == null)
+            {
+                Logger.LogError("skeletonExtra is null");
+                return;
+            }
+
+            var human = CreatePlayerNamedHumanBonesFromVrm();
+            if (human == null)
+            {
+                Logger.LogError("human is null");
+                return;
+            }
+
+            // Find the correct Armature under Visual and destroy it
+            
+            
+            var gogo = new GameObject("VisualTemp");
+
+            
+            Transform currentArmature = playerRootGameObject.transform.Find("Armature");
+            if (currentArmature != null)
+            {
+                currentArmature.SetParent(gogo.transform);
+                //UnityEngine.Object.Destroy(currentArmature.gameObject);
+            }
+            else
+            {
+                Logger.LogWarning("currentArmature is null, no need to destroy");
+            }
+
+            // Dictionary to hold the created bone transforms
+            Dictionary<string, Transform> boneTransforms = new Dictionary<string, Transform>();
+
+            // Create the new bones and add them to the dictionary
+            foreach (var bone in skeletonExtra.Skeleton)
+            {
+                // Create a new GameObject for the bone
+                GameObject boneObject = new GameObject(bone.name);
+                boneObject.transform.localPosition = bone.position;
+                boneObject.transform.localRotation = bone.rotation;
+                boneObject.transform.localScale = bone.scale;
+
+                // Add the new bone to the dictionary
+                boneTransforms[bone.name] = boneObject.transform;
+            }
+
+            // Set up the hierarchy
+            foreach (var bone in skeletonExtra.Skeleton)
+            {
+                if (bone.name == "Armature")
+                {
+                    boneTransforms[bone.name].SetParent(playerRootGameObject.transform);
+                }
+                else
+                {
+                    if (skeletonExtra.BoneNameToParentBoneName.TryGetValue(bone.name, out var parentBoneName))
+                    {
+                        if (boneTransforms.TryGetValue(parentBoneName, out Transform parentTransform))
+                        {
+                            boneTransforms[bone.name].SetParent(parentTransform);
+                        }
+                        else
+                        {
+                            Logger.LogWarning($"Parent bone transform for {bone.name} not found");
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogWarning($"Parent bone name for {bone.name} not found in BoneNameToParentBoneName");
+                    }
+                }
+            }
+
+
+
+            // Check if the playerAnimator's avatar is null
+            if (playerAnimator.avatar == null)
+            {
+                Logger.LogError("playerAnimator's avatar is null");
+                return;
+            }
 
             // Create the HumanDescription from the current bone mappings
-            HumanDescription description = CreateHumanDescription(playerAnimator.avatar.humanDescription);
+            HumanDescription description = CreateHumanDescription(playerAnimator.avatar.humanDescription, skeletonExtra.Skeleton, human);
 
             // Build the human avatar using the root GameObject and the human description
-            Avatar avatar = AvatarBuilder.BuildHumanAvatar(playerRootGameObject, description);
+            Debug.Log($"________________ playerRootGameObject.name {playerRootGameObject.name}");
+            Avatar avatar = AvatarBuilder.BuildHumanAvatar(gogo, description);
+
+            var newArmature = gogo.transform.Find("Armature");
+            
+            newArmature.SetParent(playerRootGameObject.transform);
+            
+            UnityEngine.Object.Destroy(gogo.gameObject);
+            UnityEngine.Object.Destroy(currentArmature.gameObject);
+            
+            if (avatar == null)
+            {
+                Logger.LogError("Failed to build avatar");
+                return;
+            }
 
             // Ensure the avatar is correctly named and assigned to the player's animator
             avatar.name = playerAnimator.avatar.name;
             playerAnimator.avatar = avatar;
+
+            // // Restore the original names or re-enable the conflicting transforms
+            // foreach (var hipsTransform in conflictingHips)
+            // {
+            //     hipsTransform.name = "Hips"; // Restore original name
+            // }
         }
+
 
         //TODO: determin if anything below is worth keepign around,
 
@@ -680,8 +891,8 @@ namespace EnhancedValheimVRM
             float playerBoneLength = Vector3.Distance(playerBone.position, playerBone.parent.position);
             float vrmBoneLength = Vector3.Distance(vrmBone.position, vrmBone.parent.position);
 
-            Logger.Log($"Player Bone: {playerBone.name}, Player Parent: {playerBone.parent.name}, Player Length: {playerBoneLength}");
-            Logger.Log($"VRM Bone: {vrmBone.name}, VRM Parent: {vrmBone.parent.name}, VRM Length: {vrmBoneLength}");
+            //Logger.Log($"Player Bone: {playerBone.name}, Player Parent: {playerBone.parent.name}, Player Length: {playerBoneLength}");
+            //Logger.Log($"VRM Bone: {vrmBone.name}, VRM Parent: {vrmBone.parent.name}, VRM Length: {vrmBoneLength}");
 
             if (playerBoneLength == 0)
             {

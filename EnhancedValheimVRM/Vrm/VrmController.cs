@@ -87,7 +87,8 @@ namespace EnhancedValheimVRM
 
         private static IEnumerator VrmSetup(Player player, VrmInstance vrmInstance)
         {
-            Logger.LogWarning("VRM SETUP");
+            Logger.Log("VrmSetup", Logger.LogLevel.Debug);
+            
             var vrmGo = vrmInstance.GetGameObject();
 
             if (vrmGo == null)
@@ -150,6 +151,11 @@ namespace EnhancedValheimVRM
 
                 vrmGo.transform.localPosition = playerAnimator.transform.localPosition;
 
+                yield return null;
+                
+                // var vrmBonesTransformer = vrmInstance.GetBoneTransformer();
+                // vrmBonesTransformer.ResizePlayerAvatarToVrmSize(player);
+                
                 var animationController = vrmGo.GetComponent<VrmAnimator>();
 
                 if (animationController == null)
@@ -161,7 +167,7 @@ namespace EnhancedValheimVRM
                 {
                     animationController.Setup(player, playerAnimator, vrmInstance);
                 }
-
+                
 
                 yield return null;
 
@@ -215,6 +221,8 @@ namespace EnhancedValheimVRM
             //BoneTransforms.CopyBoneTransforms(player, vrmInstance);
             //BoneTransforms.CopyBoneTransforms(player, vrmInstance.GetGameObject());
             //SetupAttachPoints(player, vrmInstance);
+            
+            
         }
 
  

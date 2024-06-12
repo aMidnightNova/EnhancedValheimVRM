@@ -48,6 +48,7 @@
         <Compile Include="Patches\PatchDebug.cs" />
         <Compile Include="Patches\PatchFejdStartup.cs" />
         <Compile Include="Patches\PatchGetHeadPoint.cs" />
+        <Compile Include="Patches\PatchMonoUpdater.cs" />
         <Compile Include="Patches\PatchOnRagdollCreated.cs" />
         <Compile Include="Patches\PatchPlayerAwake.cs" />
         <Compile Include="Patches\PatchPlayerOnDestroy.cs" />
