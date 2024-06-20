@@ -12,8 +12,6 @@ namespace EnhancedValheimVRM
         // Writable Settings Fields
         public float ModelScale = 1.0f;
 
-        public float PlayerHeight = 1.85f;
-        public float PlayerRadius = 0.5f;
 
 
         public Vector3 SittingOnChairOffset = Vector3.zero;
@@ -46,7 +44,7 @@ namespace EnhancedValheimVRM
         public bool LegsVisible = false;
 
         public float ModelBrightness = 0.8f;
-        public bool FixCameraHeight = true;
+        public bool FixCameraHeight = false;
         public bool UseMToonShader = false;
         public bool EnablePlayerFade = true;
         public bool AllowShare = true;
@@ -66,16 +64,23 @@ namespace EnhancedValheimVRM
         
         // COMPUTED Settings Properties
         // should be private or a property {get set}
-        private float HeightAspect => PlayerHeight / 1.85f;
-        private float RadiusAspect => PlayerRadius / 0.5f;
+ 
+        //private float RadiusAspect => PlayerRadius / 0.5f;
         
         // END - COMPUTED Settings Properties
         
         
         //Internal computed properties
         // a property {get set}
-        public float HeightOffsetY { get; set; } = 0f;
-        public float PlayerVrmScale { get; set; } = 0f;
+        public float HeightOffsetY { get; set; } = 1f;
+        public float PlayerVrmScale { get; set; } = 1f;
+        
+        public float PlayerHeight { get; set; } = 1.85f;  
+        public float VrmHeight { get; set; } = 1f;  
+        public float VrmRadius { get; set; } = 0.5f;
+
+
+        public Vector3 PlayerVrmScaleVector3 { get; set; } = Vector3.one;
         //Internal computed properties
         
         

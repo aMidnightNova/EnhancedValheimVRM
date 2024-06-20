@@ -10,9 +10,13 @@ namespace EnhancedValheimVRM
     public static class VrmController
     {
         private static Dictionary<string, VrmInstance> _vrmInstances = new Dictionary<string, VrmInstance>();
+        public static Dictionary<string, VrmInstance> VrmInstances => _vrmInstances;
 
         public static void AttachVrmToPlayer(Player player)
         {
+            Logger.Log("___________________________________________ Start AttachVrmToPlayer", Logger.LogLevel.Debug);
+
+            
             VrmInstance vrmInstance;
             var playerName = player.GetPlayerDisplayName();
             var exists = _vrmInstances.TryGetValue(playerName, out vrmInstance);
@@ -56,22 +60,22 @@ namespace EnhancedValheimVRM
             if (_vrmInstances.TryGetValue(playerName, out var instance))
             {
                 var vrmGo = instance.GetGameObject();
-                if (vrmGo != null)
-                {
-                    // var vrmAnimator = vrmGo.GetComponentInChildren<Animator>();
-                    // vrmAnimator.transform.SetParent(null,false);
-                    vrmGo.transform.SetParent(null, false);
-                    vrmGo.SetActive(false);
-                }
-
-
-                // var vrmAnimationController = player.GetComponent<VrmAnimator>();
-                // if (vrmAnimationController != null)
+                // if (vrmGo != null)
                 // {
-                //     UnityEngine.Object.Destroy(vrmAnimationController);
+                //     // var vrmAnimator = vrmGo.GetComponentInChildren<Animator>();
+                //     // vrmAnimator.transform.SetParent(null,false);
+                //     vrmGo.transform.SetParent(null, false);
+                //     vrmGo.SetActive(false);
                 // }
 
-                var vrmEyeController = player.gameObject.GetComponent<VrmEyeAnimator>();
+
+                var vrmAnimationController = player.GetComponent<VrmAnimator>();
+                if (vrmAnimationController != null)
+                {
+                    UnityEngine.Object.Destroy(vrmAnimationController);
+                }
+
+                var vrmEyeController = player.GetComponent<VrmEyeAnimator>();
                 if (vrmEyeController != null)
                 {
                     UnityEngine.Object.Destroy(vrmEyeController);
@@ -87,75 +91,103 @@ namespace EnhancedValheimVRM
 
         private static IEnumerator VrmSetup(Player player, VrmInstance vrmInstance)
         {
-            Logger.Log("VrmSetup", Logger.LogLevel.Debug);
             
+            Logger.Log("Start VrmSetup", Logger.LogLevel.Debug);
+            
+            var settings = vrmInstance.GetSettings();
+
+            
+            foreach (var smr in player.GetVisual().GetComponentsInChildren<SkinnedMeshRenderer>())
+            {
+                //control Player Visible PlayerVisible
+                smr.forceRenderingOff = true;
+                smr.updateWhenOffscreen = true;
+
+                if (smr.name == "body")
+                {
+                    //smr.rootBone.localScale = Vector3.Scale(smr.rootBone.localScale, settings.PlayerVrmScaleVector3);
+                    smr.rootBone.localScale = settings.PlayerVrmScaleVector3;
+                }
+                
+                
+                foreach (var mat in smr.materials)
+                {
+                    Logger.Log($"Mat Name: -> {mat.name} Mat Shader: -> {mat.shader.name}");
+                }
+                //yield return null;
+            }
+ 
             var vrmGo = vrmInstance.GetGameObject();
 
             if (vrmGo == null)
             {
-                Logger.LogError("VrmGo is null");
+                Logger.LogError("VrmGo Is Null VrmSetup");
                 yield break;
             }
 
-            var settings = vrmInstance.GetSettings();
 
             vrmGo.SetActive(true);
 
             player.m_maxInteractDistance *= settings.InteractionDistanceScale;
 
 
-            var animator = player.GetComponentInChildren<Animator>();
-
-            var oldModel = animator.transform.parent.Find(Constants.Vrm.GoName);
-            if (oldModel != null)
-            {
-                UnityEngine.Object.Destroy(oldModel);
-            }
-
-            vrmGo.transform.SetParent(animator.transform.parent, false);
 
 
-            float newHeight = settings.PlayerHeight;
-            float newRadius = settings.PlayerRadius;
+
+ 
 
             var rigidBody = player.GetComponent<Rigidbody>();
             var collider = player.GetComponent<CapsuleCollider>();
 
-            collider.height = newHeight;
-            collider.radius = newRadius;
-            collider.center = new Vector3(0, newHeight / 2, 0);
+            if (collider != null)
+            {
+                collider.height = settings.VrmHeight;
+                collider.radius = settings.VrmRadius;
+                collider.center = new Vector3(0, settings.VrmHeight / 2, 0);
+            }
+            else
+            {
+                Logger.LogError("CapsuleCollider component is missing on the player object.");
+            }
 
+            if (rigidBody != null)
+            {
+                if (collider != null)
+                {
+                    Logger.Log("______________________________ Set Rigidbody centerOfMass.");
 
-            rigidBody.centerOfMass = collider.center;
-
+                    rigidBody.centerOfMass = collider.center;
+                }
+                else
+                {
+                    Logger.LogError("Cannot set Rigidbody centerOfMass because CapsuleCollider is missing.");
+                }
+            }
+            else
+            {
+                Logger.LogError("Rigidbody component is missing on the player object.");
+            }
+            
+            
             yield return null;
 
-            foreach (var smr in player.GetVisual().GetComponentsInChildren<SkinnedMeshRenderer>())
-            {
-                //smr.forceRenderingOff = true;
-                //smr.updateWhenOffscreen = true;
-                
-                foreach (var mat in smr.materials)
-                {
-                    Logger.Log($"Mat Name: -> {mat.name} Mat Shader: -> {mat.shader.name}");
-                }
-                yield return null;
-            }
+
 
             if (player.TryGetField<Player, Animator>("m_animator", out var playerAnimator))
             {
+                
                 playerAnimator.keepAnimatorStateOnDisable = true;
                 playerAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-
-                yield return null;
-
-                vrmGo.transform.localPosition = playerAnimator.transform.localPosition;
-
+                
                 yield return null;
                 
                 // var vrmBonesTransformer = vrmInstance.GetBoneTransformer();
                 // vrmBonesTransformer.ResizePlayerAvatarToVrmSize(player);
-                
+                if (vrmGo == null)
+                {
+                    Logger.LogError("VrmGo Is Null VrmSetup 2");
+                    yield break;
+                }
                 var animationController = vrmGo.GetComponent<VrmAnimator>();
 
                 if (animationController == null)

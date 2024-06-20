@@ -129,6 +129,10 @@ namespace EnhancedValheimVRM
 
         public Animator GetAnimator()
         {
+            if (_vrmGo == null)
+            {
+                return null;
+            }
             return _vrmGo.GetComponentInChildren<Animator>();
         }
 
@@ -320,8 +324,24 @@ namespace EnhancedValheimVRM
 
         private void CreateVrmGo()
         {
-            _vrmGo = Object.Instantiate(_instance);
-            _vrmGo.name = Constants.Vrm.GoName;
+            
+            Logger.Log("Create VRM Go.");
+            if (_player.TryGetField<Player, Animator>("m_animator", out var playerAnimator))
+            {
+                if (_vrmGo != null)
+                {
+                    Object.Destroy(_vrmGo);
+                }
+                
+                _vrmGo = Object.Instantiate(_instance, playerAnimator.transform.parent, false);
+                _vrmGo.name = Constants.Vrm.GoName;
+                _vrmGo.transform.localPosition = playerAnimator.transform.localPosition;
+            }
+
+
+            
+            
+
 
             var lodGroupPlayer = _player.GetComponentInChildren<LODGroup>();
 
@@ -386,20 +406,27 @@ namespace EnhancedValheimVRM
 
             if (_player.TryGetField<Player, GameObject>("m_visual", out var playerVisual))
             {
-                var vrmAnimator = GetAnimator();
+ 
                 float playerHeight = Utils.GetModelHeight(playerVisual);
                 
                 float vrmHeight =  Utils.GetModelHeight(_vrmGo);
+                float vrmWidth =  Utils.GetModelWidth(_vrmGo);
+                
+                Logger.LogWarning($"__________ vrmWidth {vrmWidth}");
 
                 _settings.HeightOffsetY = playerHeight - vrmHeight;
+                _settings.PlayerHeight = playerHeight;
+                _settings.VrmHeight = vrmHeight;
                 
-                _settings.PlayerVrmScale = vrmHeight / playerHeight;
-                Logger.Log($"vrmHeight {vrmHeight} -- playerHeight {playerHeight} -- _settings.PlayerVrmScale {_settings.PlayerVrmScale}");
+                _settings.VrmRadius = vrmWidth * 1.1f;
 
+                _settings.PlayerVrmScale = vrmHeight / playerHeight;
+               
+                _settings.PlayerVrmScaleVector3 = new Vector3(_settings.PlayerVrmScale, _settings.PlayerVrmScale, _settings.PlayerVrmScale);
+                Logger.Log($"vrmHeight {vrmHeight} -- playerHeight {playerHeight} -- _settings.PlayerVrmScale {_settings.PlayerVrmScale} -- HeightOffsetY {_settings.HeightOffsetY}");
             }
 
 
-            Logger.Log($"_settings.HeightOffsetY -> {_settings.HeightOffsetY} _settings.PlayerVrmScale -> {_settings.PlayerVrmScale}");
             CoroutineHelper.Instance.StartCoroutine(ProcessMaterialsCoroutine());
         }
 

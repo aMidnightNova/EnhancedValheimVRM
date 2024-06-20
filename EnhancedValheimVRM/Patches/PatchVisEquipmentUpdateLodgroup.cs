@@ -104,15 +104,15 @@ namespace EnhancedValheimVRM
                     //     if (smr.rootBone != null)
                     //     {
                     //         smr.rootBone.localPosition = settings.RightHandItemPos;
-                    //         smr.rootBone.localScale = (Vector3.one * settings.EquipmentScale);;
+                    //         smr.rootBone.localScale = settings.PlayerVrmScaleVector3;
                     //     }
                     // }
                 }
                 else
                 {
-                    HandleRightItem(go, vrmAnimator, settings);
+                    
                 }
-
+                HandleRightItem(go, vrmAnimator, settings);
             }
         }
 
@@ -165,8 +165,9 @@ namespace EnhancedValheimVRM
             else
             {
                // go.transform.SetParent(vrmAnimator.GetBoneTransform(HumanBodyBones.Head), false);
-                go.transform.localScale = settings.HelmetScale;
-                go.transform.localPosition = settings.HelmetOffset;
+               go.transform.localPosition = settings.HelmetOffset;
+               //go.transform.localScale = settings.HelmetScale;
+               go.transform.localScale = Vector3.Scale(Vector3.one, settings.HelmetScale);
             }
         }
 
@@ -174,14 +175,16 @@ namespace EnhancedValheimVRM
         {
            // go.transform.SetParent(vrmAnimator.GetBoneTransform(HumanBodyBones.LeftHand), false);
             go.transform.localPosition = settings.LeftHandItemPos;
-            go.transform.localScale = Vector3.one * settings.EquipmentScale;
+            //go.transform.localScale = settings.PlayerVrmScaleVector3;
+            go.transform.localScale = Vector3.one;
         }
 
         private static void HandleRightItem(GameObject go, Animator vrmAnimator, VrmSettings settings)
         {
            // go.transform.SetParent(vrmAnimator.GetBoneTransform(HumanBodyBones.RightHand), false);
             go.transform.localPosition = settings.RightHandItemPos;
-            go.transform.localScale = Vector3.one * settings.EquipmentScale;
+            //go.transform.localScale = settings.PlayerVrmScaleVector3;
+            go.transform.localScale = Vector3.one;
         }
 
         private static void HandleRightBackItem(GameObject go, VisEquipment instance, Animator vrmAnimator, VrmSettings settings)
@@ -211,7 +214,8 @@ namespace EnhancedValheimVRM
             }
 
             go.transform.localPosition = offset;
-            go.transform.localScale = Vector3.one * settings.EquipmentScale;
+            //go.transform.localScale = settings.PlayerVrmScaleVector3;
+            go.transform.localScale = Vector3.one;
         }
 
         private static void HandleLeftBackItem(GameObject go, VisEquipment instance, Animator vrmAnimator, VrmSettings settings)
@@ -232,7 +236,9 @@ namespace EnhancedValheimVRM
             }
 
             // go.transform.SetParent(vrmAnimator.GetBoneTransform(HumanBodyBones.Chest), false);
-            go.transform.localScale = Vector3.one * settings.EquipmentScale;
+ 
+            //go.transform.localScale = settings.PlayerVrmScaleVector3;
+            go.transform.localScale = Vector3.one;
         }
     }
 }

@@ -11,8 +11,9 @@
         <AppDesignerFolder>Properties</AppDesignerFolder>
         <RootNamespace>EnhancedValheimVRM</RootNamespace>
         <AssemblyName>EnhancedValheimVRM</AssemblyName>
-        <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+        <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
+        <LangVersion>8</LangVersion>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <PlatformTarget>AnyCPU</PlatformTarget>
@@ -37,6 +38,7 @@
         <Reference Include="System"/>
         <Reference Include="System.Core"/>
         <Reference Include="System.Data"/>
+        <Reference Include="System.IO.Compression" />
         <Reference Include="System.Xml"/>
     </ItemGroup>
     <ItemGroup>
@@ -51,6 +53,7 @@
         <Compile Include="Patches\PatchMonoUpdater.cs" />
         <Compile Include="Patches\PatchOnRagdollCreated.cs" />
         <Compile Include="Patches\PatchPlayerAwake.cs" />
+        <Compile Include="Patches\PatchPlayerOnDeath.cs" />
         <Compile Include="Patches\PatchPlayerOnDestroy.cs" />
         <Compile Include="Patches\PatchSetVisible.cs" />
         <Compile Include="Patches\PatchShaderFind.cs" />

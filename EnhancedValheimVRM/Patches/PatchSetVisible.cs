@@ -19,7 +19,7 @@ namespace EnhancedValheimVRM
                 var vrmGo = vrmInstance.GetGameObject();
                 if (vrmGo == null)
                 {
-                    Logger.LogError("VrmGo Is Null");
+                    Logger.LogError("VrmGo Is Null SetVisible");
                     return;
                 }
                 var lodGroup = vrmGo.GetComponent<LODGroup>();

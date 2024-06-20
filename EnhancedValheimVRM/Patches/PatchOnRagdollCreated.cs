@@ -24,18 +24,29 @@ namespace EnhancedValheimVRM
             }
 
             var ragdollAnimator = ragdoll.gameObject.AddComponent<Animator>();
+            ragdollAnimator.keepAnimatorStateOnDisable = true;
+            ragdollAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate; 
+            
+            
+            if (ragdollAnimator == null)
+            {
+                Logger.Log("____________________ ragdollAnimator Null");
+            }
 
-            var characterAnimator = __instance.GetField<Character, Animator>("m_animator");
+            var characterAnimator = player.GetField<Player, Animator>("m_animator");
+            if (characterAnimator == null)
+            {
+                Logger.Log("____________________ characterAnimator Null");
+            }
+            
+
 
             ragdollAnimator.avatar = characterAnimator.avatar;
 
-            ragdollAnimator.keepAnimatorStateOnDisable = true;
-            ragdollAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-
-
+ 
             vrmGo.transform.SetParent(ragdoll.transform, false);
 
-            vrmGo.GetComponent<VrmAnimator>().Setup(player, ragdollAnimator, vrmInstance);
+            vrmGo.GetComponent<VrmAnimator>().Setup(player, ragdollAnimator, vrmInstance, true);
         }
     }
 }
