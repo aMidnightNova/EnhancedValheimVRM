@@ -24,14 +24,14 @@ namespace EnhancedValheimVRM
                     Logger.LogError("VrmGo Is Null GetHeadPoint");
                     return true;
                 }
-                var vrmAnimator = vrmGo.GetComponentInChildren<Animator>();
+                var vrmGoAnimator = vrmGo.GetComponentInChildren<Animator>();
 
-                if (vrmAnimator == null || vrmAnimator.avatar == null)
+                if (vrmGoAnimator == null || vrmGoAnimator.avatar == null)
                 {
                     return true;
                 }
 
-                var head = vrmAnimator.GetBoneTransform(HumanBodyBones.Head);
+                var head = vrmGoAnimator.GetBoneTransform(HumanBodyBones.Head);
 
                 if (head == null)
                 {

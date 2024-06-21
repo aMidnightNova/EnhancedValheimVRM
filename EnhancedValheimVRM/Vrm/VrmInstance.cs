@@ -127,7 +127,7 @@ namespace EnhancedValheimVRM
             return _vrmGo;
         }
 
-        public Animator GetAnimator()
+        public Animator GetVrmGoAnimator()
         {
             if (_vrmGo == null)
             {

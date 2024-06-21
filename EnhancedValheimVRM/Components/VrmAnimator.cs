@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
 
@@ -26,8 +27,8 @@ namespace EnhancedValheimVRM
         const int Crouch = -2015693266;
         const int HoldingMast = -2110678410;
         const int HoldingDragon = -2076823180; // that thing in a front of longship
-        const int RollingLeft = 21017266; 
-        const int RollingRight = 1353639306; 
+        const int RollingLeft = 21017266;
+        const int RollingRight = 1353639306;
 
 
         private readonly List<int> _adjustHipHashes = new List<int>()
@@ -44,11 +45,34 @@ namespace EnhancedValheimVRM
             GetUpFromBed
         };
 
+        public GameObject LeftItemInstance { get; set; }
+        public GameObject RightItemInstance { get; set; }
+        public GameObject LeftBackItemInstance { get; set; }
+        public GameObject RightBackItemInstance { get; set; }
+
+        // State variables for item names
+        public string LeftItemInstanceName { get; set; }
+        public string RightItemInstanceName { get; set; }
+        public string LeftBackItemInstanceName { get; set; }
+        public string RightBackItemInstanceName { get; set; }
+        
+
+        // this list is used to do special case stuff in the update loop.
+        public static readonly List<string> RiggedItemNames = new List<string>()
+        {
+            "KnifeSkollAndHati"
+        };
+
+        // this list is used to prevent the loading of the bones from the player model into the rigged item.
+        public static readonly List<string> RiggedItemNamesOther = new List<string>()
+        {
+            "skollandhati"
+        };
 
         private Player _player;
         private VrmInstance _vrmInstance;
         private Animator _playerAnimator;
-        private Animator _vrmAnimator;
+        private Animator _vrmGoAnimator;
         private VrmSettings _vrmSettings;
 
 
@@ -71,6 +95,11 @@ namespace EnhancedValheimVRM
 
         private bool _isRagdoll = false;
 
+ 
+        VisEquipment _visEquipment;
+        string _leftHandBoneName;
+        string _rightHandBoneName;
+ 
         public void Setup(Player player, Animator playerAnimator, VrmInstance vrmInstance, bool isRagdoll = false)
         {
             _player = player;
@@ -80,31 +109,41 @@ namespace EnhancedValheimVRM
             _vrmSettings = vrmInstance.GetSettings();
             _playerCollider = _player.GetComponent<CapsuleCollider>();
 
+            if (_player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
+            {
+                _visEquipment = visEquipment;
+            }
+
+            _leftHandBoneName = BoneTransformer.MapHumanBodyBoneToPlayerBoneName(HumanBodyBones.LeftHand);
+            _rightHandBoneName = BoneTransformer.MapHumanBodyBoneToPlayerBoneName(HumanBodyBones.RightHand);
+            
+            
+
             Logger.Log("__________VRM Animation Controller SETUP");
 
             var vrmGo = _vrmInstance.GetGameObject();
-            _vrmAnimator = vrmGo.GetComponent<Animator>();
+            _vrmGoAnimator = vrmGo.GetComponent<Animator>();
             // this is attached to vrmGo, this the below is the same as above, but the above is more clear.
-            //_vrmAnimator = GetComponent<Animator>();
-            _vrmAnimator.applyRootMotion = true;
-            _vrmAnimator.updateMode = _playerAnimator.updateMode;
-            _vrmAnimator.feetPivotActive = _playerAnimator.feetPivotActive;
-            _vrmAnimator.layersAffectMassCenter = _playerAnimator.layersAffectMassCenter;
-            _vrmAnimator.stabilizeFeet = _playerAnimator.stabilizeFeet;
+            //_vrmGoAnimator = GetComponent<Animator>();
+            _vrmGoAnimator.applyRootMotion = true;
+            _vrmGoAnimator.updateMode = _playerAnimator.updateMode;
+            _vrmGoAnimator.feetPivotActive = _playerAnimator.feetPivotActive;
+            _vrmGoAnimator.layersAffectMassCenter = _playerAnimator.layersAffectMassCenter;
+            _vrmGoAnimator.stabilizeFeet = _playerAnimator.stabilizeFeet;
 
 
-            Transform vrmLeftFoot = _vrmAnimator.GetBoneTransform(HumanBodyBones.LeftFoot);
-            Transform vrmRightFoot = _vrmAnimator.GetBoneTransform(HumanBodyBones.RightFoot);
+            Transform vrmLeftFoot = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftFoot);
+            Transform vrmRightFoot = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightFoot);
 
             Transform playerLeftFoot = _playerAnimator.GetBoneTransform(HumanBodyBones.LeftFoot);
             Transform playerRightFoot = _playerAnimator.GetBoneTransform(HumanBodyBones.RightFoot);
-            Transform vrmHips = _vrmAnimator.GetBoneTransform(HumanBodyBones.Hips);
+            Transform vrmHips = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Hips);
 
 
-            offset = ((vrmLeftFoot.position.y - _vrmAnimator.transform.position.y) +
-                      (vrmRightFoot.position.y - _vrmAnimator.transform.position.y)) * 0.5f;
+            offset = ((vrmLeftFoot.position.y - _vrmGoAnimator.transform.position.y) +
+                      (vrmRightFoot.position.y - _vrmGoAnimator.transform.position.y)) * 0.5f;
             offsetH = ((playerLeftFoot.position + playerRightFoot.position) -
-                      (vrmLeftFoot.position + vrmRightFoot.position)).y * 0.5f;
+                       (vrmLeftFoot.position + vrmRightFoot.position)).y * 0.5f;
 
             //_player.gameObject.AddComponent<VrmController>();
             CreatePoseHandlers();
@@ -173,17 +212,17 @@ namespace EnhancedValheimVRM
         {
             if (_player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
             {
-                visEquipment.m_leftHand = _vrmAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
-                visEquipment.m_rightHand = _vrmAnimator.GetBoneTransform(HumanBodyBones.RightHand);
+                visEquipment.m_leftHand = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
+                visEquipment.m_rightHand = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand);
 
-                visEquipment.m_helmet = _vrmAnimator.GetBoneTransform(HumanBodyBones.Head);
-                visEquipment.m_backShield = _vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
-                visEquipment.m_backMelee = _vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
+                visEquipment.m_helmet = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Head);
+                visEquipment.m_backShield = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest);
+                visEquipment.m_backMelee = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest);
 
-                visEquipment.m_backTwohandedMelee = _vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
-                visEquipment.m_backBow = _vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
-                visEquipment.m_backTool = _vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
-                visEquipment.m_backAtgeir = _vrmAnimator.GetBoneTransform(HumanBodyBones.Chest);
+                visEquipment.m_backTwohandedMelee = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest);
+                visEquipment.m_backBow = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest);
+                visEquipment.m_backTool = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest);
+                visEquipment.m_backAtgeir = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest);
             }
         }
 
@@ -218,17 +257,17 @@ namespace EnhancedValheimVRM
             if (_player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
             {
                 Logger.Log("_______________ m_visEquipment");
-                SetAttachPoint(visEquipment.m_leftHand, _vrmAnimator.GetBoneTransform(HumanBodyBones.LeftHand));
-                SetAttachPoint(visEquipment.m_rightHand, _vrmAnimator.GetBoneTransform(HumanBodyBones.RightHand));
+                SetAttachPoint(visEquipment.m_leftHand, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand));
+                SetAttachPoint(visEquipment.m_rightHand, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand));
 
-                SetAttachPoint(visEquipment.m_helmet, _vrmAnimator.GetBoneTransform(HumanBodyBones.Head));
-                SetAttachPoint(visEquipment.m_backShield, _vrmAnimator.GetBoneTransform(HumanBodyBones.Chest));
-                SetAttachPoint(visEquipment.m_backMelee, _vrmAnimator.GetBoneTransform(HumanBodyBones.Chest));
+                SetAttachPoint(visEquipment.m_helmet, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Head));
+                SetAttachPoint(visEquipment.m_backShield, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
+                SetAttachPoint(visEquipment.m_backMelee, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
 
-                SetAttachPoint(visEquipment.m_backTwohandedMelee, _vrmAnimator.GetBoneTransform(HumanBodyBones.Chest));
-                SetAttachPoint(visEquipment.m_backBow, _vrmAnimator.GetBoneTransform(HumanBodyBones.Chest));
-                SetAttachPoint(visEquipment.m_backTool, _vrmAnimator.GetBoneTransform(HumanBodyBones.Chest));
-                SetAttachPoint(visEquipment.m_backAtgeir, _vrmAnimator.GetBoneTransform(HumanBodyBones.Spine));
+                SetAttachPoint(visEquipment.m_backTwohandedMelee, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
+                SetAttachPoint(visEquipment.m_backBow, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
+                SetAttachPoint(visEquipment.m_backTool, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
+                SetAttachPoint(visEquipment.m_backAtgeir, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Spine));
             }
         }
 
@@ -242,7 +281,7 @@ namespace EnhancedValheimVRM
             Logger.LogWarning("CreatePoseHandlers");
             OnDestroy();
             _playerPoseHandler = new HumanPoseHandler(_playerAnimator.avatar, _playerAnimator.transform);
-            _vrmPoseHandler = new HumanPoseHandler(_vrmAnimator.avatar, _vrmAnimator.transform);
+            _vrmPoseHandler = new HumanPoseHandler(_vrmGoAnimator.avatar, _vrmGoAnimator.transform);
         }
 
 
@@ -278,6 +317,7 @@ namespace EnhancedValheimVRM
 
         private void UpdateBones()
         {
+            
             if (_isRagdoll) return;
 
             foreach (HumanBodyBones bone in Enum.GetValues(typeof(HumanBodyBones)))
@@ -285,16 +325,15 @@ namespace EnhancedValheimVRM
                 if (bone == HumanBodyBones.LastBone) continue;
 
                 var playerBone = _playerAnimator.GetBoneTransform(bone);
-                var vrmBone = _vrmAnimator.GetBoneTransform(bone);
-                //_playerAnimator.rootPosition = _vrmAnimator.rootPosition;
+                var vrmBone = _vrmGoAnimator.GetBoneTransform(bone);
+                //_playerAnimator.rootPosition = _vrmGoAnimator.rootPosition;
                 if (playerBone != null && vrmBone != null)
                 {
                     playerBone.position = vrmBone.position;
                 }
             }
-            
         }
- 
+
 
         private static Material _playerSizeGizmoMaterial;
         private CapsuleCollider _playerCollider;
@@ -313,7 +352,6 @@ namespace EnhancedValheimVRM
                 return;
             }
 
- 
 
             if (_playerSizeGizmoMaterial == null)
             {
@@ -340,15 +378,15 @@ namespace EnhancedValheimVRM
 
         private void Update()
         {
-            _vrmAnimator.transform.localPosition = Vector3.zero;
+            _vrmGoAnimator.transform.localPosition = Vector3.zero;
 
             //ActivateSizeGizmo();
- 
-            UpdateBones();
 
-            //_vrmAnimator.transform.localPosition -= Vector3.up * (offset * _vrmSettings.PlayerVrmScale);
+            //UpdateBones();
 
-            //_vrmAnimator.transform.localPosition += Vector3.up * _vrmSettings.HeightOffsetY;
+            //_vrmGoAnimator.transform.localPosition -= Vector3.up * (offset * _vrmSettings.PlayerVrmScale);
+
+            //_vrmGoAnimator.transform.localPosition += Vector3.up * _vrmSettings.HeightOffsetY;
         }
 
 
@@ -357,7 +395,7 @@ namespace EnhancedValheimVRM
         //      
         //
         //
-        //     _vrmAnimator.transform.localPosition = Vector3.zero;
+        //     _vrmGoAnimator.transform.localPosition = Vector3.zero;
         //     _playerAnimator.transform.localPosition = Vector3.zero;
         //     
         //     _playerPoseHandler.GetHumanPose(ref _humanPose);
@@ -418,8 +456,12 @@ namespace EnhancedValheimVRM
             //Logger.Log("CustomLateUpdate");
 
             // this stops calulations from adding up per frame.
-           _vrmAnimator.transform.localPosition = Vector3.zero;
+            _vrmGoAnimator.transform.localPosition = Vector3.zero;
 
+            Transform playerHips = _playerAnimator.GetBoneTransform(HumanBodyBones.Hips);
+            Transform vrmHips = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Hips);
+
+            //vrmHips.position = playerHips.position;
 
             _playerPoseHandler.GetHumanPose(ref _humanPose);
             _vrmPoseHandler.SetHumanPose(ref _humanPose);
@@ -436,64 +478,87 @@ namespace EnhancedValheimVRM
             // }
 
 
-            Transform playerHips = _playerAnimator.GetBoneTransform(HumanBodyBones.Hips);
-            Transform vrmHips = _vrmAnimator.GetBoneTransform(HumanBodyBones.Hips);
- 
-
-            Transform vrmLeftFoot = _vrmAnimator.GetBoneTransform(HumanBodyBones.LeftFoot);
-            Transform vrmRightFoot = _vrmAnimator.GetBoneTransform(HumanBodyBones.RightFoot);
-
+            Transform vrmLeftFoot = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftFoot);
+            Transform vrmRightFoot = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightFoot);
             
 
+            var itemName = _visEquipment.GetFieldValue<FieldInfo>("m_rightItem")?.GetValue(_visEquipment) as string;
+            if (itemName == "KnifeSkollAndHati")
+            {
+                if (_visEquipment.TryGetField<VisEquipment, GameObject>("m_rightItemInstance", out var go))
+                {
+                    Animator animator = go.GetComponent<Animator>();
+                    if (animator != null)
+                    {
+                        Transform vrmLeftHand = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
+                        Transform vrmRightHand = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand);
+                        
+                        Transform itemLeftHand = BoneTransformer.FindBoneInHierarchy(go.transform, _leftHandBoneName);
+                        Transform itemRightHand = BoneTransformer.FindBoneInHierarchy(go.transform, _rightHandBoneName);
+
+
+                        itemLeftHand.position = vrmLeftHand.position;
+                        itemRightHand.position = vrmRightHand.position;
+                    }
+                }
+            }
+
+            // playerLeftHand.position = vrmLeftHand.position;
+            // playerRightHand.position = vrmRightHand.position;
+            //
+            // _leftHandAttach.position = (vrmLeftHand.position + _leftHandOffset);
+            // _rightHandAttach.position = (vrmRightHand.position + _rightHandOffset);
             
-             var stateHash = _playerAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
-            
-            
-             var hipOffsetPosition = Vector3.zero;
-             
-             var surfacePlane = Mathf.Min(vrmLeftFoot.position.y - _vrmAnimator.transform.position.y,
-                 vrmRightFoot.position.y - _vrmAnimator.transform.position.y);
 
-    
-             
-             var _offset = ((vrmLeftFoot.position.y - _vrmAnimator.transform.position.y) +
-                       (vrmRightFoot.position.y - _vrmAnimator.transform.position.y)) * 0.5f;
 
-             var which = "";
-             if (!IsStartMenu()) 
-             {
-                 if (_adjustHipHashes.Contains(stateHash)) //_adjustHipHashes.Contains(stateHash) || 
-                 {
-                     hipOffsetPosition += new Vector3(0, -surfacePlane, 0); // goodish
-                     which = "In Hip Hash";
+            var stateHash = _playerAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
 
-                     //hipOffsetPosition += new Vector3(0, (-ground + offset), 0);
 
-                 }
-                 else
-                 {
-                     hipOffsetPosition += new Vector3(0, -surfacePlane + offset, 0); // goodish
-                     
-                     which = "Not In Hip Hash";
-                     // hipOffsetPosition = new Vector3(0f, offset, 0f);
-                 }
-             }
-             Logger.Log($"{which}, {stateHash} -> anim parent y,{_vrmAnimator.transform.position.y }, l foot y {vrmLeftFoot.position.y}, surfacePlane {surfacePlane}, offset {offset}, _offset {_offset}");
+            var hipOffsetPosition = Vector3.zero;
 
-             if (stateHash == FirstRise)
-             { // not sure why this is needed, i probably borked calculations. but its good enough for now.
-                 hipOffsetPosition += Vector3.up * 0.1f;
-             }
-             
-             vrmHips.position += hipOffsetPosition; 
-                
-            
-              //vrmHips.Translate(0, hipOffsetPosition.y, 0, Space.World);
-             //_vrmAnimator.transform.Translate(0, -hipOffsetPosition.y, 0, Space.World);
- 
- 
-            UpdateBones(); 
- 
+            var surfacePlane = Mathf.Min(vrmLeftFoot.position.y - _vrmGoAnimator.transform.position.y,
+                vrmRightFoot.position.y - _vrmGoAnimator.transform.position.y);
+            var surfacePlaneHip =  (vrmHips.position.y - _vrmGoAnimator.transform.position.y);
+
+            var _offset = ((vrmLeftFoot.position.y - _vrmGoAnimator.transform.position.y) +
+                           (vrmRightFoot.position.y - _vrmGoAnimator.transform.position.y)) * 0.5f;
+
+            var which = "";
+            if (!IsStartMenu())
+            {
+                if (_adjustHipHashes.Contains(stateHash)) //_adjustHipHashes.Contains(stateHash) || 
+                {
+                    hipOffsetPosition += new Vector3(0, -surfacePlane, 0); // goodish
+                    which = "In Hip Hash";
+
+                    //hipOffsetPosition += new Vector3(0, (-ground + offset), 0);
+                }
+                else
+                {
+                    hipOffsetPosition += new Vector3(0, -surfacePlane + offset, 0); // goodish
+
+                    which = "Not In Hip Hash";
+                    // hipOffsetPosition = new Vector3(0f, offset, 0f);
+                }
+            }
+
+            //Logger.Log($"{which}, {stateHash} -> surfacePlane {surfacePlane}, surfacePlaneHip {surfacePlaneHip}, offset {offset}, _offset {_offset}");
+
+            if (stateHash == FirstRise)
+            {
+                // not sure why this is needed, i probably borked calculations. but its good enough for now.
+                hipOffsetPosition += Vector3.up * 0.1f;
+            }
+
+            //vrmHips.position += hipOffsetPosition; 
+
+
+            //vrmHips.Translate(0, hipOffsetPosition.y, 0, Space.World);
+            //_vrmGoAnimator.transform.Translate(0, hipOffsetPosition.y, 0, Space.World);
+
+
+            //UpdateBones();
+
 
             //vrmHips.Translate(0, -ground + offset, 0, Space.World);
             //playerHips.Translate(0, -ground + offset, 0, Space.World);
@@ -502,7 +567,7 @@ namespace EnhancedValheimVRM
 
             //playerHips.Translate(0, -ground + offset, 0, Space.World);
             //
-            //_vrmAnimator.transform.localPosition -= Vector3.up * (offset * _vrmSettings.PlayerVrmScale);
+            //_vrmGoAnimator.transform.localPosition -= Vector3.up * (offset * _vrmSettings.PlayerVrmScale);
         }
 
 

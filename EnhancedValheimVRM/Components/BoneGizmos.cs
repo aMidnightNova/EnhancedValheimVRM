@@ -16,7 +16,7 @@ namespace EnhancedValheimVRM // TODO: fix this, it does not work... yet.
         public void Setup(Player player, VrmInstance vrmInstance)
         {
             _player = player;
-            _vAnimator = vrmInstance.GetAnimator();
+            _vAnimator = vrmInstance.GetVrmGoAnimator();
             _animator = _player.GetField<Player, Animator>("m_animator");
 
             InitializeLineRenderersPlayer();

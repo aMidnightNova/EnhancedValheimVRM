@@ -221,7 +221,44 @@ namespace EnhancedValheimVRM
             { Bones.LeftToes, new List<string> { "LeftToeBase" } },
             { Bones.RightToes, new List<string> { "RightToeBase" } } //RightToeBase_end
         };
+        
+        public static string MapHumanBodyBoneToPlayerBoneName(HumanBodyBones humanBodyBone)
+        {
+            if (humanBodyBone == HumanBodyBones.LastBone) 
+            {
+                Logger.LogError("Invalid HumanBodyBones value: HumanBodyBones.LastBone");
+                return null;
+            }
 
+            // Convert HumanBodyBones to custom Bones enum
+            if (!Enum.TryParse(humanBodyBone.ToString(), out BoneTransformer.Bones boneEnum))
+            {
+                Logger.LogError($"Mapping from HumanBodyBones to Bones enum failed for {humanBodyBone}");
+                return null;
+            }
+
+            // Get the corresponding player bone name list from the playerBoneMap
+            if (!BoneTransformer.playerBoneMap.TryGetValue(boneEnum, out List<string> playerBoneNames) || playerBoneNames.Count == 0)
+            {
+                Logger.LogError($"No mapping found for bone {boneEnum} in playerBoneMap");
+                return null;
+            }
+
+            // Return the first bone name from the list
+            return playerBoneNames[0];
+        }
+        public static Transform FindBoneInHierarchy(Transform root, string boneName)
+        {
+            if (root.name == boneName) return root;
+
+            foreach (Transform child in root)
+            {
+                Transform result = FindBoneInHierarchy(child, boneName);
+                if (result != null) return result;
+            }
+
+            return null;
+        }
         public BoneTransformer(Player player, GameObject vrmGo)
         {
             PlayerBoneToVrmBone = new Dictionary<string, Transform>();
@@ -683,17 +720,17 @@ namespace EnhancedValheimVRM
         public void CopyBoneTransforms2(Player player, VrmInstance vrmInstance)
         {
             var playerAnimator = player.GetField<Player, Animator>("m_animator");
-            var vrmAnimator = vrmInstance.GetAnimator();
+            var vrmGoAnimator = vrmInstance.GetVrmGoAnimator();
 
 
             playerAnimator.enabled = false;
-            vrmAnimator.enabled = false;
+            vrmGoAnimator.enabled = false;
 
             foreach (HumanBodyBones bone in Enum.GetValues(typeof(HumanBodyBones)))
             {
                 if (bone == HumanBodyBones.LastBone) continue;
 
-                Transform sourceBone = vrmAnimator.GetBoneTransform(bone);
+                Transform sourceBone = vrmGoAnimator.GetBoneTransform(bone);
                 Transform targetBone = playerAnimator.GetBoneTransform(bone);
 
                 if (sourceBone != null && targetBone != null)
@@ -705,20 +742,20 @@ namespace EnhancedValheimVRM
             playerAnimator.Rebind();
 
             playerAnimator.enabled = true;
-            vrmAnimator.enabled = true;
+            vrmGoAnimator.enabled = true;
         }
 
         public void CopyBoneTransforms(Player player, VrmInstance vrmInstance)
         {
             var playerAnimator = player.GetField<Player, Animator>("m_animator");
-            var vrmAnimator = vrmInstance.GetAnimator();
+            var vrmGoAnimator = vrmInstance.GetVrmGoAnimator();
 
 
             //var visEquipment = player.GetField<Player, VisEquipment>("m_visEquipment");
             //var playerSmr = visEquipment.m_bodyModel;
 
             var playerSmr = playerAnimator.GetComponentInChildren<SkinnedMeshRenderer>();
-            var vrmSmr = vrmAnimator.GetComponentInChildren<SkinnedMeshRenderer>();
+            var vrmSmr = vrmGoAnimator.GetComponentInChildren<SkinnedMeshRenderer>();
 
             if (playerSmr == null || vrmSmr == null)
             {
@@ -728,7 +765,7 @@ namespace EnhancedValheimVRM
 
             // Disable animators during the transformation process
             playerAnimator.enabled = false;
-            vrmAnimator.enabled = false;
+            vrmGoAnimator.enabled = false;
 
             HumanBodyBones[] bones = (HumanBodyBones[])Enum.GetValues(typeof(HumanBodyBones));
 
@@ -775,7 +812,7 @@ namespace EnhancedValheimVRM
 
             // Enable animators after the transformation process
             playerAnimator.enabled = true;
-            vrmAnimator.enabled = true;
+            vrmGoAnimator.enabled = true;
 
             playerAnimator.Rebind();
         }

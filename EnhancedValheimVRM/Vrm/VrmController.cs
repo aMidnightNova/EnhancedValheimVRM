@@ -69,10 +69,10 @@ namespace EnhancedValheimVRM
                 // }
 
 
-                var vrmAnimationController = player.GetComponent<VrmAnimator>();
-                if (vrmAnimationController != null)
+                var vrmAnimator = player.GetComponent<VrmAnimator>();
+                if (vrmAnimator != null)
                 {
-                    UnityEngine.Object.Destroy(vrmAnimationController);
+                    UnityEngine.Object.Destroy(vrmAnimator);
                 }
 
                 var vrmEyeController = player.GetComponent<VrmEyeAnimator>();
@@ -103,18 +103,7 @@ namespace EnhancedValheimVRM
                 smr.forceRenderingOff = true;
                 smr.updateWhenOffscreen = true;
 
-                if (smr.name == "body")
-                {
-                    //smr.rootBone.localScale = Vector3.Scale(smr.rootBone.localScale, settings.PlayerVrmScaleVector3);
-                    smr.rootBone.localScale = settings.PlayerVrmScaleVector3;
-                }
-                
-                
-                foreach (var mat in smr.materials)
-                {
-                    Logger.Log($"Mat Name: -> {mat.name} Mat Shader: -> {mat.shader.name}");
-                }
-                //yield return null;
+                yield return null;
             }
  
             var vrmGo = vrmInstance.GetGameObject();
@@ -188,16 +177,16 @@ namespace EnhancedValheimVRM
                     Logger.LogError("VrmGo Is Null VrmSetup 2");
                     yield break;
                 }
-                var animationController = vrmGo.GetComponent<VrmAnimator>();
+                var vrmAnimator = vrmGo.GetComponent<VrmAnimator>();
 
-                if (animationController == null)
+                if (vrmAnimator == null)
                 {
-                    animationController = vrmGo.AddComponent<VrmAnimator>();
-                    animationController.Setup(player, playerAnimator, vrmInstance);
+                    vrmAnimator = vrmGo.AddComponent<VrmAnimator>();
+                    vrmAnimator.Setup(player, playerAnimator, vrmInstance);
                 }
                 else
                 {
-                    animationController.Setup(player, playerAnimator, vrmInstance);
+                    vrmAnimator.Setup(player, playerAnimator, vrmInstance);
                 }
                 
 
@@ -277,7 +266,7 @@ namespace EnhancedValheimVRM
             var playerName = player.GetPlayerDisplayName();
             if (_vrmInstances.TryGetValue(playerName, out var instance))
             {
-                return instance.GetAnimator();
+                return instance.GetVrmGoAnimator();
             }
 
             return null;
