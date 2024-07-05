@@ -72,10 +72,11 @@ namespace EnhancedValheimVRM
                 foreach (SkinnedMeshRenderer componentsInChild in instance.GetComponentsInChildren<SkinnedMeshRenderer>())
                 {
                     // stop the sharing of bones from the player model to the item instance.
-                    if (VrmAnimator.RiggedItemNamesOther.Contains(componentsInChild.name))
+                    if (GameItem.IsSpecialCase(componentsInChild.name))
                     {
                         continue;
                     }
+                    Logger.Log($"attach_skin item name -> {componentsInChild.name}", Logger.LogLevel.All);
 
                     componentsInChild.rootBone = __instance.m_bodyModel.rootBone;
                     componentsInChild.bones = __instance.m_bodyModel.bones;

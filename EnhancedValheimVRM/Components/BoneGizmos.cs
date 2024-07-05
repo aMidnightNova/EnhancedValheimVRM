@@ -12,23 +12,44 @@ namespace EnhancedValheimVRM // TODO: fix this, it does not work... yet.
         private List<LineRenderer> _vrmLineRenderers = new List<LineRenderer>();
         private bool _playerGizmos = false;
         private bool _vrmGizmos = false;
+        private VisEquipment _visEquipment;
+        private Shader _shader = Shader.Find("Unlit/Color");
 
         public void Setup(Player player, VrmInstance vrmInstance)
         {
             _player = player;
             _vAnimator = vrmInstance.GetVrmGoAnimator();
             _animator = _player.GetField<Player, Animator>("m_animator");
+            if (_player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
+            {
+                _visEquipment = visEquipment;
+            }
 
-            InitializeLineRenderersPlayer();
-            InitializeLineRenderersVrm();
-        }
-
-        private void InitializeLineRenderersPlayer()
-        {
-            _playerGizmos = true;
             var bones = _animator.GetComponentsInChildren<Transform>();
 
-            foreach (var bone in bones)
+            if (_visEquipment.TryGetField<VisEquipment, GameObject>("m_rightItemInstance", out var go))
+            {
+                var goAnimator = go.GetComponentInChildren<Animator>();
+                bones = goAnimator.GetComponentsInChildren<Transform>();
+
+
+                _animator = goAnimator;
+                Logger.Log("_ ____ goAnimator");
+            }
+            
+            
+            
+            InitializeLineRenderers(bones);
+            //InitializeLineRenderersVrm();
+            UpdateLineRenderers();
+        }
+
+        private void InitializeLineRenderers(Transform[] transforms)
+        {
+            _playerGizmos = true;
+            
+
+            foreach (var bone in transforms)
             {
                 _playerLineRenderers.Add(CreateLineRenderer(bone, Color.red));
                 _playerLineRenderers.Add(CreateLineRenderer(bone, Color.green));
@@ -52,7 +73,7 @@ namespace EnhancedValheimVRM // TODO: fix this, it does not work... yet.
         private LineRenderer CreateLineRenderer(Transform bone, Color color)
         {
             var lineRenderer = new GameObject("BoneGizmoLine").AddComponent<LineRenderer>();
-            lineRenderer.transform.SetParent(bone);
+            lineRenderer.transform.SetParent(bone, false);
             lineRenderer.startColor = color;
             lineRenderer.endColor = color;
             lineRenderer.startWidth = 0.01f;
@@ -60,21 +81,21 @@ namespace EnhancedValheimVRM // TODO: fix this, it does not work... yet.
             lineRenderer.positionCount = 2;
             lineRenderer.useWorldSpace = false;
 
-            Material lineMaterial = new Material(Shader.Find("Unlit/Color"));
+            Material lineMaterial = new Material(_shader);
             lineMaterial.color = color;
             lineRenderer.material = lineMaterial;
 
             return lineRenderer;
         }
 
-        private void Update()
+        private void LateUpdate()
         {
-            UpdateLineRenderers();
+            //UpdateLineRenderers();
         }
 
         private void UpdateLineRenderers()
         {
-            int index = 0;
+            var index = 0;
 
             if (_playerGizmos)
             {
@@ -82,13 +103,13 @@ namespace EnhancedValheimVRM // TODO: fix this, it does not work... yet.
                 {
                     if (index + 2 < _playerLineRenderers.Count)
                     {
-                        Vector3 boneRight = bone.TransformDirection(Vector3.right * 0.1f);
-                        Vector3 boneUp = bone.TransformDirection(Vector3.up * 0.1f);
-                        Vector3 boneForward = bone.TransformDirection(Vector3.forward * 0.1f);
+                        var boneRight = bone.TransformDirection(Vector3.right * 0.0004f);
+                        var boneUp = bone.TransformDirection(Vector3.up * 0.0004f);
+                        var boneForward = bone.TransformDirection(Vector3.forward * 0.0004f);
 
-                        UpdateLineRenderer(_playerLineRenderers[index++], bone.position, bone.position + boneRight);
-                        UpdateLineRenderer(_playerLineRenderers[index++], bone.position, bone.position + boneUp);
-                        UpdateLineRenderer(_playerLineRenderers[index++], bone.position, bone.position + boneForward);
+                        UpdateLineRenderer(_playerLineRenderers[index++], bone.localPosition, bone.localPosition + boneRight);
+                        UpdateLineRenderer(_playerLineRenderers[index++], bone.localPosition, bone.localPosition + boneUp);
+                        UpdateLineRenderer(_playerLineRenderers[index++], bone.localPosition, bone.localPosition + boneForward);
                     }
                 }
             }
@@ -101,13 +122,13 @@ namespace EnhancedValheimVRM // TODO: fix this, it does not work... yet.
                 {
                     if (index + 2 < _vrmLineRenderers.Count)
                     {
-                        Vector3 boneRight = bone.TransformDirection(Vector3.right * 0.1f);
-                        Vector3 boneUp = bone.TransformDirection(Vector3.up * 0.1f);
-                        Vector3 boneForward = bone.TransformDirection(Vector3.forward * 0.1f);
+                        var boneRight = bone.TransformDirection(Vector3.right * 0.04f);
+                        var boneUp = bone.TransformDirection(Vector3.up * 0.04f);
+                        var boneForward = bone.TransformDirection(Vector3.forward * 0.04f);
 
-                        UpdateLineRenderer(_vrmLineRenderers[index++], bone.position, bone.position + boneRight);
-                        UpdateLineRenderer(_vrmLineRenderers[index++], bone.position, bone.position + boneUp);
-                        UpdateLineRenderer(_vrmLineRenderers[index++], bone.position, bone.position + boneForward);
+                        UpdateLineRenderer(_vrmLineRenderers[index++], bone.localPosition, bone.localPosition + boneRight);
+                        UpdateLineRenderer(_vrmLineRenderers[index++], bone.localPosition, bone.localPosition + boneUp);
+                        UpdateLineRenderer(_vrmLineRenderers[index++], bone.localPosition, bone.localPosition + boneForward);
                     }
                 }
             }

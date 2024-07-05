@@ -5,7 +5,7 @@ using UnityEngine;
 namespace EnhancedValheimVRM
 {
     [HarmonyPatch(typeof(Humanoid), "OnRagdollCreated")]
-    internal static class PatchOnRagdollCreated
+    internal static class PatchHumanoidOnRagdollCreated
     {
         private static void Prefix(Humanoid __instance, Ragdoll ragdoll)
         {

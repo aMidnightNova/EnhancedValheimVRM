@@ -44,7 +44,7 @@ namespace EnhancedValheimVRM
         public bool LegsVisible = false;
 
         public float ModelBrightness = 0.8f;
-        public bool FixCameraHeight = false;
+        public bool FixCameraHeight = true;
         public bool UseMToonShader = false;
         public bool EnablePlayerFade = true;
         public bool AllowShare = true;
@@ -73,6 +73,7 @@ namespace EnhancedValheimVRM
         //Internal computed properties
         // a property {get set}
         public float HeightOffsetY { get; set; } = 1f;
+        // this is the scale of the VRM to the Player Model, typically its a smaller number but can be larger. E.G. 0.68f
         public float PlayerVrmScale { get; set; } = 1f;
         
         public float PlayerHeight { get; set; } = 1.85f;  

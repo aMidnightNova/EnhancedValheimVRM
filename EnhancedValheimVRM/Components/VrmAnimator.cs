@@ -9,70 +9,307 @@ namespace EnhancedValheimVRM
 {
     public class VrmAnimator : MonoBehaviour, IMonoUpdater
     {
+        // private const int FirstTime = -161139084;
+        // private const int StandingIdle = 229373857; // standing idle 
+        // private const int FirstRise = -1536343465; // stand up upon login
+        // private const int RiseUp = -805461806;
+        // private const int StartToSitDown = 890925016;
+        // private const int SittingIdle = -1544306596;
+        // private const int StandingUpFromSit = -805461806; // same as RiseUp
+        // private const int SittingChair = -1829310159;
+        // private const int SittingThrone = 1271596;
+        // private const int SittingShip = -675369009;
+        // private const int StartSleeping = 337039637;
+        // private const int Sleeping = -1603096;
+        // private const int GetUpFromBed = -496559199;
+        // private const int Crouch = -2015693266;
+        // private const int HoldingMast = -2110678410;
+        // private const int HoldingDragon = -2076823180; // that thing in a front of longship
+        // private const int RollingLeft = 21017266;
+        // private const int RollingRight = 1353639306;
+
+
+        // states probably no longer matter with this method.
+        // private readonly List<int> _adjustHipHashes = new List<int>()
+        // {
+        //     SittingChair,
+        //     SittingThrone,
+        //     SittingShip,
+        //     Sleeping,
+        //     //
+        //     FirstRise,
+        //     StartToSitDown,
+        //     SittingIdle,
+        //     StartSleeping,
+        //     GetUpFromBed
+        // };
+
+        // private Vector3 StateHashToOffset(int stateHash)
+        // {
+        //     switch (stateHash)
+        //     {
+        //         case StartToSitDown:
+        //         case SittingIdle:
+        //             return _vrmSettings.SittingIdleOffset;
+        //         case SittingChair:
+        //             return _vrmSettings.SittingOnChairOffset;
+        //
+        //         case SittingThrone:
+        //             return _vrmSettings.SittingOnThroneOffset;
+        //
+        //         case SittingShip:
+        //             return _vrmSettings.SittingOnShipOffset;
+        //
+        //         case HoldingMast:
+        //             return _vrmSettings.HoldingMastOffset;
+        //
+        //         case HoldingDragon:
+        //             return _vrmSettings.HoldingDragonOffset;
+        //
+        //         case Sleeping:
+        //             return _vrmSettings.SleepingOffset;
+        //
+        //         default:
+        //             return Vector3.zero;
+        //     }
+        // }
+
+
+        // private class AttachmentPoint
+        // {
+        //     public Transform Player;
+        //     public Transform Vrm;
+        //     public Vector3 PlayerOriginalLocalScale;
+        // }
+        //
+        // private List<AttachmentPoint> _attachmentPoints;
+
+        //
+        // private void SetAttachPoint(Transform playerPoint, Transform vrmPoint)
+        // {
+        //     if (playerPoint == null)
+        //     {
+        //         Logger.LogError("SetAttachPoint: playerPoint is null.");
+        //     }
+        //
+        //     if (vrmPoint == null)
+        //     {
+        //         Logger.LogError("SetAttachPoint: vrmPoint is null.");
+        //     }
+        //
+        //     _attachmentPoints.Add(new AttachmentPoint
+        //     {
+        //         Player = playerPoint,
+        //         Vrm = vrmPoint,
+        //         PlayerOriginalLocalScale = playerPoint.localScale
+        //     });
+        // }
+        //
+        // private bool _runningSetupAttach2 = false;
+        //
+        // private void SetupAttachPoints2()
+        // {
+        //     _runningSetupAttach2 = true;
+        //     _attachmentPoints = new List<AttachmentPoint>();
+        //
+        //     if (_player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
+        //     {
+        //         Logger.Log("_______________ m_visEquipment");
+        //         SetAttachPoint(visEquipment.m_leftHand, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand));
+        //         SetAttachPoint(visEquipment.m_rightHand, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand));
+        //
+        //         SetAttachPoint(visEquipment.m_helmet, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Head));
+        //         SetAttachPoint(visEquipment.m_backShield, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
+        //         SetAttachPoint(visEquipment.m_backMelee, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
+        //
+        //         SetAttachPoint(visEquipment.m_backTwohandedMelee, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
+        //         SetAttachPoint(visEquipment.m_backBow, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
+        //         SetAttachPoint(visEquipment.m_backTool, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
+        //         SetAttachPoint(visEquipment.m_backAtgeir, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Spine));
+        //     }
+        // }
+        //
+        // private void UpdateBones()
+        // {
+        //     if (_isRagdoll) return;
+        //
+        //     foreach (HumanBodyBones bone in Enum.GetValues(typeof(HumanBodyBones)))
+        //     {
+        //         if (bone == HumanBodyBones.LastBone) continue;
+        //
+        //         var playerBone = _playerAnimator.GetBoneTransform(bone);
+        //         var vrmBone = _vrmGoAnimator.GetBoneTransform(bone);
+        //         //_playerAnimator.rootPosition = _vrmGoAnimator.rootPosition;
+        //         if (playerBone != null && vrmBone != null)
+        //         {
+        //             playerBone.position = vrmBone.position;
+        //         }
+        //     }
+        // }
+
+
+        // private void Update()
+        // {
+        //
+        // }
+
+
+        // private void LateUpdate()
+        // {
+        //      
+        //
+        //
+        //     _vrmGoAnimator.transform.localPosition = Vector3.zero;
+        //     _playerAnimator.transform.localPosition = Vector3.zero;
+        //     
+        //     _playerPoseHandler.GetHumanPose(ref _humanPose);
+        //     _vrmPoseHandler.SetHumanPose(ref _humanPose);
+        //
+        //     var stateHash = _playerAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+        //
+        //     if (_runningSetupAttach2)
+        //     {
+        //         foreach (var attachmentPoint in _attachmentPoints)
+        //         {
+        //             attachmentPoint.Player.position = attachmentPoint.Vrm.position;
+        //             attachmentPoint.Player.rotation = attachmentPoint.Vrm.rotation;
+        //             attachmentPoint.Player.localScale = Vector3.Scale(attachmentPoint.Player.localScale, attachmentPoint.Vrm.localScale);
+        //         }
+        //     }
+        //
+        //
+        //
+        // }
+
+
+        // end old stuff, will clean eventuly
+
+
+        private static readonly string LeftHandBoneName = BoneTransformer.MapHumanBodyBoneToPlayerBoneName(HumanBodyBones.LeftHand);
+        private static readonly string RightHandBoneName = BoneTransformer.MapHumanBodyBoneToPlayerBoneName(HumanBodyBones.RightHand);
+
+        private static readonly string LeftMiddleFinger = BoneTransformer.MapHumanBodyBoneToPlayerBoneName(HumanBodyBones.LeftMiddleProximal);
+        private static readonly string RightMiddleFinger = BoneTransformer.MapHumanBodyBoneToPlayerBoneName(HumanBodyBones.RightMiddleProximal);
+
         public static List<IMonoUpdater> Instances { get; } = new List<IMonoUpdater>();
 
-        const int FirstTime = -161139084;
-        const int StandingIdle = 229373857; // standing idle 
-        const int FirstRise = -1536343465; // stand up upon login
-        const int RiseUp = -805461806;
-        const int StartToSitDown = 890925016;
-        const int SittingIdle = -1544306596;
-        const int StandingUpFromSit = -805461806; // same as RiseUp
-        const int SittingChair = -1829310159;
-        const int SittingThrone = 1271596;
-        const int SittingShip = -675369009;
-        const int StartSleeping = 337039637;
-        const int Sleeping = -1603096;
-        const int GetUpFromBed = -496559199;
-        const int Crouch = -2015693266;
-        const int HoldingMast = -2110678410;
-        const int HoldingDragon = -2076823180; // that thing in a front of longship
-        const int RollingLeft = 21017266;
-        const int RollingRight = 1353639306;
+        private Vector3 _leftHandItemInstanceTransformOffset;
+        private Vector3 _rightHandItemInstanceTransformOffset;
 
 
-        private readonly List<int> _adjustHipHashes = new List<int>()
+        private GameObject _leftHandItemInstance;
+        private Transform _leftHandItemInstanceTransform;
+
+
+        public GameObject LeftHandItemInstance
         {
-            SittingChair,
-            SittingThrone,
-            SittingShip,
-            Sleeping,
-            //
-            FirstRise,
-            StartToSitDown,
-            SittingIdle,
-            StartSleeping,
-            GetUpFromBed
-        };
+            get => _leftHandItemInstance;
+            set
+            {
+                _leftHandItemInstance = value;
+                if (_leftHandItemInstance != null)
+                {
+                    SetupHands();
+                }
+            }
+        }
 
-        public GameObject LeftItemInstance { get; set; }
-        public GameObject RightItemInstance { get; set; }
-        public GameObject LeftBackItemInstance { get; set; }
-        public GameObject RightBackItemInstance { get; set; }
+        private GameObject _rightHandItemInstance;
+        private Transform _rightHandItemInstanceTransform;
+
+        public GameObject RightHandItemInstance
+        {
+            get => _rightHandItemInstance;
+            set
+            {
+                _rightHandItemInstance = value;
+                if (_rightHandItemInstance != null)
+                {
+                    SetupHands();
+                }
+            }
+        }
+
+
+        private void SetupHands()
+        {
+            Transform rootBone = null;
+            if (!GameItem.IsSpecialCase(LeftHandItemInstanceName) || !GameItem.IsSpecialCase(RightHandItemInstanceName))
+            {
+                var playerSmrBody = _player.GetSmrBody();
+
+                if (playerSmrBody != null)
+                {
+                    rootBone = playerSmrBody.rootBone;
+                    if (rootBone == null)
+                    {
+                        Logger.LogWarning("Root bone is null for player SMR body.");
+                    }
+                }
+                else
+                {
+                    Logger.LogWarning("Player SMR body not found.");
+                }
+            }
+            Logger.LogWarning($"-______ Items -> {LeftHandItemInstanceName}, {RightHandItemInstanceName}");
+
+            if (GameItem.IsSpecialCase(RightHandItemInstanceName))
+            {
+                _rightHandItemInstanceTransform = BoneTransformer.FindBoneInHierarchy(_rightHandItemInstance.transform, RightHandBoneName);
+            }
+            else
+            {
+                _rightHandItemInstanceTransform = BoneTransformer.FindBoneInHierarchy(rootBone, "RightHand_Attach");
+            }
+            
+            
+            if (GameItem.IsSpecialCase(RightHandItemInstanceName) || GameItem.IsSpecialCase(LeftHandItemInstanceName))
+            {
+                _leftHandItemInstanceTransform = BoneTransformer.FindBoneInHierarchy(_rightHandItemInstance.transform, LeftHandBoneName);
+            }
+            else
+            {
+                _leftHandItemInstanceTransform = BoneTransformer.FindBoneInHierarchy(rootBone, "LeftHand_Attach");
+            }
+
+
+            var leftMiddleFinger = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftMiddleProximal);
+            var rightMiddleFinger = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightMiddleProximal);
+            var leftHand = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
+            var rightHand = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand);
+
+            var scale = 1f - _vrmSettings.PlayerVrmScale;
+            var scaledBoneOffset = new Vector3(0, -(0.06f * scale), 0.04f * scale);
+
+            var leftHandMid = (leftMiddleFinger.position + leftHand.position) / 2f;
+            var leftHandOffset = (leftHandMid - leftHand.position) / 10;
+            _leftHandItemInstanceTransformOffset = leftHandOffset + scaledBoneOffset;
+
+            var rightHandMid = (rightMiddleFinger.position + rightHand.position) / 2f;
+            var rightHandOffset = -((rightHandMid - rightHand.position) / 10);
+            _rightHandItemInstanceTransformOffset = rightHandOffset + scaledBoneOffset;
+        }
+
+        public GameObject LeftHandBackItemInstance { get; set; }
+        public GameObject RightHandBackItemInstance { get; set; }
 
         // State variables for item names
-        public string LeftItemInstanceName { get; set; }
-        public string RightItemInstanceName { get; set; }
-        public string LeftBackItemInstanceName { get; set; }
-        public string RightBackItemInstanceName { get; set; }
-        
+        public string LeftHandItemInstanceName { get; set; }
+        public string RightHandItemInstanceName { get; set; }
+        public string LeftHandBackItemInstanceName { get; set; }
+        public string RightHandBackItemInstanceName { get; set; }
 
-        // this list is used to do special case stuff in the update loop.
-        public static readonly List<string> RiggedItemNames = new List<string>()
-        {
-            "KnifeSkollAndHati"
-        };
+        private Transform _vrmLeftHandTransform;
+        private Transform _vrmRightHandTransform;
+        private Transform _playerLeftHandTransform;
+        private Transform _playerRightHandTransform;
 
-        // this list is used to prevent the loading of the bones from the player model into the rigged item.
-        public static readonly List<string> RiggedItemNamesOther = new List<string>()
-        {
-            "skollandhati"
-        };
 
         private Player _player;
         private VrmInstance _vrmInstance;
         private Animator _playerAnimator;
         private Animator _vrmGoAnimator;
+        private GameObject _vrmGo;
         private VrmSettings _vrmSettings;
 
 
@@ -80,26 +317,14 @@ namespace EnhancedValheimVRM
         private HumanPoseHandler _playerPoseHandler, _vrmPoseHandler;
 
         private readonly Dictionary<HumanBodyBones, float> _boneLengthRatios = new Dictionary<HumanBodyBones, float>();
-        private float offset;
-        private float offsetH;
-
-        private class AttachmentPoint
-        {
-            public Transform Player;
-            public Transform Vrm;
-            public Vector3 PlayerOriginalLocalScale;
-        }
-
-        private List<AttachmentPoint> _attachmentPoints;
 
 
         private bool _isRagdoll = false;
 
- 
+
         VisEquipment _visEquipment;
-        string _leftHandBoneName;
-        string _rightHandBoneName;
- 
+
+
         public void Setup(Player player, Animator playerAnimator, VrmInstance vrmInstance, bool isRagdoll = false)
         {
             _player = player;
@@ -107,22 +332,9 @@ namespace EnhancedValheimVRM
             _vrmInstance = vrmInstance;
             _isRagdoll = isRagdoll;
             _vrmSettings = vrmInstance.GetSettings();
-            _playerCollider = _player.GetComponent<CapsuleCollider>();
 
-            if (_player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
-            {
-                _visEquipment = visEquipment;
-            }
-
-            _leftHandBoneName = BoneTransformer.MapHumanBodyBoneToPlayerBoneName(HumanBodyBones.LeftHand);
-            _rightHandBoneName = BoneTransformer.MapHumanBodyBoneToPlayerBoneName(HumanBodyBones.RightHand);
-            
-            
-
-            Logger.Log("__________VRM Animation Controller SETUP");
-
-            var vrmGo = _vrmInstance.GetGameObject();
-            _vrmGoAnimator = vrmGo.GetComponent<Animator>();
+            _vrmGo = vrmInstance.GetGameObject();
+            _vrmGoAnimator = _vrmGo.GetComponent<Animator>();
             // this is attached to vrmGo, this the below is the same as above, but the above is more clear.
             //_vrmGoAnimator = GetComponent<Animator>();
             _vrmGoAnimator.applyRootMotion = true;
@@ -131,19 +343,19 @@ namespace EnhancedValheimVRM
             _vrmGoAnimator.layersAffectMassCenter = _playerAnimator.layersAffectMassCenter;
             _vrmGoAnimator.stabilizeFeet = _playerAnimator.stabilizeFeet;
 
+            _vrmLeftHandTransform = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
+            _vrmRightHandTransform = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand);
 
-            Transform vrmLeftFoot = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftFoot);
-            Transform vrmRightFoot = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightFoot);
-
-            Transform playerLeftFoot = _playerAnimator.GetBoneTransform(HumanBodyBones.LeftFoot);
-            Transform playerRightFoot = _playerAnimator.GetBoneTransform(HumanBodyBones.RightFoot);
-            Transform vrmHips = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Hips);
+            _playerLeftHandTransform = _playerAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
+            _playerRightHandTransform = _playerAnimator.GetBoneTransform(HumanBodyBones.RightHand);
 
 
-            offset = ((vrmLeftFoot.position.y - _vrmGoAnimator.transform.position.y) +
-                      (vrmRightFoot.position.y - _vrmGoAnimator.transform.position.y)) * 0.5f;
-            offsetH = ((playerLeftFoot.position + playerRightFoot.position) -
-                       (vrmLeftFoot.position + vrmRightFoot.position)).y * 0.5f;
+            if (_player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
+            {
+                _visEquipment = visEquipment;
+                StartupGetItems();
+            }
+
 
             //_player.gameObject.AddComponent<VrmController>();
             CreatePoseHandlers();
@@ -151,11 +363,50 @@ namespace EnhancedValheimVRM
 
             //CreateBoneRatios();
             //SetupAttachPoints();
+
+
             ScaleAttachPoints();
             Instances.Add(this);
         }
 
-        //private void OnEnable() =>  Instances.Add( this);
+        void StartupGetItems()
+        {
+            if (_visEquipment.GetFieldValue<FieldInfo>("m_leftItem")?.GetValue(_visEquipment) is string leftItemName)
+            {
+                LeftHandItemInstanceName = leftItemName;
+                if (_visEquipment.TryGetField<VisEquipment, GameObject>("m_leftItemInstance", out var leftItemInstance))
+                {
+                    LeftHandItemInstance = leftItemInstance;
+                }
+            }
+
+            if (_visEquipment.GetFieldValue<FieldInfo>("m_rightItem")?.GetValue(_visEquipment) is string rightItemName)
+            {
+                RightHandItemInstanceName = rightItemName;
+                if (_visEquipment.TryGetField<VisEquipment, GameObject>("m_rightItemInstance", out var rightItemInstance))
+                {
+                    RightHandItemInstance = rightItemInstance;
+                }
+            }
+
+            if (_visEquipment.GetFieldValue<FieldInfo>("m_leftBackItem")?.GetValue(_visEquipment) is string leftBackItemName)
+            {
+                LeftHandBackItemInstanceName = leftBackItemName;
+                if (_visEquipment.TryGetField<VisEquipment, GameObject>("m_leftBackItemInstance", out var leftBackItemInstance))
+                {
+                    LeftHandBackItemInstance = leftBackItemInstance;
+                }
+            }
+
+            if (_visEquipment.GetFieldValue<FieldInfo>("m_rightBackItem")?.GetValue(_visEquipment) is string rightBackItemName)
+            {
+                RightHandBackItemInstanceName = rightBackItemName;
+                if (_visEquipment.TryGetField<VisEquipment, GameObject>("m_rightBackItemInstance", out var rightBackItemInstance))
+                {
+                    RightHandBackItemInstance = rightBackItemInstance;
+                }
+            }
+        }
 
 
         private void ScaleAttachPoints()
@@ -227,50 +478,6 @@ namespace EnhancedValheimVRM
         }
 
 
-        private void SetAttachPoint(Transform playerPoint, Transform vrmPoint)
-        {
-            if (playerPoint == null)
-            {
-                Logger.LogError("SetAttachPoint: playerPoint is null.");
-            }
-
-            if (vrmPoint == null)
-            {
-                Logger.LogError("SetAttachPoint: vrmPoint is null.");
-            }
-
-            _attachmentPoints.Add(new AttachmentPoint
-            {
-                Player = playerPoint,
-                Vrm = vrmPoint,
-                PlayerOriginalLocalScale = playerPoint.localScale
-            });
-        }
-
-        private bool _runningSetupAttach2 = false;
-
-        private void SetupAttachPoints2()
-        {
-            _runningSetupAttach2 = true;
-            _attachmentPoints = new List<AttachmentPoint>();
-
-            if (_player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
-            {
-                Logger.Log("_______________ m_visEquipment");
-                SetAttachPoint(visEquipment.m_leftHand, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand));
-                SetAttachPoint(visEquipment.m_rightHand, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand));
-
-                SetAttachPoint(visEquipment.m_helmet, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Head));
-                SetAttachPoint(visEquipment.m_backShield, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
-                SetAttachPoint(visEquipment.m_backMelee, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
-
-                SetAttachPoint(visEquipment.m_backTwohandedMelee, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
-                SetAttachPoint(visEquipment.m_backBow, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
-                SetAttachPoint(visEquipment.m_backTool, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest));
-                SetAttachPoint(visEquipment.m_backAtgeir, _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Spine));
-            }
-        }
-
         public Animator GetPlayerAnimator()
         {
             return _playerAnimator;
@@ -285,146 +492,7 @@ namespace EnhancedValheimVRM
         }
 
 
-        private Vector3 StateHashToOffset(int stateHash)
-        {
-            switch (stateHash)
-            {
-                case StartToSitDown:
-                case SittingIdle:
-                    return _vrmSettings.SittingIdleOffset;
-                case SittingChair:
-                    return _vrmSettings.SittingOnChairOffset;
-
-                case SittingThrone:
-                    return _vrmSettings.SittingOnThroneOffset;
-
-                case SittingShip:
-                    return _vrmSettings.SittingOnShipOffset;
-
-                case HoldingMast:
-                    return _vrmSettings.HoldingMastOffset;
-
-                case HoldingDragon:
-                    return _vrmSettings.HoldingDragonOffset;
-
-                case Sleeping:
-                    return _vrmSettings.SleepingOffset;
-
-                default:
-                    return Vector3.zero;
-            }
-        }
-
-        private void UpdateBones()
-        {
-            
-            if (_isRagdoll) return;
-
-            foreach (HumanBodyBones bone in Enum.GetValues(typeof(HumanBodyBones)))
-            {
-                if (bone == HumanBodyBones.LastBone) continue;
-
-                var playerBone = _playerAnimator.GetBoneTransform(bone);
-                var vrmBone = _vrmGoAnimator.GetBoneTransform(bone);
-                //_playerAnimator.rootPosition = _vrmGoAnimator.rootPosition;
-                if (playerBone != null && vrmBone != null)
-                {
-                    playerBone.position = vrmBone.position;
-                }
-            }
-        }
-
-
-        private static Material _playerSizeGizmoMaterial;
-        private CapsuleCollider _playerCollider;
-        private GameObject _playerSizeGizmo;
-
-        public void ActivateSizeGizmo()
-        {
-            if (_playerSizeGizmo != null)
-            {
-                if (_playerCollider != null)
-                {
-                    _playerSizeGizmo.transform.position = _playerCollider.bounds.center;
-                    _playerSizeGizmo.transform.localScale = new Vector3(_playerCollider.bounds.size.x, _playerCollider.bounds.size.y / 2, _playerCollider.bounds.size.z);
-                }
-
-                return;
-            }
-
-
-            if (_playerSizeGizmoMaterial == null)
-            {
-                _playerSizeGizmoMaterial = new Material(Shader.Find("Standard"));
-                _playerSizeGizmoMaterial.SetFloat("_Mode", 2);
-                _playerSizeGizmoMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                _playerSizeGizmoMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                _playerSizeGizmoMaterial.SetInt("_ZWrite", 0);
-                _playerSizeGizmoMaterial.DisableKeyword("_ALPHATEST_ON");
-                _playerSizeGizmoMaterial.EnableKeyword("_ALPHABLEND_ON");
-                _playerSizeGizmoMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                _playerSizeGizmoMaterial.SetFloat("_GlossMapScale", 0);
-                _playerSizeGizmoMaterial.renderQueue = 3000;
-                _playerSizeGizmoMaterial.color = new Color(1.0f, 0.0f, 0.0f, 0.3f);
-            }
-
-
-            Logger.Log("____________________ CREATE SIZE GIZMO");
-
-            _playerSizeGizmo = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            _playerSizeGizmo.GetComponent<MeshRenderer>().material = _playerSizeGizmoMaterial;
-            Destroy(_playerSizeGizmo.GetComponent<Collider>());
-        }
-
-        private void Update()
-        {
-            _vrmGoAnimator.transform.localPosition = Vector3.zero;
-
-            //ActivateSizeGizmo();
-
-            //UpdateBones();
-
-            //_vrmGoAnimator.transform.localPosition -= Vector3.up * (offset * _vrmSettings.PlayerVrmScale);
-
-            //_vrmGoAnimator.transform.localPosition += Vector3.up * _vrmSettings.HeightOffsetY;
-        }
-
-
-        // private void LateUpdate()
-        // {
-        //      
-        //
-        //
-        //     _vrmGoAnimator.transform.localPosition = Vector3.zero;
-        //     _playerAnimator.transform.localPosition = Vector3.zero;
-        //     
-        //     _playerPoseHandler.GetHumanPose(ref _humanPose);
-        //     _vrmPoseHandler.SetHumanPose(ref _humanPose);
-        //
-        //     var stateHash = _playerAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
-        //
-        //     if (_runningSetupAttach2)
-        //     {
-        //         foreach (var attachmentPoint in _attachmentPoints)
-        //         {
-        //             attachmentPoint.Player.position = attachmentPoint.Vrm.position;
-        //             attachmentPoint.Player.rotation = attachmentPoint.Vrm.rotation;
-        //             attachmentPoint.Player.localScale = Vector3.Scale(attachmentPoint.Player.localScale, attachmentPoint.Vrm.localScale);
-        //         }
-        //     }
-        //
-        //
-        //
-        // }
-
-
-        private void LateUpdate()
-        {
-            //CustomLateUpdate();
-        }
-
-
-        // not sure why i need to include these next to methods when there not in other files of the game
+        // not sure why i need to include these next to methods when there not in other files of the game and it should be inherited from IMonoUpdater
         public void CustomFixedUpdate(float deltaTime)
         {
         }
@@ -437,137 +505,38 @@ namespace EnhancedValheimVRM
         //Valheim has a Loop called CustomLateUpdate that is fired after LateUpdate but in such a way that you cant really create your own CustomLateUpdate
         //instead have to use a HarmonyPatch on MonoUpdaters LateUpdate instead.
 
-        // with regard to the above comment. using CustomLateUpdate on a patched LateUpdate was only getting 42 fps the one way i got it to work.
-        // all other ways it was jittery just the same as if there is no bone updates in Update()
-        // after some review I dont think two bone update loops add any significant cpu usage so moving on. will revisit someday, maybe.
-
-        private bool IsStartMenu()
-        {
-            return _player.gameObject.scene.name == "start";
-        }
-
-        private void CustomLateUpdate()
-        {
-            CustomLateUpdate(Time.deltaTime);
-        }
+        // private void LateUpdate()
+        // {
+        //     //CustomLateUpdate();
+        // }
+        // private void CustomLateUpdate()
+        // {
+        //     CustomLateUpdate(Time.deltaTime);
+        // }
 
         public void CustomLateUpdate(float deltaTime)
         {
-            //Logger.Log("CustomLateUpdate");
-
-            // this stops calulations from adding up per frame.
-            _vrmGoAnimator.transform.localPosition = Vector3.zero;
-
-            Transform playerHips = _playerAnimator.GetBoneTransform(HumanBodyBones.Hips);
-            Transform vrmHips = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Hips);
-
-            //vrmHips.position = playerHips.position;
-
             _playerPoseHandler.GetHumanPose(ref _humanPose);
             _vrmPoseHandler.SetHumanPose(ref _humanPose);
 
+            if (_isRagdoll) return;
 
-            // if (_runningSetupAttach2)
-            // {
-            //     foreach (var attachmentPoint in _attachmentPoints)
-            //     {
-            //         attachmentPoint.Player.position = attachmentPoint.Vrm.position;
-            //         attachmentPoint.Player.rotation = attachmentPoint.Vrm.rotation;
-            //         attachmentPoint.Player.localScale = Vector3.Scale(attachmentPoint.Player.localScale, attachmentPoint.Vrm.localScale);
-            //     }
-            // }
+            if (RightHandItemInstance == null) return;
 
+            if (_vrmGoAnimator == null) return;
 
-            Transform vrmLeftFoot = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftFoot);
-            Transform vrmRightFoot = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightFoot);
-            
-
-            var itemName = _visEquipment.GetFieldValue<FieldInfo>("m_rightItem")?.GetValue(_visEquipment) as string;
-            if (itemName == "KnifeSkollAndHati")
+            if (GameItem.IsSpecialCase(RightHandItemInstanceName))
             {
-                if (_visEquipment.TryGetField<VisEquipment, GameObject>("m_rightItemInstance", out var go))
-                {
-                    Animator animator = go.GetComponent<Animator>();
-                    if (animator != null)
-                    {
-                        Transform vrmLeftHand = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
-                        Transform vrmRightHand = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand);
-                        
-                        Transform itemLeftHand = BoneTransformer.FindBoneInHierarchy(go.transform, _leftHandBoneName);
-                        Transform itemRightHand = BoneTransformer.FindBoneInHierarchy(go.transform, _rightHandBoneName);
+                _leftHandItemInstanceTransform.rotation = _playerLeftHandTransform.rotation;
+                _leftHandItemInstanceTransform.position = _vrmLeftHandTransform.position;
 
+                _leftHandItemInstanceTransform.Translate(_leftHandItemInstanceTransformOffset);
 
-                        itemLeftHand.position = vrmLeftHand.position;
-                        itemRightHand.position = vrmRightHand.position;
-                    }
-                }
+                _rightHandItemInstanceTransform.rotation = _playerRightHandTransform.rotation;
+                _rightHandItemInstanceTransform.position = _vrmRightHandTransform.position;
+
+                _rightHandItemInstanceTransform.Translate(_rightHandItemInstanceTransformOffset);
             }
-
-            // playerLeftHand.position = vrmLeftHand.position;
-            // playerRightHand.position = vrmRightHand.position;
-            //
-            // _leftHandAttach.position = (vrmLeftHand.position + _leftHandOffset);
-            // _rightHandAttach.position = (vrmRightHand.position + _rightHandOffset);
-            
-
-
-            var stateHash = _playerAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
-
-
-            var hipOffsetPosition = Vector3.zero;
-
-            var surfacePlane = Mathf.Min(vrmLeftFoot.position.y - _vrmGoAnimator.transform.position.y,
-                vrmRightFoot.position.y - _vrmGoAnimator.transform.position.y);
-            var surfacePlaneHip =  (vrmHips.position.y - _vrmGoAnimator.transform.position.y);
-
-            var _offset = ((vrmLeftFoot.position.y - _vrmGoAnimator.transform.position.y) +
-                           (vrmRightFoot.position.y - _vrmGoAnimator.transform.position.y)) * 0.5f;
-
-            var which = "";
-            if (!IsStartMenu())
-            {
-                if (_adjustHipHashes.Contains(stateHash)) //_adjustHipHashes.Contains(stateHash) || 
-                {
-                    hipOffsetPosition += new Vector3(0, -surfacePlane, 0); // goodish
-                    which = "In Hip Hash";
-
-                    //hipOffsetPosition += new Vector3(0, (-ground + offset), 0);
-                }
-                else
-                {
-                    hipOffsetPosition += new Vector3(0, -surfacePlane + offset, 0); // goodish
-
-                    which = "Not In Hip Hash";
-                    // hipOffsetPosition = new Vector3(0f, offset, 0f);
-                }
-            }
-
-            //Logger.Log($"{which}, {stateHash} -> surfacePlane {surfacePlane}, surfacePlaneHip {surfacePlaneHip}, offset {offset}, _offset {_offset}");
-
-            if (stateHash == FirstRise)
-            {
-                // not sure why this is needed, i probably borked calculations. but its good enough for now.
-                hipOffsetPosition += Vector3.up * 0.1f;
-            }
-
-            //vrmHips.position += hipOffsetPosition; 
-
-
-            //vrmHips.Translate(0, hipOffsetPosition.y, 0, Space.World);
-            //_vrmGoAnimator.transform.Translate(0, hipOffsetPosition.y, 0, Space.World);
-
-
-            //UpdateBones();
-
-
-            //vrmHips.Translate(0, -ground + offset, 0, Space.World);
-            //playerHips.Translate(0, -ground + offset, 0, Space.World);
-
-            //Logger.Log($"_playerCollider.bounds.center {_playerCollider.bounds.center}");
-
-            //playerHips.Translate(0, -ground + offset, 0, Space.World);
-            //
-            //_vrmGoAnimator.transform.localPosition -= Vector3.up * (offset * _vrmSettings.PlayerVrmScale);
         }
 
 

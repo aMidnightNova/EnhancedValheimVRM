@@ -261,17 +261,8 @@ namespace EnhancedValheimVRM
             return null;
         }
 
-        public static Animator GetVrmGoAnimator(this Player player)
-        {
-            var playerName = player.GetPlayerDisplayName();
-            if (_vrmInstances.TryGetValue(playerName, out var instance))
-            {
-                return instance.GetVrmGoAnimator();
-            }
-
-            return null;
-        }
-
+ 
+        
         public static bool HasVrmForPlayer(Player player)
         {
             var playerName = player.GetPlayerDisplayName();

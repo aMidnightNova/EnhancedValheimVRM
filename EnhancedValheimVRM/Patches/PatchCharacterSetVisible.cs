@@ -4,7 +4,7 @@ using UnityEngine;
 namespace EnhancedValheimVRM
 {
     [HarmonyPatch(typeof(Character), "SetVisible")]
-    internal static class PatchSetVisible
+    internal static class PatchCharacterSetVisible
     {
         private static void Postfix(Character __instance,bool visible)
         {

@@ -62,8 +62,8 @@ namespace EnhancedValheimVRM
                 return 0f;
             }
 
-            Transform leftUpperArm = FindBone(bones, BoneTransformer.Bones.LeftUpperArm);
-            Transform rightUpperArm = FindBone(bones, BoneTransformer.Bones.RightUpperArm);
+            var leftUpperArm = BoneTransformer.FindPlayerBoneWithBoneEnum(bones, BoneTransformer.Bones.LeftUpperArm);
+            var rightUpperArm = BoneTransformer.FindPlayerBoneWithBoneEnum(bones, BoneTransformer.Bones.RightUpperArm);
 
             if (leftUpperArm == null || rightUpperArm == null)
             {
@@ -71,36 +71,11 @@ namespace EnhancedValheimVRM
                 return 0f;
             }
 
-            float shoulderWidth = Vector3.Distance(leftUpperArm.position, rightUpperArm.position);
+            var shoulderWidth = Vector3.Distance(leftUpperArm.position, rightUpperArm.position);
             return shoulderWidth;
         }
 
-        private static Transform FindBone(Transform[] bones, BoneTransformer.Bones boneKey)
-        {
-            if (BoneTransformer.vrmBoneMap.TryGetValue(boneKey, out List<string> boneNames))
-            {
-                foreach (var bone in bones)
-                {
-                    if (boneNames.Contains(bone.name))
-                    {
-                        return bone;
-                    }
-                }
-            }
 
-            if (BoneTransformer.playerBoneMap.TryGetValue(boneKey, out boneNames))
-            {
-                foreach (var bone in bones)
-                {
-                    if (boneNames.Contains(bone.name))
-                    {
-                        return bone;
-                    }
-                }
-            }
-
-            return null;
-        }
 
 
         public static float GetModelHeight(GameObject model)
@@ -135,8 +110,8 @@ namespace EnhancedValheimVRM
                 return 0f;
             }
 
-            float minY = float.MaxValue;
-            float maxY = float.MinValue;
+            var minY = float.MaxValue;
+            var maxY = float.MinValue;
 
             foreach (var bone in bones)
             {
@@ -152,7 +127,7 @@ namespace EnhancedValheimVRM
                 }
             }
 
-            float height = maxY - minY;
+            var height = maxY - minY;
             return height;
         }
     }

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace EnhancedValheimVRM
 {
     [HarmonyPatch(typeof(Character), "GetHeadPoint")]
-    internal static class PatchGetHeadPoint
+    internal static class PatchCharacterGetHeadPoint
     {
         private static bool Prefix(Character __instance, ref Vector3 __result)
         {

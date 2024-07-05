@@ -94,7 +94,7 @@ namespace EnhancedValheimVRM
             RightToe5
         }
 
-        public static Dictionary<Bones, List<string>> vrmBoneMap = new Dictionary<Bones, List<string>>
+        public readonly static Dictionary<Bones, List<string>> VrmBoneMap = new Dictionary<Bones, List<string>>
         {
             { Bones.Head, new List<string> { "Head", "head" } },
             { Bones.LeftEye, new List<string> { "LeftEye", "leftEye", "eye.L" } },
@@ -163,7 +163,7 @@ namespace EnhancedValheimVRM
             { Bones.RightToe5, new List<string> { "RightToe5", "ToePinky1_R" } }
         };
 
-        public static Dictionary<Bones, List<string>> playerBoneMap = new Dictionary<Bones, List<string>>
+        public readonly static Dictionary<Bones, List<string>> PlayerBoneMap = new Dictionary<Bones, List<string>>
         {
             { Bones.Head, new List<string> { "Head", "head" } },
             { Bones.LeftEye, new List<string> { "LeftEye" } },
@@ -230,21 +230,21 @@ namespace EnhancedValheimVRM
                 return null;
             }
 
-            // Convert HumanBodyBones to custom Bones enum
-            if (!Enum.TryParse(humanBodyBone.ToString(), out BoneTransformer.Bones boneEnum))
+             
+            if (!Enum.TryParse(humanBodyBone.ToString(), out Bones boneEnum))
             {
                 Logger.LogError($"Mapping from HumanBodyBones to Bones enum failed for {humanBodyBone}");
                 return null;
             }
 
             // Get the corresponding player bone name list from the playerBoneMap
-            if (!BoneTransformer.playerBoneMap.TryGetValue(boneEnum, out List<string> playerBoneNames) || playerBoneNames.Count == 0)
+            if (!PlayerBoneMap.TryGetValue(boneEnum, out List<string> playerBoneNames) || playerBoneNames.Count == 0)
             {
                 Logger.LogError($"No mapping found for bone {boneEnum} in playerBoneMap");
                 return null;
             }
 
-            // Return the first bone name from the list
+            // Return the first bone name from the list, it should be the only item tbh.
             return playerBoneNames[0];
         }
         public static Transform FindBoneInHierarchy(Transform root, string boneName)
@@ -259,6 +259,9 @@ namespace EnhancedValheimVRM
 
             return null;
         }
+ 
+
+        
         public BoneTransformer(Player player, GameObject vrmGo)
         {
             PlayerBoneToVrmBone = new Dictionary<string, Transform>();
@@ -294,12 +297,12 @@ namespace EnhancedValheimVRM
                     // Populate PlayerToVrmBones and VrmToPlayerBones
                     foreach (var bone in playerSmrBody.bones)
                     {
-                        foreach (var playerBoneEntry in playerBoneMap)
+                        foreach (var playerBoneEntry in PlayerBoneMap)
                         {
                             if (playerBoneEntry.Value.Contains(bone.name))
                             {
                                 Bones boneEnum = playerBoneEntry.Key;
-                                foreach (var vrmBoneName in vrmBoneMap[boneEnum])
+                                foreach (var vrmBoneName in VrmBoneMap[boneEnum])
                                 {
                                     if (VrmBoneDict.TryGetValue(vrmBoneName, out var vrmBone))
                                     {
@@ -317,18 +320,18 @@ namespace EnhancedValheimVRM
                     {
                         if (humanBone == HumanBodyBones.LastBone) continue;
 
-                        // Convert HumanBodyBones to custom Bones enum
+                         
                         if (Enum.TryParse(humanBone.ToString(), out Bones boneEnum))
                         {
                             // Get player bone transform
-                            Transform playerBoneTransform = playerSmrBody.bones.FirstOrDefault(b => playerBoneMap[boneEnum].Contains(b.name));
+                            Transform playerBoneTransform = playerSmrBody.bones.FirstOrDefault(b => PlayerBoneMap[boneEnum].Contains(b.name));
                             if (playerBoneTransform != null)
                             {
                                 HumanBodyBoneToPlayerBone[humanBone] = playerBoneTransform;
                             }
 
                             // Get VRM bone transform
-                            Transform vrmBoneTransform = vrmSmrBody.bones.FirstOrDefault(b => vrmBoneMap[boneEnum].Contains(b.name));
+                            Transform vrmBoneTransform = vrmSmrBody.bones.FirstOrDefault(b => VrmBoneMap[boneEnum].Contains(b.name));
                             if (vrmBoneTransform != null)
                             {
                                 HumanBodyBoneToVrmBone[humanBone] = vrmBoneTransform;
@@ -339,6 +342,32 @@ namespace EnhancedValheimVRM
             }
         }
 
+        public static Transform FindPlayerBoneWithBoneEnum(Transform[] bones,  Bones boneEnum)
+        {
+            if (VrmBoneMap.TryGetValue(boneEnum, out List<string> boneNames))
+            {
+                foreach (var bone in bones)
+                {
+                    if (boneNames.Contains(bone.name))
+                    {
+                        return bone;
+                    }
+                }
+            }
+
+            if (PlayerBoneMap.TryGetValue(boneEnum, out boneNames))
+            {
+                foreach (var bone in bones)
+                {
+                    if (boneNames.Contains(bone.name))
+                    {
+                        return bone;
+                    }
+                }
+            }
+
+            return null;
+        }
 
         private static SkeletonBone CreateSkeletonBoneFromBone(Transform vrmBone, Transform playerBone, Quaternion? rotationOverride = null)
         {
