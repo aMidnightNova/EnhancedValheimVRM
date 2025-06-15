@@ -1,4 +1,5 @@
 # There is no release yet, this is in active development.
+(waiting for the game to full release, then this will be completed)
 
 You can use my fork of ValheimVRM in the meantime. It has a lot of the important bits from here backported.
 [found here](https://github.com/aMidnightNova/ValheimVRM/releases/latest)
