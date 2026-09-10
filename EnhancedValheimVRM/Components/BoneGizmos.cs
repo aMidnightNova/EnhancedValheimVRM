@@ -1,13 +1,15 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace EnhancedValheimVRM // TODO: fix this, it does not work... yet.
 {
     public class BoneGizmos : MonoBehaviour
     {
         private Player _player;
-        private Animator _animator;
-        private Animator _vAnimator;
+        private Animator _playerAnimator;
+        private Animator _vrmGoAnimator;
         private List<LineRenderer> _playerLineRenderers = new List<LineRenderer>();
         private List<LineRenderer> _vrmLineRenderers = new List<LineRenderer>();
         private bool _playerGizmos = false;
@@ -15,58 +17,73 @@ namespace EnhancedValheimVRM // TODO: fix this, it does not work... yet.
         private VisEquipment _visEquipment;
         private Shader _shader = Shader.Find("Unlit/Color");
 
-        public void Setup(Player player, VrmInstance vrmInstance)
+        public void Setup(Player player, VrmInstance vrmInstance, bool playerGizmoEnabled = false, bool vrmGizmoEnabled = false)
         {
+            _playerGizmos = playerGizmoEnabled;
+            _vrmGizmos = vrmGizmoEnabled;
+
+
             _player = player;
-            _vAnimator = vrmInstance.GetVrmGoAnimator();
-            _animator = _player.GetField<Player, Animator>("m_animator");
+            _vrmGoAnimator = vrmInstance.GetVrmGoAnimator();
+            _playerAnimator = _player.GetField<Player, Animator>("m_animator");
             if (_player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
             {
                 _visEquipment = visEquipment;
             }
 
-            var bones = _animator.GetComponentsInChildren<Transform>();
 
-            if (_visEquipment.TryGetField<VisEquipment, GameObject>("m_rightItemInstance", out var go))
+            if (_visEquipment.GetFieldValue<FieldInfo>("m_rightItem")?.GetValue(_visEquipment) is string rightItemName)
             {
-                var goAnimator = go.GetComponentInChildren<Animator>();
-                bones = goAnimator.GetComponentsInChildren<Transform>();
-
-
-                _animator = goAnimator;
-                Logger.Log("_ ____ goAnimator");
+                if (GameItem.IsSpecialCase(rightItemName))
+                {
+                    if (_visEquipment.TryGetField<VisEquipment, GameObject>("m_rightItemInstance", out var go))
+                    {
+                        // this is overriding _playerAnimator to the armiture inside a rigged weapon.
+                        var animator = go.GetComponentInChildren<Animator>();
+                        _playerAnimator = animator;
+                    }
+                }
             }
-            
-            
-            
-            InitializeLineRenderers(bones);
-            //InitializeLineRenderersVrm();
+
+
+            if (_playerGizmos) InitializeLineRenderersPlayer();
+            if (_vrmGizmos) InitializeLineRenderersVrm();
+
             UpdateLineRenderers();
         }
 
-        private void InitializeLineRenderers(Transform[] transforms)
+        private void InitializeLineRenderersPlayer()
         {
-            _playerGizmos = true;
-            
+            var bones = _playerAnimator.GetComponentsInChildren<Transform>();
 
-            foreach (var bone in transforms)
+
+            foreach (var bone in bones)
             {
-                _playerLineRenderers.Add(CreateLineRenderer(bone, Color.red));
-                _playerLineRenderers.Add(CreateLineRenderer(bone, Color.green));
-                _playerLineRenderers.Add(CreateLineRenderer(bone, Color.blue));
+                //if (bone.name.Contains("_attach") || bone.name.Contains("_Attach"))
+                if(bone.name == "LeftHand_Attach" || bone.name == "RightHand_Attach" || bone.name == "BackTool_attach" )
+                {
+                    _playerLineRenderers.Add(CreateLineRenderer(bone, Color.red));
+                    _playerLineRenderers.Add(CreateLineRenderer(bone, Color.green));
+                    _playerLineRenderers.Add(CreateLineRenderer(bone, Color.blue));
+                }
+
             }
         }
 
         private void InitializeLineRenderersVrm()
         {
-            _vrmGizmos = true;
-            var vBones = _vAnimator.GetComponentsInChildren<Transform>();
+            var vBones = _vrmGoAnimator.GetComponentsInChildren<Transform>();
 
             foreach (var bone in vBones)
             {
-                _vrmLineRenderers.Add(CreateLineRenderer(bone, Color.red));
-                _vrmLineRenderers.Add(CreateLineRenderer(bone, Color.green));
-                _vrmLineRenderers.Add(CreateLineRenderer(bone, Color.blue));
+                //if (bone.name.Contains("_attach") || bone.name.Contains("_Attach"))
+                if(bone.name == "LeftHand_Attach" || bone.name == "RightHand_Attach" || bone.name == "BackTool_attach")
+                {
+                    _vrmLineRenderers.Add(CreateLineRenderer(bone, Color.red));
+                    _vrmLineRenderers.Add(CreateLineRenderer(bone, Color.green));
+                    _vrmLineRenderers.Add(CreateLineRenderer(bone, Color.blue));
+                }
+
             }
         }
 
@@ -99,13 +116,14 @@ namespace EnhancedValheimVRM // TODO: fix this, it does not work... yet.
 
             if (_playerGizmos)
             {
-                foreach (var bone in _animator.GetComponentsInChildren<Transform>())
+                foreach (var bone in _playerAnimator.GetComponentsInChildren<Transform>())
                 {
                     if (index + 2 < _playerLineRenderers.Count)
                     {
-                        var boneRight = bone.TransformDirection(Vector3.right * 0.0004f);
-                        var boneUp = bone.TransformDirection(Vector3.up * 0.0004f);
-                        var boneForward = bone.TransformDirection(Vector3.forward * 0.0004f);
+                        var boneLength = 10f;
+                        var boneRight = bone.TransformDirection(Vector3.right * (bone.localScale.x * boneLength));
+                        var boneUp = bone.TransformDirection(Vector3.up * (bone.localScale.y * boneLength));
+                        var boneForward = bone.TransformDirection(Vector3.forward * (bone.localScale.z * boneLength));
 
                         UpdateLineRenderer(_playerLineRenderers[index++], bone.localPosition, bone.localPosition + boneRight);
                         UpdateLineRenderer(_playerLineRenderers[index++], bone.localPosition, bone.localPosition + boneUp);
@@ -118,13 +136,14 @@ namespace EnhancedValheimVRM // TODO: fix this, it does not work... yet.
 
             if (_vrmGizmos)
             {
-                foreach (var bone in _vAnimator.GetComponentsInChildren<Transform>())
+                foreach (var bone in _vrmGoAnimator.GetComponentsInChildren<Transform>())
                 {
                     if (index + 2 < _vrmLineRenderers.Count)
                     {
-                        var boneRight = bone.TransformDirection(Vector3.right * 0.04f);
-                        var boneUp = bone.TransformDirection(Vector3.up * 0.04f);
-                        var boneForward = bone.TransformDirection(Vector3.forward * 0.04f);
+                        var boneLength = 10f;
+                        var boneRight = bone.TransformDirection(Vector3.right * (bone.localScale.x * boneLength));
+                        var boneUp = bone.TransformDirection(Vector3.up * (bone.localScale.y * boneLength));
+                        var boneForward = bone.TransformDirection(Vector3.forward * (bone.localScale.z * boneLength));
 
                         UpdateLineRenderer(_vrmLineRenderers[index++], bone.localPosition, bone.localPosition + boneRight);
                         UpdateLineRenderer(_vrmLineRenderers[index++], bone.localPosition, bone.localPosition + boneUp);

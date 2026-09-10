@@ -17,7 +17,7 @@ namespace EnhancedValheimVRM
         public static readonly Dictionary<SpecialCase, List<string>> Map = new Dictionary<SpecialCase, List<string>>()
         {
             { SpecialCase.SkollAndHati, new List<string> { "KnifeSkollAndHati", "skollandhati" } },
-            { SpecialCase.FistFenrirClaw, new List<string> { "FistFenrirClaw", "fenrirclaw" } }
+            { SpecialCase.FistFenrirClaw, new List<string> { "FistFenrirClaw", "fenrirclaw", "WolfClaw2.006" } }
         };
 
         public static SpecialCase? GetGameItemEnum(string itemName)

@@ -251,43 +251,70 @@ namespace EnhancedValheimVRM
                     Logger.LogWarning("Player SMR body not found.");
                 }
             }
+
             Logger.LogWarning($"-______ Items -> {LeftHandItemInstanceName}, {RightHandItemInstanceName}");
 
-            if (GameItem.IsSpecialCase(RightHandItemInstanceName))
+
+            // probably only need to change right hand items against special case stuff.
+
+            var isSpecialCaseRight = GameItem.IsSpecialCase(RightHandItemInstanceName);
+
+            if (isSpecialCaseRight)
             {
                 _rightHandItemInstanceTransform = BoneTransformer.FindBoneInHierarchy(_rightHandItemInstance.transform, RightHandBoneName);
             }
             else
             {
-                _rightHandItemInstanceTransform = BoneTransformer.FindBoneInHierarchy(rootBone, "RightHand_Attach");
+                _rightHandItemInstanceTransform = _visEquipment.m_rightHand;
+                //_rightHandItemInstanceTransform = BoneTransformer.FindBoneInHierarchy(rootBone, "RightHand_Attach");
             }
-            
-            
-            if (GameItem.IsSpecialCase(RightHandItemInstanceName) || GameItem.IsSpecialCase(LeftHandItemInstanceName))
+
+
+            if (isSpecialCaseRight || GameItem.IsSpecialCase(LeftHandItemInstanceName))
             {
                 _leftHandItemInstanceTransform = BoneTransformer.FindBoneInHierarchy(_rightHandItemInstance.transform, LeftHandBoneName);
             }
             else
             {
-                _leftHandItemInstanceTransform = BoneTransformer.FindBoneInHierarchy(rootBone, "LeftHand_Attach");
+                _leftHandItemInstanceTransform = _visEquipment.m_leftHand;
+                //_leftHandItemInstanceTransform = BoneTransformer.FindBoneInHierarchy(rootBone, "LeftHand_Attach");
             }
 
 
-            var leftMiddleFinger = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftMiddleProximal);
-            var rightMiddleFinger = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightMiddleProximal);
             var leftHand = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
             var rightHand = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand);
 
-            var scale = 1f - _vrmSettings.PlayerVrmScale;
-            var scaledBoneOffset = new Vector3(0, -(0.06f * scale), 0.04f * scale);
+            var leftMiddleFinger = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftMiddleProximal);
+            var rightMiddleFinger = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightMiddleProximal);
 
             var leftHandMid = (leftMiddleFinger.position + leftHand.position) / 2f;
-            var leftHandOffset = (leftHandMid - leftHand.position) / 10;
-            _leftHandItemInstanceTransformOffset = leftHandOffset + scaledBoneOffset;
-
             var rightHandMid = (rightMiddleFinger.position + rightHand.position) / 2f;
-            var rightHandOffset = -((rightHandMid - rightHand.position) / 10);
-            _rightHandItemInstanceTransformOffset = rightHandOffset + scaledBoneOffset;
+
+
+            if (isSpecialCaseRight) // this is the duel wield weapons.
+            {
+                var scale = 1f - _vrmSettings.PlayerVrmScale;
+                var scaledBoneOffset = new Vector3(0, -(0.06f * scale), 0.04f * scale);
+
+                var leftHandOffset = (leftHandMid - leftHand.position) / 10;
+                _leftHandItemInstanceTransformOffset = leftHandOffset + scaledBoneOffset;
+
+                var rightHandOffset = -((rightHandMid - rightHand.position) / 10);
+                _rightHandItemInstanceTransformOffset = rightHandOffset + scaledBoneOffset;
+            }
+            else
+            {
+                var leftHandOffset = _leftHandItemInstanceTransform.position - _leftHandItemInstanceTransform.parent.position;
+                
+                
+                _leftHandItemInstanceTransformOffset = Vector3.zero;
+
+                var rightHandOffset = _rightHandItemInstanceTransform.position - _rightHandItemInstanceTransform.parent.position;
+                _rightHandItemInstanceTransformOffset = Vector3.zero;
+            }
+
+            Logger.Log($"Hand Offsets -> Left:{_leftHandItemInstanceTransformOffset.ToString("F6")}, Right:{_rightHandItemInstanceTransformOffset.ToString("F6")}",
+                Logger.LogLevel.All);
         }
 
         public GameObject LeftHandBackItemInstance { get; set; }
@@ -322,7 +349,7 @@ namespace EnhancedValheimVRM
         private bool _isRagdoll = false;
 
 
-        VisEquipment _visEquipment;
+        private VisEquipment _visEquipment;
 
 
         public void Setup(Player player, Animator playerAnimator, VrmInstance vrmInstance, bool isRagdoll = false)
@@ -365,7 +392,7 @@ namespace EnhancedValheimVRM
             //SetupAttachPoints();
 
 
-            ScaleAttachPoints();
+            SetupAttachPoints();
             Instances.Add(this);
         }
 
@@ -409,7 +436,117 @@ namespace EnhancedValheimVRM
         }
 
 
-        private void ScaleAttachPoints()
+        private void ReParentAttachPoint(Transform newParent, Transform child, Vector3? newScale, Vector3 rotation)
+        {
+            // this is up here, becase we want the offset in certain instances but it needs to be before its parent is changed.
+            
+            var offset = child.position - child.parent.position;
+            var localOffset = child.parent.InverseTransformPoint(child.position) * (100f * _vrmSettings.PlayerVrmScale);
+            var localOffsetO = child.parent.InverseTransformPoint(child.position) * 100f;
+            if (newScale.HasValue)
+            {
+                child.localScale = newScale.Value;
+            }
+
+            // the localPosition is most likley the bones offset from the parent bone.
+            // and i need to recheck all the calculations that deal with offsets becase
+            // i was not accounting for this fact when making them.
+            var originalLocalPosition = child.localPosition;
+            
+            child.localPosition = Vector3.zero;
+
+            child.SetParent(newParent, false);
+ 
+            var newWorldPosition = newParent.position;
+            var newLocalPosition = Vector3.zero;
+             
+ 
+
+
+
+            if (child.name == "RightHand_Attach")
+            {
+                
+                
+                //child.Translate(localOffset);
+
+                //var scale = 1f - _vrmSettings.PlayerVrmScale;
+                newLocalPosition = new Vector3(localOffset.y * 0.8f,-localOffset.z,localOffset.x);
+
+                if (_player.IsInStartMenu())
+                {
+                    //child.localPosition = new Vector3(-localOffset.y * (_vrmSettings.PlayerVrmScale * 0.8f), -localOffset.x, 0);
+                }
+                else
+                {
+                    //child.localPosition = new Vector3(-offset.x * _vrmSettings.PlayerVrmScale , -offset.y, 0); // x * (_vrmSettings.PlayerVrmScale * 0.8f)
+                    //child.localPosition = new Vector3(localOffset.x, localOffset.y, localOffset.z); // x * (_vrmSettings.PlayerVrmScale * 0.8f)
+                }
+
+
+                //
+                // var leftHand = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
+                // var rightHand = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand);
+                //
+                // var leftMiddleFinger = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftMiddleProximal);
+                // var rightMiddleFinger = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightMiddleProximal);
+                //
+                // var leftHandMid = (leftHand.position * (1f / 3f)) + (leftMiddleFinger.position * (2f / 3f));
+                // var rightHandMid = (rightHand.position * (1f / 3f)) + (rightMiddleFinger.position * (2f / 3f));
+                //
+                // Logger.Log($"-------------", Logger.LogLevel.All);
+                // Logger.Log($"rightHandMid -> {rightHandMid.ToString("F6")}, newWorldPosition -> {newWorldPosition.ToString("F6")}", Logger.LogLevel.All);
+                // Logger.Log($"newParent.position -> {newParent.position.ToString("F6")}, offset -> {offset.ToString("F6")} ", Logger.LogLevel.All);
+                // Logger.Log($"-------------", Logger.LogLevel.All);
+                // //Logger.Log($"child {child.name} -> leftHandMid {leftHandMid.ToString("F6")}, rightHandMid {rightHandMid.ToString("F6")}, newWorldPosition {newWorldPosition.ToString("F6")}, offset {offset.ToString("F6")}", Logger.LogLevel.All);
+                //
+                // //if (child.name == "LeftHand_Attach") newWorldPosition = leftHandMid;
+                // //if (child.name == "RightHand_Attach") newWorldPosition = rightHandMid;
+            }
+
+            if (child.name == "LeftHand_Attach")
+            {   // this will help place the hand onto the shield handle.
+                var scaledDepth = -0.035f * (1f - _vrmSettings.PlayerVrmScale);
+                //newLocalPosition = new Vector3(-localOffset.y * 0.8f,scaledDepth,localOffset.z);
+                newLocalPosition = new Vector3(-localOffset.y  * 0.8f,scaledDepth,localOffset.z);
+
+
+                //child.Translate(localOffset);
+                
+                if (_player.IsInStartMenu())
+                {
+                    //child.localPosition = new Vector3(localOffset.y, localOffset.z, localOffset.x) * (_vrmSettings.PlayerVrmScale * 0.8f);
+                }
+                else
+                {
+                    //child.localPosition = new Vector3(localOffset.x, localOffset.y, localOffset.z);;
+                }
+                
+                
+                
+            }
+            
+            child.position = newWorldPosition;
+            
+            //child.localPosition = newLocalPosition;
+            child.SetLocalPositionAndRotation(newLocalPosition, Quaternion.Euler(rotation));
+            //child.localRotation = Quaternion.Euler(rotation);
+
+   
+            if (child.name == "LeftHand_Attach" || child.name == "RightHand_Attach")
+            {
+                Logger.Log($"-----------", Logger.LogLevel.All);
+                Logger.Log($"child {child.name} -> localOffsetO {localOffsetO.ToString("F6")}, localOffset {localOffset.ToString("F6")}", Logger.LogLevel.All);
+                Logger.Log($"child {child.name} -> newWorldPosition {newWorldPosition.ToString("F6")}", Logger.LogLevel.All);
+ 
+                Logger.Log($"-----------", Logger.LogLevel.All);
+
+            }
+
+        }
+
+
+        private void SetupAttachPoints()
         {
             // no idea why but when putting items in the back slots, whiles having the armature of the player scaled causes the items to be 100 times bigger.
 
@@ -431,35 +568,44 @@ namespace EnhancedValheimVRM
 
                 var newScale = new Vector3(0.01f, 0.01f, 0.01f);
 
-                var attachPointNames = new HashSet<string>
-                {
-                    "BackShield_attach",
-                    "BackOneHanded_attach",
-                    "BackTwohanded_attach",
-                    "BackBow_attach",
-                    "BackTool_attach",
-                    "BackAtgeir_attach"
-                };
+                // var attachPointNames = new HashSet<string>
+                // {
+                //     "BackShield_attach",
+                //     "BackOneHanded_attach",
+                //     "BackTwohanded_attach",
+                //     "BackBow_attach",
+                //     "BackTool_attach",
+                //     "BackAtgeir_attach"
+                // };
 
-                var allTransforms = armatureTransform.GetComponentsInChildren<Transform>();
+                // stuff should be 0.01 i think.
+                var smallScale = Vector3.one * 0.01f;
+ 
+                ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand), _visEquipment.m_leftHand, smallScale, new Vector3(0, 0, -180));
+                ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand), _visEquipment.m_rightHand, smallScale, new Vector3(0, 0, 0));
 
-                foreach (var t in allTransforms)
-                {
-                    if (attachPointNames.Contains(t.name))
-                    {
-                        t.localScale = newScale;
-                        Debug.Log($"Scaled {t.name} to {newScale}");
-                    }
-                }
+                ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Head), _visEquipment.m_helmet, smallScale, new Vector3(-22.286f, -90, 0));
+
+                ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest), _visEquipment.m_backShield, smallScale, new Vector3(260.842f, -110.573f, -95.08301f));
+
+                ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest), _visEquipment.m_backMelee, smallScale, new Vector3(123.57f, 82.526f, 86.67f));
+
+                ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest), _visEquipment.m_backTwohandedMelee, smallScale, new Vector3(126.719f, 84.227f, 89.261f));
+
+                ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest), _visEquipment.m_backBow, smallScale, new Vector3(-111.234f, -56.51501f, 148.21f));
+
+                ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest), _visEquipment.m_backAtgeir, smallScale, new Vector3(-74.321f, 30.416f, -213.174f));
+
+                ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Hips), _visEquipment.m_backTool, smallScale, new Vector3(101.664f, -90.17902f, -179.256f));
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Error in ScaleAttachPoints: {ex.Message}");
+                Debug.LogError($"Error in SetupAttachPoints: {ex.Message}");
             }
         }
 
 
-        private void SetupAttachPoints()
+        private void SetupAttachPoints2()
         {
             if (_player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
             {
@@ -529,13 +675,14 @@ namespace EnhancedValheimVRM
             {
                 _leftHandItemInstanceTransform.rotation = _playerLeftHandTransform.rotation;
                 _leftHandItemInstanceTransform.position = _vrmLeftHandTransform.position;
-
-                _leftHandItemInstanceTransform.Translate(_leftHandItemInstanceTransformOffset);
+                //_leftHandItemInstanceTransform.localPosition = _leftHandItemInstanceTransformOffset;
+                _leftHandItemInstanceTransform.Translate(_leftHandItemInstanceTransformOffset, Space.Self);
 
                 _rightHandItemInstanceTransform.rotation = _playerRightHandTransform.rotation;
                 _rightHandItemInstanceTransform.position = _vrmRightHandTransform.position;
+                //_rightHandItemInstanceTransform.localPosition = _rightHandItemInstanceTransformOffset;
 
-                _rightHandItemInstanceTransform.Translate(_rightHandItemInstanceTransformOffset);
+                _rightHandItemInstanceTransform.Translate(_rightHandItemInstanceTransformOffset, Space.Self);
             }
         }
 
