@@ -54,6 +54,17 @@ namespace EnhancedValheimVRM
             return visual?.GetComponentsInChildren<SkinnedMeshRenderer>().FirstOrDefault(smr => smr.name == "body");
         }
 
+        public static VrmInstance GetVrmInstance(this Player player)
+        {
+            var playerName = player.GetPlayerDisplayName();
+            var vrmInstances = VrmController.GetVrmInstances();
+            if (vrmInstances.TryGetValue(playerName, out var instance))
+            {
+                return instance;
+            }
+
+            return null;
+        }
         public static Animator GetVrmGoAnimator(this Player player)
         {
             var vrmInstance = player.GetVrmInstance();

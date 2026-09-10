@@ -14,6 +14,7 @@
         <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
         <LangVersion>8</LangVersion>
+        <FrameworkPathOverride Condition="'$(OS)' == 'Unix'">/usr/lib/mono/4.7.1-api</FrameworkPathOverride>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <PlatformTarget>AnyCPU</PlatformTarget>
@@ -83,6 +84,9 @@
         <Compile Include="Vrm\VrmController.cs" />
         <Compile Include="Vrm\VrmInstance.cs" />
         <Compile Include="Vrm\VrmSettings.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.3" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 

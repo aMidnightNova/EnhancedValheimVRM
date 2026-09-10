@@ -211,7 +211,7 @@ namespace EnhancedValheimVRM
             }
 
 
-            if (settings.UseMToonShader)
+            if (settings.UseMToonShader && !settings.AttemptTextureFix)
             {
                 var vrmMToonControler = vrmGo.GetComponent<VrmMToonFix>();
 
@@ -237,7 +237,7 @@ namespace EnhancedValheimVRM
                 yield return null;
             }
 
-            //player.gameObject.AddComponent<BoneGizmos>().Setup(player, vrmInstance);
+            player.gameObject.AddComponent<BoneGizmos>().Setup(player, vrmInstance, true,true);
  
             //BoneTransforms.CopyBoneTransforms(player, vrmInstance);
             //BoneTransforms.CopyBoneTransforms(player, vrmInstance.GetGameObject());
@@ -250,15 +250,9 @@ namespace EnhancedValheimVRM
 
 
 
-        public static VrmInstance GetVrmInstance(this Player player)
+        public static Dictionary<string, VrmInstance> GetVrmInstances()
         {
-            var playerName = player.GetPlayerDisplayName();
-            if (_vrmInstances.TryGetValue(playerName, out var instance))
-            {
-                return instance;
-            }
-
-            return null;
+            return _vrmInstances;
         }
 
  
