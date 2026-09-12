@@ -21,6 +21,7 @@ namespace EnhancedValheimVRM
         public Vector3 LeftHandBackItemRot = Vector3.zero;
         public Vector3 RightHandBackItemPos = Vector3.zero;
         public Vector3 LeftHandBackItemPos = Vector3.zero;
+        public float WeaponScale = 1.0f;
 
         public bool HelmetVisible = false;
         public Vector3 HelmetScale = Vector3.one;
@@ -29,6 +30,7 @@ namespace EnhancedValheimVRM
         public bool ChestVisible = false;
         public bool ShouldersVisible = false;
         public bool UtilityVisible = false;
+        public bool TrinketVisible = false;
         public bool LegsVisible = false;
 
         public float ModelBrightness = 0.8f;
@@ -90,8 +92,29 @@ namespace EnhancedValheimVRM
             { { "Mace", "Club" }, { "Atgeir", "Polearm" }, { "Hammer", "Tool" }, { "Dagger", "Knife" }, { "Greatsword", "Sword" } };
         private sealed class ItemAdjustment { public string Class; public Vector3 Pos, Rot; public bool HasPos, HasRot; }
         private readonly Dictionary<string, ItemAdjustment> _items = new Dictionary<string, ItemAdjustment>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, float> _weaponScales = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
 
         private static string ItemKey(string scope, bool hand) => scope + (hand ? "|hand" : "|back");
+
+        public float GetWeaponScale(string prefabName)
+        {
+            return !string.IsNullOrEmpty(prefabName) && _weaponScales.TryGetValue(prefabName, out var scale)
+                ? scale
+                : WeaponScale;
+        }
+
+        private bool TryParseWeaponScaleLine(string key, string value)
+        {
+            if (!key.Equals(nameof(WeaponScale), StringComparison.OrdinalIgnoreCase)) return false;
+            int comma = value.IndexOf(',');
+            if (comma < 0) return false;
+            string prefabName = value.Substring(0, comma).Trim();
+            string scaleText = value.Substring(comma + 1).Trim();
+            if (prefabName.Length == 0 || !(ParseValue(typeof(float), scaleText) is float scale))
+                throw new InvalidDataException("Cannot parse named WeaponScale: " + value);
+            _weaponScales[prefabName] = scale;
+            return true;
+        }
 
         // Returns true and the adjustment for a weapon: its own name first, then its class.
         public bool TryGetItemAdjustment(string prefabName, string itemClass, bool hand, out Vector3 pos, out Vector3 rot)
@@ -198,6 +221,8 @@ namespace EnhancedValheimVRM
                 if (pair.Value.HasRot)
                     lines.Add(prefix + "Rot=" + name + string.Format(CultureInfo.InvariantCulture, "({0:R},{1:R},{2:R})", pair.Value.Rot.x, pair.Value.Rot.y, pair.Value.Rot.z));
             }
+            foreach (var pair in _weaponScales)
+                lines.Add("WeaponScale=" + pair.Key + "," + pair.Value.ToString("R", CultureInfo.InvariantCulture));
 
             lines.Sort(StringComparer.Ordinal);
             return string.Join("\n", lines);
@@ -231,6 +256,7 @@ namespace EnhancedValheimVRM
                 string key = parts[0].Trim();
                 string value = parts[1].Trim();
 
+                if (TryParseWeaponScaleLine(key, value)) continue;
                 if (!_fields.ContainsKey(key) && TryParseItemLine(key, value)) continue;
 
                 if (_fields.TryGetValue(key, out FieldInfo field))
@@ -257,6 +283,9 @@ namespace EnhancedValheimVRM
                 foreach (var v in new[] { pair.Value.Pos, pair.Value.Rot })
                     if (float.IsNaN(v.x) || float.IsInfinity(v.x) || float.IsNaN(v.y) || float.IsInfinity(v.y) || float.IsNaN(v.z) || float.IsInfinity(v.z))
                         throw new InvalidDataException("Non-finite weapon adjustment: " + pair.Key);
+            foreach (var pair in _weaponScales)
+                if (pair.Value <= 0 || float.IsNaN(pair.Value) || float.IsInfinity(pair.Value))
+                    throw new InvalidDataException("WeaponScale override must be positive and finite: " + pair.Key);
             foreach (var field in _fields.Values)
             {
                 object value = field.GetValue(this);
@@ -272,10 +301,10 @@ namespace EnhancedValheimVRM
                 throw new InvalidDataException("ShaderForTextureFix must be player or creature.");
             if (TextureFixEmission < 0 || TextureFixEmission > 1)
                 throw new InvalidDataException("TextureFixEmission must be between 0 and 1.");
-            if (ModelScale <= 0 || InteractionDistanceScale <= 0 || SpringBoneStiffness < 0 ||
+            if (ModelScale <= 0 || WeaponScale <= 0 || InteractionDistanceScale <= 0 || SpringBoneStiffness < 0 ||
                 SpringBoneGravityPower < 0 || ModelBrightness < 0)
                 throw new InvalidDataException(
-                    "Model/interaction scales must be positive; brightness and spring multipliers must be nonnegative.");
+                    "Model, weapon, and interaction scales must be positive; brightness and spring multipliers must be nonnegative.");
         }
 
         private static object ParseValue(Type type, string value)
