@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
 
 namespace EnhancedValheimVRM
 {
@@ -48,47 +46,9 @@ namespace EnhancedValheimVRM
             return player.gameObject.scene.name == "start";
         }
 
-        public static SkinnedMeshRenderer GetSmrBody(this Player player)
-        {
-            var visual = player.GetField<Player, GameObject>("m_visual");
-            return visual?.GetComponentsInChildren<SkinnedMeshRenderer>().FirstOrDefault(smr => smr.name == "body");
-        }
-
         public static VrmInstance GetVrmInstance(this Player player)
         {
-            var playerName = player.GetPlayerDisplayName();
-            var vrmInstances = VrmController.GetVrmInstances();
-            if (vrmInstances.TryGetValue(playerName, out var instance))
-            {
-                return instance;
-            }
-
-            return null;
-        }
-        public static Animator GetVrmGoAnimator(this Player player)
-        {
-            var vrmInstance = player.GetVrmInstance();
-            if (vrmInstance != null)
-            {
-                return vrmInstance.GetVrmGoAnimator();
-            }
-
-            return null;
-        }
-
-        public static VrmAnimator GetVrmAnimator(this Player player)
-        {
-            var vrmInstance = player.GetVrmInstance();
-            if (vrmInstance != null)
-            {
-                var vrmGo = vrmInstance.GetGameObject();
-                if (vrmGo != null)
-                {
-                    return vrmGo.GetComponent<VrmAnimator>();
-                }
-            }
-
-            return null;
+            return VrmController.FindInstance(player);
         }
     }
 }

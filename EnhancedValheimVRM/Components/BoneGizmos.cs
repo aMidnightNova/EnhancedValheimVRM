@@ -1,165 +1,129 @@
-﻿using System;
-using UnityEngine;
+using System;
 using System.Collections.Generic;
-using System.Reflection;
+using UnityEngine;
 
-namespace EnhancedValheimVRM // TODO: fix this, it does not work... yet.
+namespace EnhancedValheimVRM
 {
     public class BoneGizmos : MonoBehaviour
     {
-        private Player _player;
-        private Animator _playerAnimator;
-        private Animator _vrmGoAnimator;
-        private List<LineRenderer> _playerLineRenderers = new List<LineRenderer>();
-        private List<LineRenderer> _vrmLineRenderers = new List<LineRenderer>();
-        private bool _playerGizmos = false;
-        private bool _vrmGizmos = false;
-        private VisEquipment _visEquipment;
-        private Shader _shader = Shader.Find("Unlit/Color");
+        private sealed class SocketGizmo
+        {
+            public Transform Bone;
+            public string Label;
+            public readonly List<LineRenderer> Axes = new List<LineRenderer>();
+        }
+
+        private readonly List<SocketGizmo> _gizmos = new List<SocketGizmo>();
+        private readonly HashSet<Transform> _equipmentSockets = new HashSet<Transform>();
+        private GUIStyle _labelStyle;
 
         public void Setup(Player player, VrmInstance vrmInstance, bool playerGizmoEnabled = false, bool vrmGizmoEnabled = false)
         {
-            _playerGizmos = playerGizmoEnabled;
-            _vrmGizmos = vrmGizmoEnabled;
-
-
-            _player = player;
-            _vrmGoAnimator = vrmInstance.GetVrmGoAnimator();
-            _playerAnimator = _player.GetField<Player, Animator>("m_animator");
-            if (_player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
+            ClearGizmos();
+            _equipmentSockets.Clear();
+            if (player.TryGetField<Player, VisEquipment>("m_visEquipment", out var equipment) && equipment != null)
             {
-                _visEquipment = visEquipment;
+                foreach (var socket in new[] { equipment.m_leftHand, equipment.m_rightHand, equipment.m_helmet,
+                    equipment.m_backShield, equipment.m_backMelee, equipment.m_backTwohandedMelee,
+                    equipment.m_backBow, equipment.m_backTool, equipment.m_backAtgeir })
+                    if (socket != null) _equipmentSockets.Add(socket);
             }
+            var shader = Shader.Find("Unlit/Color");
+            if (shader == null) return;
+            if (playerGizmoEnabled) AddSockets(player.GetField<Player, Animator>("m_animator"), "Player", shader);
+            if (vrmGizmoEnabled) AddSockets(vrmInstance.GetVrmGoAnimator(), "VRM", shader);
+            UpdateAxes();
+        }
 
-
-            if (_visEquipment.GetFieldValue<FieldInfo>("m_rightItem")?.GetValue(_visEquipment) is string rightItemName)
+        private void AddSockets(Animator animator, string source, Shader shader)
+        {
+            if (animator == null) return;
+            var leftForearm = BoneLookup.Get(animator, HumanBodyBones.LeftLowerArm);
+            var rightForearm = BoneLookup.Get(animator, HumanBodyBones.RightLowerArm);
+            foreach (var bone in animator.GetComponentsInChildren<Transform>(true))
             {
-                if (GameItem.IsSpecialCase(rightItemName))
+                // Use the game's actual sockets, plus any additional attachment
+                // markers in either rig. Do not restrict this to particular slots.
+                bool forearm = bone == leftForearm || bone == rightForearm;
+                if (!forearm && !_equipmentSockets.Contains(bone) && bone.name.IndexOf("_attach", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                if (_gizmos.Exists(existing => existing.Bone == bone)) continue;
+                var gizmo = new SocketGizmo { Bone = bone, Label = source + " / " + bone.name + (forearm ? " (forearm bone)" : "") };
+                foreach (var color in new[] { Color.red, Color.green, Color.blue })
                 {
-                    if (_visEquipment.TryGetField<VisEquipment, GameObject>("m_rightItemInstance", out var go))
-                    {
-                        // this is overriding _playerAnimator to the armiture inside a rigged weapon.
-                        var animator = go.GetComponentInChildren<Animator>();
-                        _playerAnimator = animator;
-                    }
+                    var line = new GameObject("BoneGizmoLine").AddComponent<LineRenderer>();
+                    line.transform.SetParent(bone, false);
+                    line.startColor = line.endColor = color;
+                    line.startWidth = line.endWidth = 0.005f;
+                    line.positionCount = 2;
+                    line.useWorldSpace = false;
+                    // Unlit/Color uses material color rather than vertex colors.
+                    line.sharedMaterial = new Material(shader) { color = color };
+                    gizmo.Axes.Add(line);
                 }
-            }
-
-
-            if (_playerGizmos) InitializeLineRenderersPlayer();
-            if (_vrmGizmos) InitializeLineRenderersVrm();
-
-            UpdateLineRenderers();
-        }
-
-        private void InitializeLineRenderersPlayer()
-        {
-            var bones = _playerAnimator.GetComponentsInChildren<Transform>();
-
-
-            foreach (var bone in bones)
-            {
-                //if (bone.name.Contains("_attach") || bone.name.Contains("_Attach"))
-                if(bone.name == "LeftHand_Attach" || bone.name == "RightHand_Attach" || bone.name == "BackTool_attach" )
-                {
-                    _playerLineRenderers.Add(CreateLineRenderer(bone, Color.red));
-                    _playerLineRenderers.Add(CreateLineRenderer(bone, Color.green));
-                    _playerLineRenderers.Add(CreateLineRenderer(bone, Color.blue));
-                }
-
+                _gizmos.Add(gizmo);
             }
         }
 
-        private void InitializeLineRenderersVrm()
+        internal void SetVisible(bool visible)
         {
-            var vBones = _vrmGoAnimator.GetComponentsInChildren<Transform>();
-
-            foreach (var bone in vBones)
-            {
-                //if (bone.name.Contains("_attach") || bone.name.Contains("_Attach"))
-                if(bone.name == "LeftHand_Attach" || bone.name == "RightHand_Attach" || bone.name == "BackTool_attach")
-                {
-                    _vrmLineRenderers.Add(CreateLineRenderer(bone, Color.red));
-                    _vrmLineRenderers.Add(CreateLineRenderer(bone, Color.green));
-                    _vrmLineRenderers.Add(CreateLineRenderer(bone, Color.blue));
-                }
-
-            }
+            enabled = visible;
+            foreach (var gizmo in _gizmos)
+                foreach (var line in gizmo.Axes)
+                    if (line != null) line.enabled = visible;
         }
 
-        private LineRenderer CreateLineRenderer(Transform bone, Color color)
+        private void LateUpdate() => UpdateAxes();
+
+        private void UpdateAxes()
         {
-            var lineRenderer = new GameObject("BoneGizmoLine").AddComponent<LineRenderer>();
-            lineRenderer.transform.SetParent(bone, false);
-            lineRenderer.startColor = color;
-            lineRenderer.endColor = color;
-            lineRenderer.startWidth = 0.01f;
-            lineRenderer.endWidth = 0.01f;
-            lineRenderer.positionCount = 2;
-            lineRenderer.useWorldSpace = false;
-
-            Material lineMaterial = new Material(_shader);
-            lineMaterial.color = color;
-            lineRenderer.material = lineMaterial;
-
-            return lineRenderer;
-        }
-
-        private void LateUpdate()
-        {
-            //UpdateLineRenderers();
-        }
-
-        private void UpdateLineRenderers()
-        {
-            var index = 0;
-
-            if (_playerGizmos)
+            foreach (var gizmo in _gizmos)
             {
-                foreach (var bone in _playerAnimator.GetComponentsInChildren<Transform>())
+                if (gizmo.Bone == null) continue;
+                for (int axis = 0; axis < gizmo.Axes.Count; axis++)
                 {
-                    if (index + 2 < _playerLineRenderers.Count)
-                    {
-                        var boneLength = 10f;
-                        var boneRight = bone.TransformDirection(Vector3.right * (bone.localScale.x * boneLength));
-                        var boneUp = bone.TransformDirection(Vector3.up * (bone.localScale.y * boneLength));
-                        var boneForward = bone.TransformDirection(Vector3.forward * (bone.localScale.z * boneLength));
-
-                        UpdateLineRenderer(_playerLineRenderers[index++], bone.localPosition, bone.localPosition + boneRight);
-                        UpdateLineRenderer(_playerLineRenderers[index++], bone.localPosition, bone.localPosition + boneUp);
-                        UpdateLineRenderer(_playerLineRenderers[index++], bone.localPosition, bone.localPosition + boneForward);
-                    }
-                }
-            }
-
-            index = 0; // Reset index for VRM gizmos
-
-            if (_vrmGizmos)
-            {
-                foreach (var bone in _vrmGoAnimator.GetComponentsInChildren<Transform>())
-                {
-                    if (index + 2 < _vrmLineRenderers.Count)
-                    {
-                        var boneLength = 10f;
-                        var boneRight = bone.TransformDirection(Vector3.right * (bone.localScale.x * boneLength));
-                        var boneUp = bone.TransformDirection(Vector3.up * (bone.localScale.y * boneLength));
-                        var boneForward = bone.TransformDirection(Vector3.forward * (bone.localScale.z * boneLength));
-
-                        UpdateLineRenderer(_vrmLineRenderers[index++], bone.localPosition, bone.localPosition + boneRight);
-                        UpdateLineRenderer(_vrmLineRenderers[index++], bone.localPosition, bone.localPosition + boneUp);
-                        UpdateLineRenderer(_vrmLineRenderers[index++], bone.localPosition, bone.localPosition + boneForward);
-                    }
+                    var line = gizmo.Axes[axis];
+                    if (line == null) continue;
+                    var direction = axis == 0 ? gizmo.Bone.right : axis == 1 ? gizmo.Bone.up : gizmo.Bone.forward;
+                    // Each line starts at its own socket, with a 12 cm world length
+                    // independent of avatar import scale. Parenting follows animation.
+                    line.SetPosition(0, Vector3.zero);
+                    line.SetPosition(1, gizmo.Bone.InverseTransformVector(direction * 0.12f));
                 }
             }
         }
 
-        private void UpdateLineRenderer(LineRenderer lineRenderer, Vector3 startPosition, Vector3 endPosition)
+        private void OnGUI()
         {
-            if (lineRenderer != null)
+            var camera = Camera.main;
+            if (camera == null || Event.current.type != EventType.Repaint) return;
+            if (_labelStyle == null)
+                _labelStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.LowerCenter, fontSize = 14, fontStyle = FontStyle.Bold };
+
+            foreach (var gizmo in _gizmos)
             {
-                lineRenderer.SetPosition(0, startPosition);
-                lineRenderer.SetPosition(1, endPosition);
+                if (gizmo.Bone == null || !gizmo.Bone.gameObject.activeInHierarchy) continue;
+                var screen = camera.WorldToScreenPoint(gizmo.Bone.position);
+                if (screen.z <= 0 || screen.x < 0 || screen.x > Screen.width || screen.y < 0 || screen.y > Screen.height) continue;
+                var rect = new Rect(screen.x - 160, Screen.height - screen.y - 32, 320, 24);
+                _labelStyle.normal.textColor = Color.black;
+                GUI.Label(new Rect(rect.x + 1, rect.y + 1, rect.width, rect.height), gizmo.Label, _labelStyle);
+                _labelStyle.normal.textColor = Color.white;
+                GUI.Label(rect, gizmo.Label, _labelStyle);
             }
         }
+
+        private void ClearGizmos()
+        {
+            foreach (var gizmo in _gizmos)
+            foreach (var line in gizmo.Axes)
+            {
+                if (line == null) continue;
+                Destroy(line.sharedMaterial);
+                Destroy(line.gameObject);
+            }
+            _gizmos.Clear();
+        }
+
+        private void OnDestroy() => ClearGizmos();
     }
 }

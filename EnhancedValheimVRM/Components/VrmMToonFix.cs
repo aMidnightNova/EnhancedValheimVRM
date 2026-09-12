@@ -36,9 +36,9 @@ namespace EnhancedValheimVRM
 			_matColors.Clear();
 			foreach (var smr in vrm.GetComponentsInChildren<SkinnedMeshRenderer>())
 			{
-				foreach (var mat in smr.materials)
+				foreach (var mat in smr.sharedMaterials)
 				{
-					if (!_matColors.Exists(m => m.mat == mat))
+					if (mat != null && !_matColors.Exists(m => m.mat == mat))
 					{
 						_matColors.Add(new MatColor()
 						{
@@ -54,6 +54,18 @@ namespace EnhancedValheimVRM
 				}
 			}
 		}
+
+        internal void RefreshMaterialBaseline(Material material)
+        {
+            var baseline = _matColors.Find(item => item.mat == material);
+            if (baseline == null) return; // Setup will capture it if the avatar is still staging.
+            baseline.hasColor = material.HasProperty("_Color");
+            baseline.hasShadeColor = material.HasProperty("_ShadeColor");
+            baseline.hasEmission = material.HasProperty("_EmissionColor");
+            baseline.color = baseline.hasColor ? material.GetColor("_Color") : Color.white;
+            baseline.shadeColor = baseline.hasShadeColor ? material.GetColor("_ShadeColor") : Color.white;
+            baseline.emission = baseline.hasEmission ? material.GetColor("_EmissionColor") : Color.black;
+        }
 
 		void Update()
 		{

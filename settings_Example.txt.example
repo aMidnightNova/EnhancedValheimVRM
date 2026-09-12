@@ -1,108 +1,53 @@
-#--- Player size settings ---#
-
 # VRM model scale
 ModelScale=1.1
 
-# Y-coordinate offset of the model
-ModelOffsetY=0
-
-# Player collider height
-PlayerHeight=1.85
-
-# Player collider radius
-PlayerRadius=0.5
-
-# offset from the back of a chair, sitting on the edge.
-SittingOnChairOffset=<0, 0, 0>
-
-# Offset when sitting on throne
-SittingOnThroneOffset=<0, 0, 0>
-
-# Offset when sitting in a ship
-SittingOnShipOffset=<0, 0, 0>
-
-# Offset when holding the mast
-HoldingMastOffset=<0, 0, 0>
-
-# Offset when standing on a ship front
-HoldingDragonOffset=<0, 0, 0>
-
-# Use this to offset yourself when you're sitting on the ground
-SittingIdleOffset=<0, 0, 0>
-
-# Use that if your smol character stuck in air while sleeping
-SleepingOffset=<0, 0, 0>
-
-
-
-#--- Equipment transformation ---#
-
-# Offset of the equipment position of the right hand
+# Generic equipment adjustments in socket-local metres / Euler degrees.
+# Positions scale with avatar height; original prefab grip rotations are preserved.
 RightHandItemPos=<0, 0, 0>
-
-# Offset of the equipment position of the left hand
+RightHandItemRot=<0, 0, 0>
 LeftHandItemPos=<0, 0, 0>
-
-# Offset of back item position of the right hand. (+Y is forward, +Z is down, +X is right)
-#right back items<when you press R>
+LeftHandItemRot=<0, 0, 0>
 RightHandBackItemPos=<0, 0, 0>
-KnifeSidePos=<0, 0, 0>
-KnifeSideRot=<0, 0, 0>
-StaffPos=<0, 0, 0>
-StaffRot=<0, 0, 0>
-
-# Offset of back item position of the left hand. (+Y is forward, +Z is down, +X is right)
-#left back items<when you press R>
+RightHandBackItemRot=<0, 0, 0>
 LeftHandBackItemPos=<0, 0, 0>
-BowBackPos=<0, 0, 0>
-StaffSkeletonPos=<0, 0, 0>
+LeftHandBackItemRot=<0, 0, 0>
+# Per weapon class, added on top of the slot values above. Plain = stowed on the back,
+# add Hand for held. Put a prefab name in front to hit one weapon only; that line
+# replaces its class line. Classes: Bow Crossbow Sword Knife Club Axe Spear Polearm
+# Staff Shield Tool Pickaxe Torch Fist (Mace=Club, Atgeir=Polearm, Hammer=Tool)
+#BowPos=<0, 0.02, 0>
+#BowPos=BowDraugrFang,<0, 0.03, 0>
+#KnifeRot=<0, 0, 15>
+#SwordHandPos=<0, -0.01, 0>
 
+# Vanilla helmet visibility and additional scale/position adjustment.
+HelmetVisible=false
+HelmetScale=<1, 1, 1>
+HelmetOffset=<0, 0, 0>
+# Vanilla armor visibility.
+ChestVisible=false
+ShouldersVisible=false
+UtilityVisible=false
+LegsVisible=false
 
-#--- Misc ---#
-
-# VRM model brightness
-ModelBrightness=0.8
-
-# This will process and turn textures into standard textures. it will take some time, like 20 seconds or so if your avatar has a lot of textures.
-# cannot be used at the same time as UseMToonShader, and will override the UseMToonShader setting
-AttemptTextureFix=true
-
-# Adjust the camera position to the height of the VRM model
-FixCameraHeight=true
-
-# Use the MToon shader
-# If you want to use it, set "SSAO" to Off in the graphics settings
+# Material brightness and optional asynchronous texture conversion.
+ModelBrightness=1.0
+# which game shader the texture fix uses. player = the normal character shader. creature = the animal shader,
+# creature is the only one that can glow, needed for TextureFixEmission to do anything.
+ShaderForTextureFix=player
+AttemptTextureFix=false
+# only with ShaderForTextureFix=creature: how much the avatar glows with its own colors so it does not go black in shadow. 0 to 1.
+TextureFixEmission=0.15
+# Use the MToon shader (texture conversion takes precedence).
 UseMToonShader=false
-
-# Make the player fade out when the camera gets close
-# It is recommended to disable it on small characters
+# Camera height follows the avatar, with optional close-camera fading.
+FixCameraHeight=true
 EnablePlayerFade=true
 
-
-
-#--- SpringBone settings ---#
-
-# Stiffness scale of SpringBone
+# Multipliers on the avatar's authored spring settings.
 SpringBoneStiffness=1.0
-
-# Gravity strength scale of SpringBone
 SpringBoneGravityPower=1.0
-
-
-
-#--- Scaling ---#
-
-# Scale for the equipment in hands
-EquipmentScale=1.0
-
-# Scale for the interaction distance
+# Gameplay interaction distance multiplier; weapon attack range is unchanged.
 InteractionDistanceScale=1.0
-
-# Scale for attack distance
-AttackDistanceScale=1.0
-
-# Depth on which your character starts swimming
-SwimDepthScale=1.0
-
-
-
+# Permit this character's bundle and sharing key to be supplied to viewers.
+AllowShare=true

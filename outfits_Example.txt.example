@@ -1,0 +1,13 @@
+# Use your VRM's exact renderer and blendshape names.
+# Exactly one section must contain Default=True; its name can be anything.
+[Everyday]
+Default=True
+mesh:Body=True
+mesh:Shirt=True
+mesh:Hoodie=False
+
+[Winter]
+Default=False
+mesh:Body=True
+mesh:Shirt=False
+mesh:Hoodie=True
