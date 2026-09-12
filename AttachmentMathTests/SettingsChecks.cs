@@ -22,8 +22,10 @@ internal static class SettingsChecks
             check(first.ModelScale == 2 && first.HelmetVisible, "Candidate reload mutated previous settings before successful swap");
             // Per-class and per-weapon lines: class applies to every member, a named line replaces it,
             // and the lines survive the shared-settings round trip.
-            File.WriteAllText(path, "BowPos=<0,0.02,0>\nBowPos=Draugrfang,<0,0.03,0>\nBowRot=(0,0,15)\nKnifeHandRot=<0,10,0>\nMacePos=<0,0,-0.01>\nRightHandItemPos=<1,0,0>\n");
+            File.WriteAllText(path, "WeaponScale=1.1\nWeaponScale=BowDraugrFang,1.2\nBowPos=<0,0.02,0>\nBowPos=Draugrfang,<0,0.03,0>\nBowRot=(0,0,15)\nKnifeHandRot=<0,10,0>\nMacePos=<0,0,-0.01>\nRightHandItemPos=<1,0,0>\n");
             var weapons = new VrmSettings("Test");
+            check(Math.Abs(weapons.GetWeaponScale("BowFineWood") - 1.1f) < 0.000001f, "Global weapon scale did not apply");
+            check(Math.Abs(weapons.GetWeaponScale("bowdraugrfang") - 1.2f) < 0.000001f, "Named weapon scale did not replace the global value case-insensitively");
             check(weapons.TryGetItemAdjustment("Bow", "Bow", false, out var p1, out var r1) && p1.y == 0.02f && r1.z == 15, "Class line did not apply to a plain bow");
             check(weapons.TryGetItemAdjustment("Draugrfang", "Bow", false, out var p2, out var r2) && p2.y == 0.03f && r2.z == 15, "Named line did not replace the class position or lost the class rotation");
             check(!weapons.TryGetItemAdjustment("Bow", "Bow", true, out _, out _), "Back line applied in hand");
@@ -34,11 +36,13 @@ internal static class SettingsChecks
             var shared = new VrmSettings("Test", weapons.Serialize());
             check(shared.TryGetItemAdjustment("Draugrfang", "Bow", false, out var p5, out _) && p5.y == 0.03f &&
                   shared.TryGetItemAdjustment("KnifeCopper", "Knife", true, out _, out var r5) && r5.y == 10, "Weapon lines lost in shared settings");
+            check(Math.Abs(shared.GetWeaponScale("BowFineWood") - 1.1f) < 0.000001f &&
+                  Math.Abs(shared.GetWeaponScale("BowDraugrFang") - 1.2f) < 0.000001f, "Weapon scale lines lost in shared settings");
             File.WriteAllText(path, "BowPos=Draugrfang\n");
             bool badWeapon = false;
             try { new VrmSettings("Test"); } catch (InvalidDataException) { badWeapon = true; }
             check(badWeapon, "Weapon line without a vector accepted");
-            foreach (string bad in new[] { "ModelScale=0", "ModelScale=banana", "ModelScale=NaN", "SpringBoneStiffness=-1", "InteractionDistanceScale=Infinity", "RightHandBackItemPos=(0,NaN,0)" })
+            foreach (string bad in new[] { "ModelScale=0", "ModelScale=banana", "ModelScale=NaN", "WeaponScale=0", "WeaponScale=BowDraugrFang,NaN", "WeaponScale=,1.2", "SpringBoneStiffness=-1", "InteractionDistanceScale=Infinity", "RightHandBackItemPos=(0,NaN,0)" })
             {
                 File.WriteAllText(path, bad);
                 bool rejected = false;

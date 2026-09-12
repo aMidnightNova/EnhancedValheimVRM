@@ -11,6 +11,9 @@ RightHandBackItemPos=<0, 0, 0>
 RightHandBackItemRot=<0, 0, 0>
 LeftHandBackItemPos=<0, 0, 0>
 LeftHandBackItemRot=<0, 0, 0>
+# Scale all weapons, or name a weapon to scale it independently.
+WeaponScale=1.0
+#WeaponScale=BowDraugrFang,1.2
 # Per weapon class, added on top of the slot values above. Plain = stowed on the back,
 # add Hand for held. Put a prefab name in front to hit one weapon only; that line
 # replaces its class line. Classes: Bow Crossbow Sword Knife Club Axe Spear Polearm
@@ -28,6 +31,7 @@ HelmetOffset=<0, 0, 0>
 ChestVisible=false
 ShouldersVisible=false
 UtilityVisible=false
+TrinketVisible=false
 LegsVisible=false
 
 # Material brightness and optional asynchronous texture conversion.

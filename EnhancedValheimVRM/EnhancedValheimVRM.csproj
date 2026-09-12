@@ -7,7 +7,7 @@
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
         <ProjectGuid>{56266ABF-B3F1-44F5-8790-D269FE536067}</ProjectGuid>
         <OutputType>Library</OutputType>
-        <Version>1.0.0</Version>
+        <Version>1.0.1</Version>
         <AppDesignerFolder>Properties</AppDesignerFolder>
         <RootNamespace>EnhancedValheimVRM</RootNamespace>
         <AssemblyName>EnhancedValheimVRM</AssemblyName>
@@ -306,6 +306,42 @@
         <Copy SourceFiles="@(ReleaseDocumentation)" DestinationFolder="$(ReleasePath)/EnhancedValheimVRM" />
         <ZipDirectory SourceDirectory="$(ReleasePackageRoot)" DestinationFile="$(ReleaseArchive)" Overwrite="true" />
         <Message Importance="high" Text="Created release archive: $(ReleaseArchive)" />
+        <CallTarget Targets="PackageThunderstoreRelease" />
+    </Target>
+
+    <Target Name="PackageThunderstoreRelease" Condition="'$(Configuration)' == 'Release'">
+        <PropertyGroup>
+            <ThunderstorePackageRoot Condition="'$(OS)' != 'Windows_NT'">$(EnhancedProjectRoot)/artifacts/thunderstore-package</ThunderstorePackageRoot>
+            <ThunderstoreArchive Condition="'$(OS)' != 'Windows_NT'">$(EnhancedProjectRoot)/artifacts/EnhancedValheimVRM-$(Version)-Thunderstore.zip</ThunderstoreArchive>
+            <ThunderstoreReleasePath Condition="'$(OS)' != 'Windows_NT'">$(EnhancedProjectRoot)/artifacts/release-package/release/</ThunderstoreReleasePath>
+            <ThunderstorePackageRoot Condition="'$(OS)' == 'Windows_NT'">$(SolutionDir)packaged\thunderstore-package</ThunderstorePackageRoot>
+            <ThunderstoreArchive Condition="'$(OS)' == 'Windows_NT'">$(SolutionDir)packaged\EnhancedValheimVRM-$(Version)-Thunderstore.zip</ThunderstoreArchive>
+            <ThunderstoreReleasePath Condition="'$(OS)' == 'Windows_NT'">$(SolutionDir)release\</ThunderstoreReleasePath>
+            <ThunderstoreManifest>{
+  &quot;name&quot;: &quot;EnhancedValheimVRM&quot;,
+  &quot;version_number&quot;: &quot;$(Version)&quot;,
+  &quot;website_url&quot;: &quot;https://github.com/aMidnightNova/EnhancedValheimVRM&quot;,
+  &quot;description&quot;: &quot;Enhanced VRM avatar support for Valheim.&quot;,
+  &quot;dependencies&quot;: [
+    &quot;denikson-BepInExPack_Valheim-5.4.2350&quot;
+  ]
+}</ThunderstoreManifest>
+        </PropertyGroup>
+        <RemoveDir Directories="$(ThunderstorePackageRoot)" />
+        <MakeDir Directories="$(ThunderstorePackageRoot)" />
+        <ItemGroup>
+            <ThunderstoreRuntimeFile Include="$(ThunderstoreReleasePath)**/*" />
+        </ItemGroup>
+        <Copy SourceFiles="@(ThunderstoreRuntimeFile)"
+              DestinationFiles="@(ThunderstoreRuntimeFile->'$(ThunderstorePackageRoot)/%(RecursiveDir)%(Filename)%(Extension)')" />
+        <Copy SourceFiles="$(EnhancedProjectRoot)/README.md" DestinationFolder="$(ThunderstorePackageRoot)" />
+        <Copy SourceFiles="$(EnhancedProjectRoot)/icon.png" DestinationFolder="$(ThunderstorePackageRoot)" />
+        <WriteLinesToFile File="$(ThunderstorePackageRoot)/manifest.json"
+                          Lines="$(ThunderstoreManifest)" Overwrite="true" Encoding="ASCII" />
+        <ZipDirectory SourceDirectory="$(ThunderstorePackageRoot)"
+                      DestinationFile="$(ThunderstoreArchive)" Overwrite="true" />
+        <RemoveDir Directories="$(ThunderstorePackageRoot)" />
+        <Message Importance="high" Text="Created Thunderstore archive: $(ThunderstoreArchive)" />
     </Target>
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent"
@@ -423,6 +459,7 @@
 
         <!-- Zip for release -->
         <Exec Condition=" '$(Configuration)' == 'Release' " Command="powershell -command &quot;Compress-Archive -Path '$(ReleasePath)' -DestinationPath '$(SolutionDir)packaged\EnhancedValheimVRM-$(Version).zip'&quot; -Force" />
+        <CallTarget Targets="PackageThunderstoreRelease" Condition=" '$(Configuration)' == 'Release' " />
 
 
 

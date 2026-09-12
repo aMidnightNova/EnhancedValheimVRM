@@ -31,6 +31,7 @@ namespace EnhancedValheimVRM
             SetListVisible(equipment, "m_legItemInstances", settings.LegsVisible);
             SetListVisible(equipment, "m_shoulderItemInstances", settings.ShouldersVisible);
             SetListVisible(equipment, "m_utilityItemInstances", settings.UtilityVisible);
+            SetListVisible(equipment, "m_trinketItemInstances", settings.TrinketVisible);
             if (equipment.TryGetField<VisEquipment, GameObject>("m_helmetItemInstance", out var helmet))
             {
                 helmet.SetActive(settings.HelmetVisible);
@@ -72,7 +73,7 @@ namespace EnhancedValheimVRM
             var reference = EquipmentTransformReference.Get(item.transform);
             reference.SetRotationOffset(rotation);
             reference.SetPositionOffset(offset, settings.PlayerVrmScale);
-            reference.SetScale(settings.PlayerVrmScale);
+            reference.SetScale(settings.PlayerVrmScale * settings.GetWeaponScale(name));
         }
 
         private static void SetBack(VisEquipment equipment, string field, bool right, VrmSettings settings)
@@ -90,7 +91,7 @@ namespace EnhancedValheimVRM
 
             reference.SetRotationOffset(rotation);
             reference.SetPositionOffset(offset, settings.PlayerVrmScale);
-            reference.SetScale(settings.PlayerVrmScale);
+            reference.SetScale(settings.PlayerVrmScale * settings.GetWeaponScale(name));
         }
 
         internal static void RecreateEquipment(VisEquipment equipment)
