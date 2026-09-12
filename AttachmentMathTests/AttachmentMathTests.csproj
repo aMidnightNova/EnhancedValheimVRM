@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <VALHEIM_INSTALL Condition="'$(VALHEIM_INSTALL)' == '' and '$(OS)' != 'Windows_NT'">$(HOME)/.local/share/Steam/steamapps/common/Valheim</VALHEIM_INSTALL>
+    <UNIVRM_UNITY_LIBS Condition="'$(UNIVRM_UNITY_LIBS)' == ''">$(VALHEIM_INSTALL)/valheim_Data</UNIVRM_UNITY_LIBS>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../EnhancedValheimVRM/Utility/BoneNames.cs" Link="BoneNames.cs" />
+    <Compile Include="../EnhancedValheimVRM/Vrm/VrmSettings.cs" Link="VrmSettings.cs" />
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(UNIVRM_UNITY_LIBS)/Managed/UnityEngine.CoreModule.dll</HintPath></Reference>
+    <Compile Include="../EnhancedValheimVRM/Utility/AttachmentMath.cs" Link="AttachmentMath.cs" />
+    <Compile Include="../EnhancedValheimVRM/Utility/FixedRotationSmoother.cs" Link="FixedRotationSmoother.cs" />
+    <Reference Include="Unity.Mathematics">
+      <HintPath>$(UNIVRM_UNITY_LIBS)/Managed/Unity.Mathematics.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

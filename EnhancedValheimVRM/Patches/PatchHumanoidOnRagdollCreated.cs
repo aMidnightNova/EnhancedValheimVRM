@@ -1,52 +1,22 @@
 using HarmonyLib;
-using UnityEngine;
-
 
 namespace EnhancedValheimVRM
 {
+    // The game only calls this on the client that owns the dying character.
     [HarmonyPatch(typeof(Humanoid), "OnRagdollCreated")]
     internal static class PatchHumanoidOnRagdollCreated
     {
-        private static void Prefix(Humanoid __instance, Ragdoll ragdoll)
+        private static void Postfix(Humanoid __instance, Ragdoll ragdoll)
         {
-            if (!__instance.IsPlayer()) return;
-
-            var player = __instance as Player;
-
-            var vrmInstance = player.GetVrmInstance();
-            var vrmGo = vrmInstance.GetGameObject();
-            if (vrmGo == null) return;
-
-            foreach (var smr in ragdoll.GetComponentsInChildren<SkinnedMeshRenderer>())
-            {
-                smr.forceRenderingOff = true;
-                smr.updateWhenOffscreen = true;
-            }
-
-            var ragdollAnimator = ragdoll.gameObject.AddComponent<Animator>();
-            ragdollAnimator.keepAnimatorStateOnDisable = true;
-            ragdollAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate; 
-            
-            
-            if (ragdollAnimator == null)
-            {
-                Logger.Log("____________________ ragdollAnimator Null");
-            }
-
-            var characterAnimator = player.GetField<Player, Animator>("m_animator");
-            if (characterAnimator == null)
-            {
-                Logger.Log("____________________ characterAnimator Null");
-            }
-            
-
-
-            ragdollAnimator.avatar = characterAnimator.avatar;
-
- 
-            vrmGo.transform.SetParent(ragdoll.transform, false);
-
-            vrmGo.GetComponent<VrmAnimator>().Setup(player, ragdollAnimator, vrmInstance, true);
+            if (!(__instance is Player player) || ragdoll == null) return;
+            VrmController.TransferToRagdoll(player.GetVrmInstance(), ragdoll);
         }
+    }
+
+    // Other players' corpses arrive through the network without that call. Claim them here.
+    [HarmonyPatch(typeof(Ragdoll), "Awake")]
+    internal static class PatchRagdollAwake
+    {
+        private static void Postfix(Ragdoll __instance) => VrmController.OnRagdollAppeared(__instance);
     }
 }

@@ -10,12 +10,12 @@ namespace EnhancedValheimVRM
         private static void Postfix(Player __instance)
         {
             var vrmInstance = __instance.GetVrmInstance();
+            if (vrmInstance == null) return;
             var settings = vrmInstance.GetSettings();
 
             if (settings.FixCameraHeight)
             {
                 
-                Logger.Log("______________ Destroy EYE");
                 Object.Destroy(__instance.GetComponent<VrmEyeAnimator>());
             }
             

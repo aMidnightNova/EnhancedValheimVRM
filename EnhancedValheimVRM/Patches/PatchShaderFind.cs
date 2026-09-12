@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using HarmonyLib;
 using UnityEngine;
@@ -9,80 +10,67 @@ namespace EnhancedValheimVRM
     [HarmonyPriority(Priority.VeryHigh)]
     internal static class PatchShaderFind
     {
-        private static readonly Dictionary<string, Shader> ShaderDictionary = new Dictionary<string, Shader>();
+        // Previous commit's resolution order: game shaders, VRM bundle, native fallback.
+        private static readonly Dictionary<string, Shader> GameShaders = new Dictionary<string, Shader>();
+        private static readonly Dictionary<string, Shader> Shaders = new Dictionary<string, Shader>();
+        private static bool _started, _ready;
+        private static AssetBundle _bundle;
+        private static AssetBundleCreateRequest _bundleRequest;
 
-        private static readonly Dictionary<string, Shader> VRMShaderDictionary = new Dictionary<string, Shader>();
+        private static string BundlePath => Path.Combine(Constants.Shaders.Dir,
+            Settings.ShaderBundle == Settings.ShaderOptions.Old ? "OldUniVrm.shaders" : "UniVrm.shaders");
 
-
-        static PatchShaderFind()
+        private static void CaptureGameShaders()
         {
-            Shader[] allShaders = Resources.FindObjectsOfTypeAll<Shader>();
+            foreach (var shader in Resources.FindObjectsOfTypeAll<Shader>())
+                if (!GameShaders.ContainsKey(shader.name)) GameShaders.Add(shader.name, shader);
+        }
 
-            foreach (Shader shader in allShaders)
+        private static void AddShaders(Object[] assets)
+        {
+            foreach (var asset in assets)
+                if (asset is Shader shader) Shaders[shader.name] = shader;
+        }
+
+        internal static void EnsureLoadedForMenu()
+        {
+            if (_ready) return;
+            if (!_started) { CaptureGameShaders(); _started = true; }
+            try
             {
-                if (!ShaderDictionary.ContainsKey(shader.name))
-                {
-                    ShaderDictionary.Add(shader.name, shader);
-                }
+                // Like the old local loader, menu construction is synchronous.
+                // Reuse an existing request if returning from a world during its load.
+                if (_bundle == null) _bundle = _bundleRequest != null ? _bundleRequest.assetBundle : AssetBundle.LoadFromFile(BundlePath);
+                if (_bundle == null) { Logger.LogWarning("VRM shader bundle could not be loaded."); return; }
+                AddShaders(_bundle.LoadAllAssets<Shader>());
             }
+            finally { _ready = true; }
+        }
 
-            Logger.Log("[ShaderPatch] All shaders loaded into ShaderDictionary.");
-
-
-            var shaderFile = "";
-
-            if (Settings.ShaderBundle == Settings.ShaderOptions.Current)
+        internal static IEnumerator EnsureLoaded()
+        {
+            if (_started) { while (!_ready) yield return null; yield break; }
+            _started = true;
+            try
             {
-                shaderFile = "UniVrm.shaders";
+                CaptureGameShaders();
+                _bundleRequest = AssetBundle.LoadFromFileAsync(BundlePath);
+                yield return _bundleRequest;
+                if (_ready) yield break;
+                _bundle = _bundleRequest.assetBundle;
+                if (_bundle == null) { Logger.LogWarning("VRM shader bundle could not be loaded."); yield break; }
+                var assets = _bundle.LoadAllAssetsAsync<Shader>();
+                yield return assets;
+                if (!_ready) AddShaders(assets.allAssets);
             }
-            else if (Settings.ShaderBundle == Settings.ShaderOptions.Old)
-            {
-                shaderFile = "OldUniVrm.shaders";
-            }
-            else
-            {
-                Logger.LogError("[ShaderPatch] Invalid ShaderBundle; old, current");
-            }
-
-            var shaderPath = Path.Combine(Constants.Shaders.Dir, shaderFile);
-
-
-            if (File.Exists(shaderPath))
-            {
-                var assetBundle = AssetBundle.LoadFromFile(shaderPath);
-                var shaders = assetBundle.LoadAllAssets<Shader>();
-                foreach (var shader in shaders)
-                {
-                    Logger.Log("[ShaderPatch] Add Shader: " + shader.name);
-                    VRMShaderDictionary.Add(shader.name, shader);
-                }
-            }
-            else
-            {
-                Logger.Log("[ShaderPatch] No Shader file found at path." + shaderPath);
-            }
+            finally { _ready = true; }
         }
 
         private static bool Prefix(ref Shader __result, string name)
         {
-            Shader shader;
-            
-            if (ShaderDictionary.TryGetValue(name, out shader))
-            {
-                Logger.Log("[ShaderPatch] Shader '" + name + "' found in preloaded ShaderDictionary.");
-                __result = shader;
-                return false;
-            }
-            
-            if (VRMShaderDictionary.TryGetValue(name, out shader))
-            {
-                Logger.Log("[ShaderPatch] Shader '" + name + "' found in VRMShaders.Shaders");
-                __result = shader;
-                return false;
-            }
-
-            Logger.Log("[ShaderPatch] Shader '" + name + "' NOT FOUND in ShaderDictionary. passing method to original Shader.Find.");
-            return true;
+            if (!GameShaders.TryGetValue(name, out var shader) && !Shaders.TryGetValue(name, out shader)) return true;
+            __result = shader;
+            return false;
         }
     }
 }

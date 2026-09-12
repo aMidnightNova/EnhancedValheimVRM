@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using UnityEngine;
 
 namespace EnhancedValheimVRM
@@ -14,14 +14,15 @@ namespace EnhancedValheimVRM
             }
 
             var player = __instance as Player;
-            var vrmInstance = player.GetVrmInstance();
+            // A dead player's own object keeps sliding from the killing blow until respawn;
+            // its name tag belongs on the corpse.
+            var vrmInstance = player.GetVrmInstance() ?? VrmController.FindCorpseFor(player);
 
             if (vrmInstance != null)
             {
                 var vrmGo = vrmInstance.GetGameObject();
                 if (vrmGo == null)
                 {
-                    Logger.LogError("VrmGo Is Null GetHeadPoint");
                     return true;
                 }
                 var vrmGoAnimator = vrmGo.GetComponentInChildren<Animator>();

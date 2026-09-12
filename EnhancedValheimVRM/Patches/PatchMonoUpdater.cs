@@ -17,24 +17,8 @@ namespace EnhancedValheimVRM
             }
             else
             {
-                Logger.LogError("Failed to get m_update field from MonoUpdaters instance.");
+                Logger.LogOnce("mono-updater-field", "Failed to get m_update field from MonoUpdaters instance.");
             }
         }
     }
-
-    // [HarmonyPatch(typeof(MonoUpdaters), "Update")]
-    // public static class PatchMonoUpdate
-    // {
-    //     public static void Postfix(MonoUpdaters __instance)
-    //     {
-    //     }
-    // }
-    //
-    // [HarmonyPatch(typeof(MonoUpdaters), "FixedUpdate")]
-    // public static class PatchMonoFixedUpdate
-    // {
-    //     public static void Postfix(MonoUpdaters __instance)
-    //     {
-    //     }
-    // }
 }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -15,44 +17,37 @@ namespace EnhancedValheimVRM
         
         public static void ApplyPatches(Harmony harmony)
         {
-            var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var assemblyFilesInPath = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll", SearchOption.AllDirectories);
-            var assemblyFiles = loadedAssemblies.Where(a => IsAssemblyInDirectory(a, assemblyFilesInPath)).ToList();
+            CoroutineHelper.Instance.StartCoroutine(ApplyPatchesAsync(harmony));
+        }
 
-            foreach (var assembly in assemblyFiles)
+        private static IEnumerator ApplyPatchesAsync(Harmony harmony)
+        {
+            // Optional diagnostic discovery must not recursively read the install tree
+            // while an avatar is loading. Harmony itself is applied one type per frame.
+            var discovery = Task.Run(() =>
             {
+                var files = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll", SearchOption.AllDirectories);
+                var types = new List<Type>();
+                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    if (assembly.IsDynamic || new[] { "UnityEngine", "System", "mscorlib", "netstandard", "Microsoft", "Editor", "LuxParticles", "DemoScript" }.Any(assembly.FullName.StartsWith)) continue;
+                    try { if (IsAssemblyInDirectory(assembly, files)) types.AddRange(assembly.GetTypes()); }
+                    catch (ReflectionTypeLoadException error) { types.AddRange(error.Types.Where(type => type != null)); }
+                }
+                return types;
+            });
+            while (!discovery.IsCompleted) yield return null;
+            if (discovery.IsFaulted) { Logger.LogWarning("Profiler discovery failed: " + discovery.Exception.GetBaseException().Message); yield break; }
+            foreach (var type in discovery.Result)
+            {
+                yield return null;
                 try
                 {
-                    if (assembly.FullName.StartsWith("UnityEngine") ||
-                        assembly.FullName.StartsWith("System") ||
-                        assembly.FullName.StartsWith("mscorlib") ||
-                        assembly.FullName.StartsWith("netstandard") ||
-                        assembly.FullName.StartsWith("Microsoft") ||
-                        assembly.FullName.StartsWith("Editor") ||
-                        assembly.FullName.StartsWith("LuxParticles") ||
-                        assembly.FullName.StartsWith("DemoScript"))
-                    {
-                        continue;
-                    }
-
-                    foreach (var type in assembly.GetTypes())
-                    {
-                        try
-                        {
-                            PatchMethod(harmony, type, "Update");
-                            PatchMethod(harmony, type, "FixedUpdate");
-                            PatchMethod(harmony, type, "LateUpdate");
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Log($"Error patching type {type.FullName}: {ex.Message}");
-                        }
-                    }
+                    PatchMethod(harmony, type, "Update");
+                    PatchMethod(harmony, type, "FixedUpdate");
+                    PatchMethod(harmony, type, "LateUpdate");
                 }
-                catch (ReflectionTypeLoadException ex)
-                {
-                    Logger.Log($"Error loading types from {assembly.FullName}: {ex.LoaderExceptions[0].Message}");
-                }
+                catch (Exception error) { Logger.LogWarning("Cannot profile " + type.FullName + ": " + error.Message); }
             }
         }
 
@@ -121,12 +116,12 @@ namespace EnhancedValheimVRM
 
             if (methodCallTimestamps[methodName].Count > Settings.CallThreshold)
             {
-                Logger.Log($"{methodName} called {methodCallTimestamps[methodName].Count} times in the last {Settings.TimeWindowMs} ms");
+                Logger.LogOnce("profiler-frequency:" + methodName, $"{methodName} called {methodCallTimestamps[methodName].Count} times in the last {Settings.TimeWindowMs} ms");
             }
 
             if (elapsedMilliseconds > Settings.ProfileLogThresholdMs)
             {
-                Logger.Log($"{methodName} | Runtime -> {elapsedMilliseconds} ms | Call Count -> {methodCallTimestamps[methodName].Count}");
+                Logger.LogOnce("profiler-duration:" + methodName, $"{methodName} | Runtime -> {elapsedMilliseconds} ms | Call Count -> {methodCallTimestamps[methodName].Count}");
             }
         }
     }

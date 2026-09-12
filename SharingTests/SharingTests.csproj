@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../EnhancedValheimVRM/Outfits/OutfitConfig.cs" Link="OutfitConfig.cs" />
+    <Compile Include="../EnhancedValheimVRM/Sharing/SharingRpc.cs" Link="SharingRpc.cs" />
+    <Compile Include="../EnhancedValheimVRM/Sharing/PeerCharacter.cs" Link="PeerCharacter.cs" />
+    <Compile Include="../Shared/*.cs" Link="Shared/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
             Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
@@ -15,6 +15,12 @@
         <FileAlignment>512</FileAlignment>
         <LangVersion>8</LangVersion>
         <FrameworkPathOverride Condition="'$(OS)' == 'Unix'">/usr/lib/mono/4.7.1-api</FrameworkPathOverride>
+    </PropertyGroup>
+    <!-- Match the neighboring ValheimVRM development installation; explicit overrides take precedence. -->
+    <PropertyGroup>
+        <VALHEIM_INSTALL Condition="'$(VALHEIM_INSTALL)' == '' and '$(OS)' != 'Windows_NT'">$(HOME)/.local/share/Steam/steamapps/common/Valheim</VALHEIM_INSTALL>
+        <UNIVRM_UNITY_LIBS Condition="'$(UNIVRM_UNITY_LIBS)' == ''">$(VALHEIM_INSTALL)/valheim_Data</UNIVRM_UNITY_LIBS>
+        <EnhancedProjectRoot>$(MSBuildProjectDirectory)/..</EnhancedProjectRoot>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <PlatformTarget>AnyCPU</PlatformTarget>
@@ -35,27 +41,54 @@
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+        <DebugType>portable</DebugType>
+    </PropertyGroup>
     <ItemGroup>
+        <Reference Include="netstandard">
+            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\netstandard.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="System"/>
+        <Reference Include="System.IO.Compression">
+            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\System.IO.Compression.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="System.Core"/>
         <Reference Include="System.Data"/>
-        <Reference Include="System.IO.Compression" />
         <Reference Include="System.Xml"/>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Outfits\OutfitConfig.cs" />
+        <Compile Include="Outfits\OutfitController.cs" />
+        <Compile Include="Outfits\OutfitRpc.cs" />
         <Compile Include="Components\BoneGizmos.cs" />
-        <Compile Include="Components\SizeGizmo.cs" />
+        <Compile Include="Components\AttachmentReference.cs" />
+        <Compile Include="Components\EquipmentTransformReference.cs" />
+        <Compile Include="Utility\AttachmentMath.cs" />
+        <Compile Include="Utility\FixedRotationSmoother.cs" />
+        <Compile Include="ExtensionMethods\VisEquipmentExtensions.cs" />
         <Compile Include="Constants.cs" />
+        <Compile Include="Sharing\SharedVrmLifetime.cs" />
+        <Compile Include="..\Shared\SharingWire.cs"><Link>Sharing\SharingWire.cs</Link></Compile>
+        <Compile Include="..\Shared\BandwidthLimiter.cs"><Link>Sharing\BandwidthLimiter.cs</Link></Compile>
+        <Compile Include="..\Shared\SharingDownloadPolicy.cs"><Link>Sharing\SharingDownloadPolicy.cs</Link></Compile>
+        <Compile Include="..\Shared\BundleCrypto.cs"><Link>Sharing\BundleCrypto.cs</Link></Compile>
+        <Compile Include="..\Shared\AvatarTcpClient.cs"><Link>Sharing\AvatarTcpClient.cs</Link></Compile>
+        <Compile Include="..\Shared\AvatarTcpServer.cs"><Link>Sharing\AvatarTcpServer.cs</Link></Compile>
+        <Compile Include="..\Shared\SharingEndpoint.cs"><Link>Sharing\SharingEndpoint.cs</Link></Compile>
+        <Compile Include="Sharing\EmbeddedSharingHost.cs" />
+        <Compile Include="Sharing\SharingPortDiscovery.cs" />
+        <Compile Include="Sharing\SharingRpc.cs" />
+        <Compile Include="Sharing\PeerCharacter.cs" />
         <Compile Include="Components\VrmAnimator.cs" />
         <Compile Include="Components\VrmEyeAnimator.cs" />
         <Compile Include="Components\VrmMToonFix.cs" />
         <Compile Include="ExtensionMethods\DictionaryExtensions.cs" />
-        <Compile Include="ExtensionMethods\ExtensionMethods.cs" />
-        <Compile Include="ExtensionMethods\GameObjectExtensions.cs" />
         <Compile Include="ExtensionMethods\GenericExtensions.cs" />
         <Compile Include="ExtensionMethods\PlayerExtensions.cs" />
-        <Compile Include="Patches\PatchDebug.cs" />
         <Compile Include="Patches\PatchFejdStartup.cs" />
+        <Compile Include="Patches\PatchAvatarLoadingScreen.cs" />
         <Compile Include="Patches\PatchGameCameraGetCameraBaseOffset.cs" />
         <Compile Include="Patches\PatchCharacterGetHeadPoint.cs" />
         <Compile Include="Patches\PatchMonoUpdater.cs" />
@@ -72,17 +105,20 @@
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="Settings.cs" />
         <Compile Include="GameItem.cs" />
-        <Compile Include="Utility\BoneTransformer.cs" />
-        <Compile Include="Utility\Compression.cs" />
+        <Compile Include="Utility\BoneLookup.cs" />
+        <Compile Include="Utility\BoneNames.cs" />
+        <Compile Include="Components\SpringSettingsReference.cs" />
+        <Compile Include="Components\VrmRagdoll.cs" />
         <Compile Include="Utility\ConsoleCommands.cs" />
         <Compile Include="Utility\CoroutineHelper.cs" />
         <Compile Include="Utility\Logger.cs" />
         <Compile Include="Utility\TextureDeserializer.cs" />
-        <Compile Include="Utility\TimeElapsedHelper.cs" />
         <Compile Include="Utility\Utils.cs" />
         <Compile Include="Utility\FileTransferController.cs" />
         <Compile Include="Vrm\VrmController.cs" />
         <Compile Include="Vrm\VrmInstance.cs" />
+        <Compile Include="Vrm\VrmAssetCache.cs" />
+        <Compile Include="Vrm\PersistentImportAwaitCaller.cs" />
         <Compile Include="Vrm\VrmSettings.cs" />
     </ItemGroup>
     <ItemGroup>
@@ -128,6 +164,12 @@
         </Reference>
         <Reference Include="UnityEngine.CoreModule">
             <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.IMGUIModule">
+            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.TextRenderingModule">
+            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.PhysicsModule">
             <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
@@ -201,14 +243,73 @@
         <Reference Include="Unity.Mathematics">
             <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\Unity.Mathematics.dll</HintPath>
         </Reference>
-        <Reference Include="FreeImage.dll">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Plugins\x86_64\FreeImage.dll</HintPath>
-        </Reference>
+        <!-- FreeImage is a native runtime library, not a managed assembly reference. -->
     </ItemGroup>
     
 
     
-    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Target Name="ValidateGamePaths" BeforeTargets="ResolveReferences">
+        <Error Condition="!Exists('$(VALHEIM_INSTALL)/valheim_Data/Managed/assembly_valheim.dll')"
+               Text="VALHEIM_INSTALL must point to the Valheim installation used for this build." />
+        <Error Condition="!Exists('$(VALHEIM_INSTALL)/BepInEx/core/BepInEx.dll')"
+               Text="BepInEx was not found under VALHEIM_INSTALL/BepInEx/core." />
+        <Error Condition="!Exists('$(UNIVRM_UNITY_LIBS)/Managed/VRM.dll')"
+               Text="UNIVRM_UNITY_LIBS must point to the data directory containing Managed/VRM.dll." />
+    </Target>
+
+    <!-- Linux uses dependencies already installed in valheim_Data/Managed. -->
+    <Target Name="DeployLinuxBuild" AfterTargets="Build"
+            Condition="'$(OS)' != 'Windows_NT' and '$(DeployToGame)' != 'false'">
+        <PropertyGroup>
+            <BepInExPluginPath Condition="'$(BepInExPluginPath)' == ''">$(VALHEIM_INSTALL)/BepInEx/plugins</BepInExPluginPath>
+            <EnhancedVrmDataPath Condition="'$(EnhancedVrmDataPath)' == ''">$(VALHEIM_INSTALL)/EnhancedValheimVRM</EnhancedVrmDataPath>
+        </PropertyGroup>
+        <MakeDir Directories="$(BepInExPluginPath);$(EnhancedVrmDataPath)/shaders" />
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BepInExPluginPath)" />
+        <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(BepInExPluginPath)"
+              Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+        <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/UniVRM.shaders"
+              DestinationFiles="$(EnhancedVrmDataPath)/shaders/UniVrm.shaders" />
+        <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/OldUniVrm.shaders"
+              DestinationFolder="$(EnhancedVrmDataPath)/shaders" />
+        <Delete Files="$(BepInExPluginPath)/$(TargetFileName).mdb" />
+        <Delete Files="$(BepInExPluginPath)/$(TargetName).pdb"
+                Condition="!Exists('$(TargetDir)$(TargetName).pdb')" />
+        <Message Importance="high" Text="Deployed $(TargetFileName) and debug symbols to $(BepInExPluginPath), shaders to $(EnhancedVrmDataPath)/shaders." />
+    </Target>
+
+    <Target Name="PackageLinuxRelease" AfterTargets="Build" BeforeTargets="DeployLinuxBuild"
+            Condition="'$(OS)' != 'Windows_NT' and '$(Configuration)' == 'Release'">
+        <PropertyGroup>
+            <ReleasePackageRoot>$(EnhancedProjectRoot)/artifacts/release-package</ReleasePackageRoot>
+            <ReleasePath>$(ReleasePackageRoot)/release</ReleasePath>
+            <ReleaseArchive>$(EnhancedProjectRoot)/artifacts/EnhancedValheimVRM-$(Version).zip</ReleaseArchive>
+            <FreeImagePath>$(UNIVRM_UNITY_LIBS)/Plugins/x86_64/FreeImage.dll</FreeImagePath>
+            <FreeImagePath Condition="!Exists('$(FreeImagePath)')">$(UNIVRM_UNITY_LIBS)/Managed/FreeImage.dll</FreeImagePath>
+        </PropertyGroup>
+        <ItemGroup>
+            <ReleaseLibraryName Include="FastSpringBone;FastSpringBone10;MToon;UniGLTF;UniHumanoid;VRM;VRM10;VrmLib;UniGLTF.Utils" />
+            <ReleaseLibraryName Include="VRMShaders.GLTF.IO.Runtime;VRMShaders.GLTF.UniUnlit.Runtime;VRMShaders.VRM.IO.Runtime;VRMShaders.VRM10.Format.Runtime;VRMShaders.VRM10.MToon10.Runtime" />
+            <ReleaseLibraryName Include="AsyncImageLoader.Runtime;Unity.Burst;Unity.Mathematics" />
+            <ReleaseLibrary Include="@(ReleaseLibraryName->'$(UNIVRM_UNITY_LIBS)/Managed/%(Identity).dll')" />
+            <ReleaseLibrary Include="$(FreeImagePath)" />
+            <ReleaseDocumentation Include="$(EnhancedProjectRoot)/README.md;$(EnhancedProjectRoot)/WEAPONS.md;$(EnhancedProjectRoot)/outfits_Example.txt.example;$(EnhancedProjectRoot)/settings_Example.txt.example;$(EnhancedProjectRoot)/settings____Default.txt.example" />
+        </ItemGroup>
+        <RemoveDir Directories="$(ReleasePackageRoot)" />
+        <MakeDir Directories="$(ReleasePath)/BepInEx/plugins;$(ReleasePath)/valheim_Data/Managed;$(ReleasePath)/EnhancedValheimVRM/shaders" />
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ReleasePath)/BepInEx/plugins" />
+        <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/UniVRM.shaders"
+              DestinationFiles="$(ReleasePath)/EnhancedValheimVRM/shaders/UniVrm.shaders" />
+        <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/OldUniVrm.shaders"
+              DestinationFolder="$(ReleasePath)/EnhancedValheimVRM/shaders" />
+        <Copy SourceFiles="@(ReleaseLibrary)" DestinationFolder="$(ReleasePath)/valheim_Data/Managed" />
+        <Copy SourceFiles="@(ReleaseDocumentation)" DestinationFolder="$(ReleasePath)/EnhancedValheimVRM" />
+        <ZipDirectory SourceDirectory="$(ReleasePackageRoot)" DestinationFile="$(ReleaseArchive)" Overwrite="true" />
+        <Message Importance="high" Text="Created release archive: $(ReleaseArchive)" />
+    </Target>
+
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent"
+            Condition="'$(OS)' == 'Windows_NT' and '$(DeployToGame)' != 'false'">
         <!-- Set Paths -->
         <PropertyGroup>
             <BepInExPluginPath>$(VALHEIM_INSTALL)\BepInEx\plugins\</BepInExPluginPath>

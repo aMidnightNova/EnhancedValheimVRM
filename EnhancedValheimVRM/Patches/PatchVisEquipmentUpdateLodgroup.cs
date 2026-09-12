@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Reflection;
+using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 
@@ -10,257 +9,101 @@ namespace EnhancedValheimVRM
     {
         private static void Postfix(VisEquipment __instance)
         {
-            if (!__instance.m_isPlayer || !__instance.TryGetComponent(out Player player)) return;
-
-            Logger.LogWarning("Update LOG GROUP");
-
-            var vrmInstance = player.GetVrmInstance();
-            if (vrmInstance == null) return;
-
-            var settings = vrmInstance.GetSettings();
-            var vrmGoAnimator = player.GetVrmGoAnimator();
-            var vrmAnimator = player.GetVrmAnimator();
-
-            TryHandleItemInstance(__instance, "m_hairItemInstance", vrmGoAnimator, settings);
-            TryHandleItemInstance(__instance, "m_beardItemInstance", vrmGoAnimator, settings);
-
-            TryHandleItemList(__instance, "m_chestItemInstances", settings.ChestVisible);
-            TryHandleItemList(__instance, "m_legItemInstances", settings.LegsVisible);
-            TryHandleItemList(__instance, "m_shoulderItemInstances", settings.ShouldersVisible);
-            TryHandleItemList(__instance, "m_utilityItemInstances", settings.UtilityVisible);
-
-            TryHandleHelmet(__instance, "m_helmetItemInstance", vrmGoAnimator, settings);
-            TryHandleLeftItem(__instance, "m_leftItemInstance", vrmGoAnimator, vrmAnimator, settings);
-            TryHandleRightItem(__instance, "m_rightItemInstance", vrmGoAnimator, vrmAnimator, settings);
-            TryHandleRightBackItem(__instance, "m_rightBackItemInstance", vrmGoAnimator, vrmAnimator, settings);
-            TryHandleLeftBackItem(__instance, "m_leftBackItemInstance", vrmGoAnimator, vrmAnimator, settings);
+            if (!__instance.m_isPlayer || !__instance.TryGetComponent<Player>(out var player)) return;
+            Apply(__instance, player.GetVrmInstance());
         }
 
-        private static void TryHandleItemInstance(VisEquipment instance, string fieldName, Animator vrmGoAnimator, VrmSettings settings)
+        internal static void Apply(VisEquipment equipment, VrmInstance vrm)
         {
-            if (instance.TryGetField<VisEquipment, GameObject>(fieldName, out var go))
+            if (vrm == null || vrm.GetGameObject() == null) return;
+            // Staging is already loaded here; rollback restores this flag if setup fails.
+            if (vrm.IsReady && equipment.m_bodyModel != null)
             {
-                // gets the field like so m_hairItem~~Instance~~ -> m_hairItem
-                var itemName = instance.GetFieldValue<FieldInfo>(fieldName.Replace("Instance", ""))?.GetValue(instance) as string;
-                Logger.Log($"Handling item: {fieldName}, Item Name: {itemName}");
-                HandleItemInstance(go, vrmGoAnimator, false, false);
+                equipment.m_bodyModel.forceRenderingOff = true;
+                equipment.m_bodyModel.updateWhenOffscreen = true;
             }
-        }
 
-        private static void TryHandleItemList(VisEquipment instance, string fieldName, bool visible)
-        {
-            if (instance.TryGetField<VisEquipment, List<GameObject>>(fieldName, out var goList))
+            var settings = vrm.GetSettings();
+            foreach (string field in new[] { "m_hairItemInstance", "m_beardItemInstance" })
+                if (equipment.TryGetField<VisEquipment, GameObject>(field, out var hair))
+                    hair.SetActive(false);
+            SetListVisible(equipment, "m_chestItemInstances", settings.ChestVisible);
+            SetListVisible(equipment, "m_legItemInstances", settings.LegsVisible);
+            SetListVisible(equipment, "m_shoulderItemInstances", settings.ShouldersVisible);
+            SetListVisible(equipment, "m_utilityItemInstances", settings.UtilityVisible);
+            if (equipment.TryGetField<VisEquipment, GameObject>("m_helmetItemInstance", out var helmet))
             {
-                var itemName = instance.GetFieldValue<FieldInfo>(fieldName.Replace("Instances", ""))?.GetValue(instance) as string;
-                Logger.Log($"Handling item: {fieldName}, Item Name: {itemName}");
-                HandleItemInstanceList(goList, visible);
-            }
-        }
-
-        private static void TryHandleHelmet(VisEquipment instance, string fieldName, Animator vrmGoAnimator, VrmSettings settings)
-        {
-            if (instance.TryGetField<VisEquipment, GameObject>(fieldName, out var go))
-            {
-                var itemName = instance.GetFieldValue<FieldInfo>("m_helmetItem")?.GetValue(instance) as string;
-                Logger.Log($"Handling helmet: {fieldName}, Item Name: {itemName}");
-                HandleHelmet(go, vrmGoAnimator, settings);
-            }
-        }
-
-        private static void TryHandleLeftItem(VisEquipment instance, string fieldName, Animator vrmGoAnimator, VrmAnimator vrmAnimator, VrmSettings settings)
-        {
-            if (instance.TryGetField<VisEquipment, GameObject>(fieldName, out var go))
-            {
-                var itemName = instance.GetFieldValue<FieldInfo>("m_leftItem")?.GetValue(instance) as string;
-
-
-                if (vrmAnimator != null)
+                helmet.SetActive(settings.HelmetVisible);
+                if (settings.HelmetVisible)
                 {
-                    vrmAnimator.LeftHandItemInstanceName = itemName;
-                    vrmAnimator.LeftHandItemInstance = go;
+                    EquipmentTransformReference.Get(helmet.transform)
+                        .SetPositionOffset(settings.HelmetOffset, settings.PlayerVrmScale);
+                    EquipmentTransformReference.Get(helmet.transform)
+                        .SetScale(settings.PlayerVrmScale, settings.HelmetScale);
                 }
-
-
-                Logger.Log($"Handling left item: {fieldName}, Item Name: {itemName}");
-
-                // go.transform.SetParent(vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand), false);
-                go.transform.localPosition = settings.LeftHandItemPos;
-                go.transform.localScale = settings.PlayerVrmScaleVector3;
-
-                //go.transform.localScale = Vector3.one;
             }
+
+            SetHand(equipment, "m_leftItem", settings.LeftHandItemPos, settings.LeftHandItemRot, settings);
+            SetHand(equipment, "m_rightItem", settings.RightHandItemPos, settings.RightHandItemRot, settings);
+            SetBack(equipment, "m_rightBackItem", true, settings);
+            SetBack(equipment, "m_leftBackItem", false, settings);
+            // Refresh both slots together, including nulls after unequipping.
+            vrm.GetGameObject().GetComponent<VrmAnimator>()?.StartupGetItems();
         }
 
-        private static void TryHandleRightItem(VisEquipment instance, string fieldName, Animator vrmGoAnimator, VrmAnimator vrmAnimator, VrmSettings settings)
+        private static void SetListVisible(VisEquipment equipment, string field, bool visible)
         {
-            if (instance.TryGetField<VisEquipment, GameObject>(fieldName, out var go))
-            {
-                var itemName = instance.GetFieldValue<FieldInfo>("m_rightItem")?.GetValue(instance) as string;
-                Logger.Log($"Handling right item: {fieldName}, Item Name: {itemName}");
-
-                if (vrmAnimator != null)
-                {
-                    vrmAnimator.RightHandItemInstanceName = itemName;
-                    vrmAnimator.RightHandItemInstance = go;
-                }
-
-
-                // if (GameItem.IsSpecialCase(itemName))
-                // {
-                //     var smr = go.GetComponentInChildren<SkinnedMeshRenderer>();
-                //     if (smr != null)
-                //     {
-                //         if (smr.rootBone != null)
-                //         {
-                //             // var leftHandBoneName = BoneTransformer.MapHumanBodyBoneToPlayerBoneName(HumanBodyBones.LeftHand);
-                //             // var rightHandBoneName = BoneTransformer.MapHumanBodyBoneToPlayerBoneName(HumanBodyBones.RightHand);
-                //             //
-                //             // var left = BoneTransformer.FindBoneInHierarchy(go.transform, leftHandBoneName);
-                //             // var right = BoneTransformer.FindBoneInHierarchy(go.transform, rightHandBoneName);
-                //             //
-                //             // left.localScale = settings.PlayerVrmScaleVector3;
-                //             // right.localScale = settings.PlayerVrmScaleVector3;
-                //             // //smr.rootBone.localPosition = Vector3.zero;
-                //             // //smr.rootBone.localPosition = settings.RightHandItemPos;
-                //             smr.rootBone.localScale = settings.PlayerVrmScaleVector3;
-                //         }
-                //     }
-                // }
-                // else
-                // {
-                //     // go.transform.SetParent(vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand), false);
-                //     go.transform.localScale = settings.PlayerVrmScaleVector3;
-                //     //go.transform.localScale = Vector3.one;
-                // }
-                go.transform.localPosition = settings.RightHandItemPos;
-                go.transform.localScale = settings.PlayerVrmScaleVector3;
-
-            }
+            if (!equipment.TryGetField<VisEquipment, List<GameObject>>(field, out var items)) return;
+            foreach (var item in items)
+                if (item != null)
+                    item.SetActive(visible);
         }
 
-        private static void TryHandleRightBackItem(VisEquipment instance, string fieldName, Animator vrmGoAnimator, VrmAnimator vrmAnimator, VrmSettings settings)
+        private static void SetHand(VisEquipment equipment, string field, Vector3 offset, Vector3 rotation, VrmSettings settings)
         {
-            if (instance.TryGetField<VisEquipment, GameObject>(fieldName, out var go))
+            if (!equipment.TryGetField<VisEquipment, GameObject>(field + "Instance", out var item)) return;
+            string name = equipment.GetEquippedItemName(field);
+            if (settings.TryGetItemAdjustment(name, GameItem.ClassOf(name), true, out var itemPos, out var itemRot))
             {
-                var itemName = instance.GetFieldValue<FieldInfo>("m_rightBackItem")?.GetValue(instance) as string;
-                Logger.Log($"Handling right back item: {fieldName}, Item Name: {itemName}");
-
-                if (vrmAnimator != null)
-                {
-                    vrmAnimator.RightHandBackItemInstanceName = itemName;
-                    vrmAnimator.RightHandBackItemInstance = go;
-                }
-
-                HandleRightBackItem(go, instance, vrmGoAnimator, settings);
+                offset += itemPos;
+                rotation += itemRot;
             }
+
+            var reference = EquipmentTransformReference.Get(item.transform);
+            reference.SetRotationOffset(rotation);
+            reference.SetPositionOffset(offset, settings.PlayerVrmScale);
+            reference.SetScale(settings.PlayerVrmScale);
         }
 
-        private static void TryHandleLeftBackItem(VisEquipment instance, string fieldName, Animator vrmGoAnimator, VrmAnimator vrmAnimator, VrmSettings settings)
+        private static void SetBack(VisEquipment equipment, string field, bool right, VrmSettings settings)
         {
-            if (instance.TryGetField<VisEquipment, GameObject>(fieldName, out var go))
+            if (!equipment.TryGetField<VisEquipment, GameObject>(field + "Instance", out var item)) return;
+            var reference = EquipmentTransformReference.Get(item.transform);
+            Vector3 offset = right ? settings.RightHandBackItemPos : settings.LeftHandBackItemPos;
+            Vector3 rotation = right ? settings.RightHandBackItemRot : settings.LeftHandBackItemRot;
+            string name = equipment.GetEquippedItemName(field);
+            if (settings.TryGetItemAdjustment(name, GameItem.ClassOf(name), false, out var itemPos, out var itemRot))
             {
-                var itemName = instance.GetFieldValue<FieldInfo>("m_leftBackItem")?.GetValue(instance) as string;
-                Logger.Log($"Handling left back item: {fieldName}, Item Name: {itemName}");
-
-                if (vrmAnimator != null)
-                {
-                    vrmAnimator.LeftHandBackItemInstanceName = itemName;
-                    vrmAnimator.LeftHandBackItemInstance = go;
-                }
-
-
-                HandleLeftBackItem(go, instance, vrmGoAnimator, settings);
+                offset += itemPos;
+                rotation += itemRot;
             }
+
+            reference.SetRotationOffset(rotation);
+            reference.SetPositionOffset(offset, settings.PlayerVrmScale);
+            reference.SetScale(settings.PlayerVrmScale);
         }
 
-        private static void HandleItemInstance(GameObject go, Animator vrmGoAnimator, bool visible, bool attachToBone)
+        internal static void RecreateEquipment(VisEquipment equipment)
         {
-            if (!visible)
-            {
-                go.SetActive(false);
-            }
-            else if (attachToBone)
-            {
-                //go.transform.SetParent(vrmGoAnimator.GetBoneTransform(HumanBodyBones.Head), false);
-            }
-        }
-
-        private static void HandleItemInstanceList(List<GameObject> itemList, bool visible)
-        {
-            if (!visible)
-            {
-                itemList.ForEach(item => item.SetActive(false));
-            }
-        }
-
-        private static void HandleHelmet(GameObject go, Animator vrmGoAnimator, VrmSettings settings)
-        {
-            if (!settings.HelmetVisible)
-            {
-                go.SetActive(false);
-            }
-            else
-            {
-                // go.transform.SetParent(vrmGoAnimator.GetBoneTransform(HumanBodyBones.Head), false);
-                go.transform.localPosition = settings.HelmetOffset;
-                go.transform.localScale = settings.HelmetScale;
-                //go.transform.localScale = Vector3.Scale(Vector3.one, settings.HelmetScale);
-            }
-        }
-
-
-        private static void HandleRightBackItem(GameObject go, VisEquipment instance, Animator vrmGoAnimator, VrmSettings settings)
-        {
-            var rightBackName = instance.GetFieldValue<FieldInfo>("m_rightBackItem")?.GetValue(instance) as string;
-
-            Vector3 offset = Vector3.zero;
-
-            if (rightBackName?.StartsWith("Knife") == true)
-            {
-                //go.transform.SetParent(vrmGoAnimator.GetBoneTransform(HumanBodyBones.Hips), false);
-                offset = settings.KnifeSidePos;
-                go.transform.Rotate(settings.KnifeSideRot);
-            }
-            else if (rightBackName?.StartsWith("Staff") == true)
-            {
-                // go.transform.SetParent(vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest), false);
-                offset = settings.StaffPos;
-                go.transform.Rotate(settings.StaffRot);
-            }
-            else
-            {
-                //go.transform.SetParent(vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest), false);
-                offset = go.transform.parent == instance.m_backTool
-                    ? settings.RightHandBackItemToolPos
-                    : settings.RightHandBackItemPos;
-            }
-
-            go.transform.localPosition = offset;
-            go.transform.localScale = settings.PlayerVrmScaleVector3;
-            //go.transform.localScale = Vector3.one;
-        }
-
-        private static void HandleLeftBackItem(GameObject go, VisEquipment instance, Animator vrmGoAnimator, VrmSettings settings)
-        {
-            var leftBackName = instance.GetFieldValue<FieldInfo>("m_leftBackItem")?.GetValue(instance) as string;
-
-            if (leftBackName?.StartsWith("Bow") == true)
-            {
-                go.transform.localPosition = settings.BowBackPos;
-            }
-            else if (leftBackName?.StartsWith("StaffSkeleton") == true)
-            {
-                go.transform.localPosition = settings.StaffSkeletonPos;
-            }
-            else
-            {
-                go.transform.localPosition = settings.LeftHandBackItemPos;
-            }
-
-            // go.transform.SetParent(vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest), false);
-
-            go.transform.localScale = settings.PlayerVrmScaleVector3;
-            //go.transform.localScale = Vector3.one;
+            // Recreate any rig that was attached before the VRM became ready, and
+            // rebuild skinned clothing whose renderer visibility was previously hidden.
+            foreach (string slot in new[]
+                     {
+                         "LeftItem", "RightItem", "HelmetItem", "ChestItem", "LegItem", "ShoulderItem", "UtilityItem",
+                         "TrinketItem", "LeftBackItem", "RightBackItem"
+                     })
+                AccessTools.Field(typeof(VisEquipment), "m_current" + slot + "Hash")?.SetValue(equipment, int.MinValue);
+            equipment.InvokePrivateMethod("UpdateEquipmentVisuals");
         }
     }
 }

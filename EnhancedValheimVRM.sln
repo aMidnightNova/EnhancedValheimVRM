@@ -1,6 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# 
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnhancedValheimVRM", "EnhancedValheimVRM\EnhancedValheimVRM.csproj", "{56266ABF-B3F1-44F5-8790-D269FE536067}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharingTests", "SharingTests\SharingTests.csproj", "{16DDB760-2E91-4FB3-9F18-67757A7069FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AttachmentMathTests", "AttachmentMathTests\AttachmentMathTests.csproj", "{C794D031-554B-47B2-AD05-AB15E7D2F937}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoadingTests", "LoadingTests\LoadingTests.csproj", "{95EAAECA-FDF9-4DAB-9D70-491703760BDC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -8,9 +15,21 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C794D031-554B-47B2-AD05-AB15E7D2F937}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C794D031-554B-47B2-AD05-AB15E7D2F937}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C794D031-554B-47B2-AD05-AB15E7D2F937}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C794D031-554B-47B2-AD05-AB15E7D2F937}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16DDB760-2E91-4FB3-9F18-67757A7069FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16DDB760-2E91-4FB3-9F18-67757A7069FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16DDB760-2E91-4FB3-9F18-67757A7069FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16DDB760-2E91-4FB3-9F18-67757A7069FE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{56266ABF-B3F1-44F5-8790-D269FE536067}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{56266ABF-B3F1-44F5-8790-D269FE536067}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{56266ABF-B3F1-44F5-8790-D269FE536067}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{56266ABF-B3F1-44F5-8790-D269FE536067}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95EAAECA-FDF9-4DAB-9D70-491703760BDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95EAAECA-FDF9-4DAB-9D70-491703760BDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95EAAECA-FDF9-4DAB-9D70-491703760BDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95EAAECA-FDF9-4DAB-9D70-491703760BDC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

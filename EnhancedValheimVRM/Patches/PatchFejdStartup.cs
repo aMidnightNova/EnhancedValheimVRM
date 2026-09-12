@@ -9,10 +9,12 @@ namespace EnhancedValheimVRM
     {
         public static void Apply(Harmony harmony)
         {
-            var originalMethod = typeof(FejdStartup).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            // Dedicated builds do not need the menu bootstrap. Resolve it only if
+            // that type is present, without touching any client avatar types.
+            var startupType = typeof(ZNet).Assembly.GetType("FejdStartup", false);
+            var originalMethod = startupType?.GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
             if (originalMethod == null)
             {
-                Debug.LogError("Failed to find Awake method in FejdStartup.");
                 return;
             }
 

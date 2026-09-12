@@ -11,18 +11,18 @@ namespace EnhancedValheimVRM
 
         public void Setup(Player player, Animator playerAnimator, VrmInstance vrmInstance)
         {
-            _playerAnimator = playerAnimator;
+            _playerAnimator = vrmInstance.GetVrmGoAnimator();
             
-            _vrmEyes = _playerAnimator.GetBoneTransform(HumanBodyBones.LeftEye);
+            _vrmEyes = BoneLookup.Get(_playerAnimator, HumanBodyBones.LeftEye);
 
             if (_vrmEyes == null)
             {
-                _vrmEyes = _playerAnimator.GetBoneTransform(HumanBodyBones.Head);
+                _vrmEyes = BoneLookup.Get(_playerAnimator, HumanBodyBones.Head);
             }
 
             if (_vrmEyes == null)
             {
-                _vrmEyes = _playerAnimator.GetBoneTransform(HumanBodyBones.Neck);
+                _vrmEyes = BoneLookup.Get(_playerAnimator, HumanBodyBones.Neck);
             }
 
 
@@ -43,7 +43,6 @@ namespace EnhancedValheimVRM
                 var pos = _playerEyes.position;
                 pos.y = _vrmEyes.position.y;
 
-                //TODO: figure out if the player eye should be set to the vrm eye pos.
                 _playerEyes.position = pos;
             }
         }

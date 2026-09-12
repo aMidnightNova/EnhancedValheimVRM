@@ -1,10 +1,14 @@
-﻿using UnityEngine;
+﻿using System.Collections.Concurrent;
+using UnityEngine;
 
 namespace EnhancedValheimVRM
 {
     public static class Logger
     {
         private static readonly string Prepend = $"[{Constants.PluginName}]";
+        private static readonly ConcurrentDictionary<string, byte> Reported = new ConcurrentDictionary<string, byte>();
+        private static readonly ConcurrentQueue<string> Order = new ConcurrentQueue<string>();
+        private const int MaximumOnceKeys = 512;
 
         public enum LogLevel
         {
@@ -15,38 +19,40 @@ namespace EnhancedValheimVRM
             Override = -1
         }
 
-        private static bool LogLevelCheck(LogLevel level)
-        {
-            
-            // If level is Override, always log
-            if (level == LogLevel.Override) return true;
-            
-            // If logging is disabled, return false
-            if (Settings.LogLevel == LogLevel.None) return false;
-
-            // Proceed if the current log level is greater than or equal to the specified level
-            return Settings.LogLevel >= level;
-        }
+        private static bool Enabled(LogLevel level) => level == LogLevel.Override ||
+                                                       (Settings.LogLevel != LogLevel.None &&
+                                                        Settings.LogLevel >= level);
 
         public static void Log(object message, LogLevel level = LogLevel.Override)
         {
-            if (!LogLevelCheck(level)) return;
-
-            Debug.Log($"{Prepend} {message}");
+            if (Enabled(level)) Debug.Log($"{Prepend} {message}");
         }
-        
+
         public static void LogWarning(object message, LogLevel level = LogLevel.Override)
         {
-            if (!LogLevelCheck(level)) return;
-            
-            Debug.LogWarning($"{Prepend} {message}");
+            if (Enabled(level)) Debug.LogWarning($"{Prepend} {message}");
         }
-        
+
         public static void LogError(object message, LogLevel level = LogLevel.Override)
         {
-            if (!LogLevelCheck(level)) return;
+            if (Enabled(level)) Debug.LogError($"{Prepend} {message}");
+        }
 
-            Debug.LogError($"{Prepend} {message}");
+        public static void LogOnce(string key, object message, LogLevel level = LogLevel.Override)
+        {
+            if (!Enabled(level) || !Reported.TryAdd(key, 0)) return;
+            Order.Enqueue(key);
+            while (Reported.Count > MaximumOnceKeys && Order.TryDequeue(out var oldest))
+                Reported.TryRemove(oldest, out _);
+            Debug.Log($"{Prepend} {message}");
+        }
+
+        internal static void ResetOnce()
+        {
+            Reported.Clear();
+            while (Order.TryDequeue(out _))
+            {
+            }
         }
     }
 }
