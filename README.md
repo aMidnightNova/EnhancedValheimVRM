@@ -39,6 +39,8 @@ settings_Example.txt.example has everything with comments, but the short version
 - RightHandItemPos / LeftHandItemPos / RightHandBackItemPos / LeftHandBackItemPos and the matching *Rot ones \
   nudge where weapons sit. Pos is in meters along the sockets axes and scales with the avatar height, Rot is euler degrees.
 - weapon lines, see the next section.
+- SittingOnChairOffset \
+  seated offset: X right, Y up, Z forward. Scales with avatar height.
 - HelmetVisible, HelmetScale, HelmetOffset \
   vanilla helmet on or off and where it sits.
 - ChestVisible, ShouldersVisible, UtilityVisible, LegsVisible \

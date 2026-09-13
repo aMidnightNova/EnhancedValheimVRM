@@ -24,6 +24,14 @@ internal static class SettingsChecks
                 "Fresh reload candidate must restore omitted settings to defaults");
             check(first.ModelScale == 2 && first.HelmetVisible,
                 "Candidate reload mutated previous settings before successful swap");
+            check(replacement.SittingOnChairOffset.x == 0 && replacement.SittingOnChairOffset.y == 0 &&
+                replacement.SittingOnChairOffset.z == 0,
+                "Omitted chair offset must default to zero");
+            var seated = new VrmSettings("Test", "SittingOnChairOffset=(0.02,0.05,0.10)\n");
+            var seatedShared = new VrmSettings("Test", seated.Serialize());
+            check(seatedShared.SittingOnChairOffset.x == 0.02f && seatedShared.SittingOnChairOffset.y == 0.05f &&
+                seatedShared.SittingOnChairOffset.z == 0.10f,
+                "Legacy chair offset must parse and survive sharing");
             // Per-class and per-weapon lines: class applies to every member, a named line replaces it,
             // and the lines survive the shared-settings round trip.
             File.WriteAllText(path,
@@ -70,7 +78,8 @@ internal static class SettingsChecks
                      {
                          "ModelScale=0", "ModelScale=banana", "ModelScale=NaN", "WeaponScale=0",
                          "WeaponScale=BowDraugrFang,NaN", "WeaponScale=,1.2", "SpringBoneStiffness=-1",
-                         "InteractionDistanceScale=Infinity", "RightHandBackItemPos=(0,NaN,0)"
+                         "InteractionDistanceScale=Infinity", "RightHandBackItemPos=(0,NaN,0)",
+                         "SittingOnChairOffset=(0,Infinity,0)"
                      })
             {
                 File.WriteAllText(path, bad);

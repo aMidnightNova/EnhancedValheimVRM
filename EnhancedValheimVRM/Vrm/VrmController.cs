@@ -745,7 +745,7 @@ namespace EnhancedValheimVRM
                     Logger.Log(label + " dead object moved to " + now.ToString("F1") + " at +" +
                         (Time.realtimeSinceStartup - start).ToString("F2") + "s" +
                         (body != null
-                            ? "; velocity " + body.velocity.magnitude.ToString("F1") + " m/s, kinematic=" +
+                            ? "; velocity " + body.linearVelocity.magnitude.ToString("F1") + " m/s, kinematic=" +
                             body.isKinematic
                             : "") +
                         "; dead=" + player.IsDead());

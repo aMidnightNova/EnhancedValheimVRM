@@ -25,9 +25,47 @@ internal static class Program
     private static void Main()
     {
         SettingsChecks.Run(Check);
+        SeatSupportChecks.Run(Check);
         var identity = quaternion.identity;
         var turn = quaternion.RotateY(math.PI / 2);
         var gripRotation = quaternion.RotateZ(math.PI / 2);
+
+
+        var seatedHips = new float3(0, 0.8f, 0.15f);
+        var avatarHips = new float3(0.03f, 0.5f, -0.1f);
+        var seatCorrection = AttachmentMath.SeatedHipCorrection(seatedHips, avatarHips, identity);
+        Near(seatCorrection, new float3(0, 0.3f, 0.25f), "Seated pelvis height/depth");
+        Near(AttachmentMath.SeatedHipCorrection(seatedHips, avatarHips + seatCorrection, identity),
+            float3.zero,
+            "Corrected seated pelvis must not drift");
+        Near(AttachmentMath.SeatedHipCorrection(seatedHips, seatedHips, identity),
+            float3.zero,
+            "Matching rigs need no seated correction");
+        Near(AttachmentMath.SeatedHipCorrection(avatarHips, seatedHips, identity),
+            -seatCorrection,
+            "Taller/forward pelvis must also be corrected");
+        // turned chair and tilted ship, same fix rotated with the seat
+        foreach (var seatTurn in new[] { turn, quaternion.EulerXYZ(0.2f, 1.3f, -0.15f) })
+        {
+            var seatOrigin = new float3(20, 4, -10);
+            var worldAvatarHips = seatOrigin + math.rotate(seatTurn, avatarHips);
+            var worldCorrection = AttachmentMath.SeatedHipCorrection(seatOrigin + math.rotate(seatTurn, seatedHips),
+                worldAvatarHips,
+                seatTurn);
+            Near(worldCorrection,
+                math.rotate(seatTurn, seatCorrection),
+                "Seating must follow the chair/ship axes");
+            var manualOffset = new float3(0.02f, 0.05f, 0.10f);
+            Near(AttachmentMath.PlaceBone(worldAvatarHips + worldCorrection, seatTurn, manualOffset),
+                seatOrigin + math.rotate(seatTurn, new float3(0.05f, 0.85f, 0.25f)),
+                "Manual chair offset must add to automatic alignment in seat-relative metres");
+            Near(AttachmentMath.PlaceBone(worldAvatarHips + worldCorrection, seatTurn, manualOffset * 0.5f),
+                seatOrigin + math.rotate(seatTurn, new float3(0.04f, 0.825f, 0.20f)),
+                "Half-height avatar halves the manual seated offset without scaling automatic alignment");
+            Near(AttachmentMath.PlaceBone(worldAvatarHips + worldCorrection, seatTurn, manualOffset * 2f),
+                seatOrigin + math.rotate(seatTurn, new float3(0.07f, 0.90f, 0.35f)),
+                "Double-height avatar doubles only the manual seated offset");
+        }
 
         // A socket 2 cm along the old bone's Y axis, with socket X pointing along Y.
         var captured = AttachmentMath.ToSocketOffset(new float3(5, 7, 9), new float3(5, 7.02f, 9), gripRotation);

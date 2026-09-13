@@ -19,7 +19,21 @@ namespace EnhancedValheimVRM
 
         public static class Shaders
         {
-            public static readonly string Dir = Path.Combine(PluginDir, "shaders");
+            // r2modman flattens the zip so the bundles end up next to the dll.
+            public static readonly string Dir = Resolve();
+
+            private static string Resolve()
+            {
+                var dllDir = Path.GetDirectoryName(typeof(Constants).Assembly.Location);
+                if (dllDir != null)
+                {
+                    if (File.Exists(Path.Combine(dllDir, "UniVrm.shaders"))) return dllDir;
+                    var sub = Path.Combine(dllDir, "shaders");
+                    if (File.Exists(Path.Combine(sub, "UniVrm.shaders"))) return sub;
+                }
+
+                return Path.Combine(PluginDir, "shaders");
+            }
         }
 
         public static class Keys

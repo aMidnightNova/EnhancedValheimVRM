@@ -12,6 +12,8 @@ namespace EnhancedValheimVRM
         // Writable Settings Fields
         public float ModelScale = 1.0f;
 
+        // seat nudge, x right y up z forward, scales with avatar height
+        public Vector3 SittingOnChairOffset = Vector3.zero;
 
         public Vector3 RightHandItemPos = Vector3.zero;
         public Vector3 LeftHandItemPos = Vector3.zero;

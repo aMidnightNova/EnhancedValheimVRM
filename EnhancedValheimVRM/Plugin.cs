@@ -11,7 +11,7 @@ namespace EnhancedValheimVRM
     {
         private const string PluginGuid = "com.rawrtastic.plugins.enhancedvalheimvrm";
         private const string PluginName = "EnhancedValheimVRM";
-        private const string PluginVersion = "1.0.1";
+        private const string PluginVersion = "1.1.0";
 
         private static EnhancedValheimVrmPlugin _instance;
         private static bool _clientInitialized;
