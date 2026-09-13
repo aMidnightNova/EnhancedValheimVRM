@@ -6,8 +6,20 @@ namespace EnhancedValheimVRM
     public sealed class SharingPortDiscovery : MonoBehaviour
     {
         private EmbeddedSharingHost _host;
-        private void Awake() => _host = GetComponent<EmbeddedSharingHost>();
-        private void Update() => SharingRpc.Tick(_host != null ? _host.Storage : null);
-        private void OnDestroy() => SharingRpc.Reset(null);
+
+        private void Awake()
+        {
+            _host = GetComponent<EmbeddedSharingHost>();
+        }
+
+        private void Update()
+        {
+            SharingRpc.Tick(_host != null ? _host.Storage : null);
+        }
+
+        private void OnDestroy()
+        {
+            SharingRpc.Reset(null);
+        }
     }
 }

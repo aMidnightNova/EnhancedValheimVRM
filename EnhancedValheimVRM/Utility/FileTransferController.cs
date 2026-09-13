@@ -52,15 +52,19 @@ namespace EnhancedValheimVRM
         // Milliseconds since the local player spawned into the world, or -1 before that.
         internal static double MillisecondsSinceLocalSpawn => _instance?._localSpawn?.Elapsed.TotalMilliseconds ?? -1;
 
-        internal static string PlayerLabel(Player player) =>
-            player != null && !string.IsNullOrEmpty(player.GetPlayerName()) ? player.GetPlayerName() : "player";
+        internal static string PlayerLabel(Player player)
+        {
+            return player != null && !string.IsNullOrEmpty(player.GetPlayerName()) ? player.GetPlayerName() : "player";
+        }
 
         // Main thread only: resolves a character id to the display name of a loaded player.
         internal static string PlayerLabel(long id)
         {
             foreach (var player in Player.GetAllPlayers())
-                if (player != null && player.GetPlayerID() == id)
-                    return PlayerLabel(player);
+            {
+                if (player != null && player.GetPlayerID() == id) return PlayerLabel(player);
+            }
+
             return "player " + id;
         }
 
@@ -69,6 +73,7 @@ namespace EnhancedValheimVRM
             if (player == null || player.IsInStartMenu()) return;
             if (VrmController.HasKnownAvatar(player.GetPlayerID())) VrmController.ExpectSharedAvatar(player);
             if (Settings.LogLoadTiming)
+            {
                 FirstSeen.GetValue(player,
                     ignored =>
                     {
@@ -76,6 +81,7 @@ namespace EnhancedValheimVRM
                             "; character=" + player.GetPlayerID());
                         return System.Diagnostics.Stopwatch.StartNew();
                     });
+            }
         }
 
         private Task<HashSet<string>> _inventoryRead;
@@ -98,7 +104,7 @@ namespace EnhancedValheimVRM
 
             if (_inventoryRead != null || Time.realtimeSinceStartup < _nextInventory) return;
             _nextInventory = Time.realtimeSinceStartup + 5;
-            string directory = Constants.Vrm.Dir;
+            var directory = Constants.Vrm.Dir;
             _inventoryRead = Task.Run(() => new HashSet<string>(Directory.Exists(directory)
                     ? Directory.EnumerateFiles(directory, "*.vrm").Select(Path.GetFileNameWithoutExtension)
                     : Enumerable.Empty<string>(),
@@ -139,13 +145,13 @@ namespace EnhancedValheimVRM
             }
 
             // A client never uses its local ServerPort value or guesses a default.
-            if (!SharingRpc.TryGetServerPort(network, out int serverPort))
+            if (!SharingRpc.TryGetServerPort(network, out var serverPort))
             {
                 StopSession();
                 return;
             }
 
-            string serverHost = SharingEndpoint.ResolveClientHost(Settings.SharingHost, ZNet.GetServerString());
+            var serverHost = SharingEndpoint.ResolveClientHost(Settings.SharingHost, ZNet.GetServerString());
             if (string.IsNullOrEmpty(serverHost))
             {
                 StopSession();
@@ -202,7 +208,7 @@ namespace EnhancedValheimVRM
 
         private void PumpPublish(Player local)
         {
-            long localId = local != null ? local.GetPlayerID() : 0;
+            var localId = local != null ? local.GetPlayerID() : 0;
             if (localId == 0)
             {
                 if (_localPlayer != null) ResetPublish();
@@ -219,7 +225,7 @@ namespace EnhancedValheimVRM
             }
 
             var localVrm = VrmController.FindSharingInstance(local);
-            bool allowShare = localVrm != null && localVrm.GetSettings().AllowShare;
+            var allowShare = localVrm != null && localVrm.GetSettings().AllowShare;
             var localModel = localVrm?.GetGameObject();
             var localOutfits = localModel != null ? localModel.GetComponent<OutfitController>() : null;
             if (_wasSharing && !allowShare)
@@ -233,15 +239,15 @@ namespace EnhancedValheimVRM
             {
                 if (_upload.Status == TaskStatus.RanToCompletion && allowShare)
                 {
-                    bool changed = _published == null || !_published.SameAs(_upload.Result);
+                    var changed = _published == null || !_published.SameAs(_upload.Result);
                     _published = _upload.Result;
                     if (changed) Logger.Log("Your avatar is shared with the server.");
                 }
                 else if (_upload.IsFaulted)
                 {
                     var failure = _upload.Exception.Flatten().InnerExceptions.First();
-                    string stage = (failure as SharingRpc.PublishFailure)?.Stage ?? "preparing the local bundle";
-                    string reason = failure.GetBaseException().GetType().Name;
+                    var stage = (failure as SharingRpc.PublishFailure)?.Stage ?? "preparing the local bundle";
+                    var reason = failure.GetBaseException().GetType().Name;
                     _nextPublish = Time.realtimeSinceStartup + 15;
                     // Stable, deduplicated warning: no keys, payloads, or raw exception text.
                     Logger.LogOnce("publish-failed:" + _localId + ":" + stage,
@@ -254,14 +260,14 @@ namespace EnhancedValheimVRM
             if (allowShare && _upload == null && Time.realtimeSinceStartup >= _nextPublish)
             {
                 _nextPublish = float.PositiveInfinity;
-                string path = localVrm.GetVrmFilePath();
-                string settings = localVrm.GetSettings().Serialize();
-                string outfits = localOutfits?.SourceText ?? "";
-                long id = _localId;
-                string key = _key;
+                var path = localVrm.GetVrmFilePath();
+                var settings = localVrm.GetSettings().Serialize();
+                var outfits = localOutfits?.SourceText ?? "";
+                var id = _localId;
+                var key = _key;
                 var client = _client;
                 var cancellation = _publish.Token;
-                long epoch = SharingRpc.Epoch;
+                var epoch = SharingRpc.Epoch;
                 _upload = Task.Run(async () =>
                 {
                     cancellation.ThrowIfCancellationRequested();
@@ -271,10 +277,10 @@ namespace EnhancedValheimVRM
                     long length = file.Length, modified = file.LastWriteTimeUtc.Ticks;
                     // The model's version is remembered per file, so an unchanged model is never
                     // packed again. Settings and outfits travel in their own small blob.
-                    string signature = BundleCrypto.Version(
+                    var signature = BundleCrypto.Version(
                         System.Text.Encoding.UTF8.GetBytes(path + "\0" + length + "\0" + modified),
                         key);
-                    string manifest = Path.Combine(Constants.Vrm.Dir,
+                    var manifest = Path.Combine(Constants.Vrm.Dir,
                         "Published",
                         id.ToString(System.Globalization.CultureInfo.InvariantCulture),
                         "version");
@@ -283,7 +289,7 @@ namespace EnhancedValheimVRM
                     {
                         if (File.Exists(manifest) && new FileInfo(manifest).Length < 1024)
                         {
-                            string[] previous = File.ReadAllLines(manifest);
+                            var previous = File.ReadAllLines(manifest);
                             if (previous.Length == 2 && previous[0] == signature)
                             {
                                 SharingWire.ValidateHash(previous[1]);
@@ -298,13 +304,13 @@ namespace EnhancedValheimVRM
                     }
 
                     var prepareClock = Settings.LogLoadTiming ? System.Diagnostics.Stopwatch.StartNew() : null;
-                    bool remembered = avatarVersion != null;
+                    var remembered = avatarVersion != null;
                     byte[] avatarZip = null;
-                    byte[] profile = BundleCrypto.PackProfile(settings, outfits);
+                    var profile = BundleCrypto.PackProfile(settings, outfits);
                     Func<byte[]> packAvatar = () =>
                     {
                         if (avatarZip != null) return avatarZip;
-                        byte[] vrm = File.ReadAllBytes(path);
+                        var vrm = File.ReadAllBytes(path);
                         try
                         {
                             return avatarZip = BundleCrypto.PackAvatar(vrm);
@@ -350,9 +356,12 @@ namespace EnhancedValheimVRM
                     }
 
                     if (prepareClock != null)
+                    {
                         Logger.Log("Avatar sharing checked in " +
                             prepareClock.Elapsed.TotalMilliseconds.ToString("F0") + "ms" +
                             (remembered ? " (model unchanged)." : "."));
+                    }
+
                     return result;
                 });
             }
@@ -372,7 +381,7 @@ namespace EnhancedValheimVRM
             // Wait for the first background inventory before overriding installed models.
             if (_installedAvatars == null) return;
             // Before the local player spawns, the profile name is the only way to skip our own character.
-            string localName = Game.instance.GetPlayerProfile()?.GetName();
+            var localName = Game.instance.GetPlayerProfile()?.GetName();
             foreach (var player in Player.GetAllPlayers())
             {
                 if (player == null || player == local || player.IsDead() || player.GetPlayerID() == 0) continue;
@@ -402,8 +411,8 @@ namespace EnhancedValheimVRM
             {
                 if (download.Task.Status == TaskStatus.RanToCompletion && download.Task.Result != null)
                 {
-                    Received received = download.Task.Result;
-                    double beforeImport = FirstSeen.TryGetValue(download.Player, out var firstSeen)
+                    var received = download.Task.Result;
+                    var beforeImport = FirstSeen.TryGetValue(download.Player, out var firstSeen)
                         ? firstSeen.Elapsed.TotalMilliseconds
                         : 0;
                     download.Installing = true;
@@ -421,7 +430,7 @@ namespace EnhancedValheimVRM
                 else if (download.Task.IsFaulted)
                 {
                     var error = download.Task.Exception.GetBaseException();
-                    bool terminal = error is SharingRpc.KeyUnavailable ||
+                    var terminal = error is SharingRpc.KeyUnavailable ||
                         error is System.Security.Cryptography.CryptographicException || error is InvalidDataException;
                     if (terminal)
                     {
@@ -436,23 +445,23 @@ namespace EnhancedValheimVRM
                         (terminal ? "Stopped for this avatar version." : "Trying again in 15 seconds."));
                 }
 
-                bool failed = download.Task.IsFaulted || download.Task.IsCanceled;
+                var failed = download.Task.IsFaulted || download.Task.IsCanceled;
                 download.Task = null;
                 // Retry only failed work. Availability comes from server events.
                 download.NextCheck = failed ? Time.realtimeSinceStartup + 15 : 0;
             }
 
             if (download.Installing || download.Task != null || Time.realtimeSinceStartup < download.NextCheck) return;
-            BundleInfo info = SharingRpc.GetAvailable(download.Id);
+            var info = SharingRpc.GetAvailable(download.Id);
             if (info == null || info.Key == download.LoadedHash || info.Key == download.BlockedHash) return;
             var client = _client;
             var cancellation = download.Stop.Token;
             long id = download.Id, epoch = SharingRpc.Epoch;
-            string cache = Path.Combine(Constants.Vrm.Dir, "Shared");
+            var cache = Path.Combine(Constants.Vrm.Dir, "Shared");
             var lifecycle = Settings.LogLoadTiming && FirstSeen.TryGetValue(download.Player, out var seen)
                 ? seen
                 : null;
-            string label = PlayerLabel(download.Player);
+            var label = PlayerLabel(download.Player);
             if (lifecycle != null)
                 Logger.Log(label + ": fetch scheduled at world+" + lifecycle.ElapsedMilliseconds + "ms");
             download.RequestedHash = info.Key;
@@ -475,7 +484,7 @@ namespace EnhancedValheimVRM
             download.Task = Task.Run(async () =>
             {
                 string timing = null;
-                AvatarBundle bundle = await SharingRpc.ReceiveAsync(client,
+                var bundle = await SharingRpc.ReceiveAsync(client,
                         id,
                         info,
                         cache,

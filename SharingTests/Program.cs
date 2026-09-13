@@ -36,9 +36,9 @@ internal static class Program
 
     public static async Task Main(string[] args)
     {
-        ThreadPool.GetMinThreads(out int workers, out int completionPorts);
+        ThreadPool.GetMinThreads(out var workers, out var completionPorts);
         ThreadPool.SetMinThreads(Math.Max(workers, 32), completionPorts);
-        string root = Path.Combine(Path.GetTempPath(), "evrm-tests-" + Guid.NewGuid().ToString("N"));
+        var root = Path.Combine(Path.GetTempPath(), "evrm-tests-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         try
         {
@@ -87,14 +87,14 @@ internal static class Program
                 "PlayFab identity mistaken for TCP address");
             Check(SharingEndpoint.ResolveClientHost(" custom.example ", "playfab/12345") == "custom.example",
                 "Relay hostname override");
-            string key = BundleCrypto.GenerateKey();
+            var key = BundleCrypto.GenerateKey();
             var vrm = new byte[600000];
             RandomNumberGenerator.Fill(vrm);
             const long id = 1001;
-            byte[] packed = BundleCrypto.PackAvatar(vrm);
-            byte[] profile = BundleCrypto.PackProfile("ModelScale=1.25\nAllowShare=True", "");
-            byte[] encrypted = TestBundle.Encrypt(packed, key, id);
-            byte[] encryptedProfile = TestBundle.Encrypt(profile, key, id);
+            var packed = BundleCrypto.PackAvatar(vrm);
+            var profile = BundleCrypto.PackProfile("ModelScale=1.25\nAllowShare=True", "");
+            var encrypted = TestBundle.Encrypt(packed, key, id);
+            var encryptedProfile = TestBundle.Encrypt(profile, key, id);
             string version = BundleCrypto.Version(packed, key), profileVersion = BundleCrypto.Version(profile, key);
             Check(BundleCrypto.IsValidKey(key), "Generated key invalid");
             Check(!BundleCrypto.IsValidKey("invalid"), "Invalid key accepted");
@@ -105,9 +105,9 @@ internal static class Program
                 "Wrong key accepted");
             Reject(() => BundleCrypto.Decrypt(encrypted, key, version, id + 1), "Wrong character accepted");
             Reject(() => BundleCrypto.Decrypt(encrypted, key, profileVersion, id), "Wrong version accepted");
-            foreach (int offset in new[] { 0, 32, encrypted.Length - 1 })
+            foreach (var offset in new[] { 0, 32, encrypted.Length - 1 })
             {
-                byte[] corrupted = (byte[])encrypted.Clone();
+                var corrupted = (byte[])encrypted.Clone();
                 corrupted[offset] ^= 1;
                 Reject(() => BundleCrypto.Decrypt(corrupted, key, version, id), "Tampered bundle accepted");
             }
@@ -126,7 +126,7 @@ internal static class Program
             {
                 var commits = new System.Collections.Concurrent.ConcurrentQueue<BundleInfo>();
                 server.Uploaded += (session, uploadedId, uploaded) => commits.Enqueue(uploaded);
-                Task serving = server.RunAsync(stop.Token);
+                var serving = server.RunAsync(stop.Token);
                 var client = new AvatarTcpClient("127.0.0.1", server.Port, 750000);
                 Check(server.ReadCurrent(id) == null, "Unpublished avatar advertised");
                 var info = new BundleInfo
@@ -136,7 +136,7 @@ internal static class Program
                     ProfileVersion = profileVersion,
                     ProfileHash = BundleCrypto.Hash(encryptedProfile)
                 };
-                string uploadTicket = server.AuthorizeTransfer("owner", id, SharingWire.AvatarKind, info, true);
+                var uploadTicket = server.AuthorizeTransfer("owner", id, SharingWire.AvatarKind, info, true);
                 var timer = Stopwatch.StartNew();
                 client.UploadBlob(id, uploadTicket, encrypted, default);
                 Check(timer.Elapsed.TotalSeconds >= encrypted.Length / 750000.0 - 0.02, "Upload exceeded 6 Mbps");
@@ -145,25 +145,25 @@ internal static class Program
                 Reject(() => client.UploadBlob(id, uploadTicket, encrypted, default), "Upload ticket replay accepted");
                 var stored = server.ReadCurrent(id);
                 Check(stored.Version == version && !stored.HasProfile, "Model-only manifest lost or invented data");
-                string profileTicket = server.AuthorizeTransfer("owner", id, SharingWire.ProfileKind, info, true);
+                var profileTicket = server.AuthorizeTransfer("owner", id, SharingWire.ProfileKind, info, true);
                 client.UploadBlob(id, profileTicket, encryptedProfile, default);
                 Check(commits.TryDequeue(out committed) && committed.SameAs(info),
                     "Server did not merge the settings upload");
                 Check(server.ReadCurrent(id).SameAs(info), "Version lookup lost unchanged content");
-                string serverDirectory = Path.Combine(root, "server", id.ToString());
+                var serverDirectory = Path.Combine(root, "server", id.ToString());
                 Check(Directory.GetFiles(serverDirectory)
                         .Select(Path.GetFileName)
                         .OrderBy(n => n)
                         .SequenceEqual(new[] { "current", info.Hash + ".settings.bundle", info.Hash + ".vrm.bundle" }
                             .OrderBy(n => n)),
                     "Server blob names must be <modelhash>.vrm.bundle and <modelhash>.settings.bundle");
-                byte[] storedBytes = File.ReadAllBytes(Path.Combine(serverDirectory, info.Hash + ".vrm.bundle"));
+                var storedBytes = File.ReadAllBytes(Path.Combine(serverDirectory, info.Hash + ".vrm.bundle"));
                 Check(BundleCrypto.Hash(storedBytes) == info.Hash && !storedBytes.SequenceEqual(packed),
                     "Server stored wrong/plaintext blob");
 
                 // A settings change replaces the settings file in place under the same model hash.
-                byte[] profile2 = BundleCrypto.PackProfile("ModelScale=1.5\nAllowShare=True", "");
-                byte[] encryptedProfile2 = TestBundle.Encrypt(profile2, key, id);
+                var profile2 = BundleCrypto.PackProfile("ModelScale=1.5\nAllowShare=True", "");
+                var encryptedProfile2 = TestBundle.Encrypt(profile2, key, id);
                 var info2 = info.Clone();
                 info2.ProfileVersion = BundleCrypto.Version(profile2, key);
                 info2.ProfileHash = BundleCrypto.Hash(encryptedProfile2);
@@ -186,16 +186,16 @@ internal static class Program
                         true),
                     "Settings blob authorized without a model hash to name it");
 
-                string cache = Path.Combine(root, "cache");
-                string downloadTicket = server.AuthorizeTransfer("recipient", id, SharingWire.AvatarKind, info2, false);
-                string downloadProfile =
+                var cache = Path.Combine(root, "cache");
+                var downloadTicket = server.AuthorizeTransfer("recipient", id, SharingWire.AvatarKind, info2, false);
+                var downloadProfile =
                     server.AuthorizeTransfer("recipient", id, SharingWire.ProfileKind, info2, false);
-                AvatarBundle received =
+                var received =
                     client.Receive(id, info2, key, cache, default, downloadTicket, downloadProfile, null);
                 Check(received.Vrm.SequenceEqual(vrm) && received.Settings == "ModelScale=1.5\nAllowShare=True",
                     "Downloaded avatar/settings differ");
-                string cachePath = Path.Combine(cache, id.ToString(), info.Hash + ".vrm.bundle");
-                string cacheProfile = Path.Combine(cache, id.ToString(), info.Hash + ".settings.bundle");
+                var cachePath = Path.Combine(cache, id.ToString(), info.Hash + ".vrm.bundle");
+                var cacheProfile = Path.Combine(cache, id.ToString(), info.Hash + ".settings.bundle");
                 var modified = File.GetLastWriteTimeUtc(cachePath);
                 Check(client.Receive(id, info2, key, cache, default, "", "", null).Vrm.SequenceEqual(vrm),
                     "Valid cache required TCP");
@@ -211,8 +211,8 @@ internal static class Program
                     "Corrupt cache was not replaced");
                 // The cached settings blob carries the old version; its tag no longer matches and it is re-fetched.
                 var info3 = info2.Clone();
-                byte[] profile3 = BundleCrypto.PackProfile("ModelScale=2\nAllowShare=True", "");
-                byte[] encryptedProfile3 = TestBundle.Encrypt(profile3, key, id);
+                var profile3 = BundleCrypto.PackProfile("ModelScale=2\nAllowShare=True", "");
+                var encryptedProfile3 = TestBundle.Encrypt(profile3, key, id);
                 info3.ProfileVersion = BundleCrypto.Version(profile3, key);
                 info3.ProfileHash = BundleCrypto.Hash(encryptedProfile3);
                 client.UploadBlob(id,
@@ -227,9 +227,9 @@ internal static class Program
                     "Settings change grew the cache");
 
                 // A revoked game session cannot use a previously issued transfer ticket.
-                string revoked = server.AuthorizeTransfer("leaving", id, SharingWire.AvatarKind, info3, true);
+                var revoked = server.AuthorizeTransfer("leaving", id, SharingWire.AvatarKind, info3, true);
                 server.RevokeSession("leaving");
-                bool denied = false;
+                var denied = false;
                 try
                 {
                     client.UploadBlob(id, revoked, encrypted, default);
@@ -240,7 +240,7 @@ internal static class Program
                 }
 
                 Check(denied, "Disconnected peer retained upload authorization");
-                string ownTicket = server.AuthorizeTransfer("recipient", id, SharingWire.AvatarKind, info3, false);
+                var ownTicket = server.AuthorizeTransfer("recipient", id, SharingWire.AvatarKind, info3, false);
                 server.RevokeCharacter(id);
                 using (var socket = new TcpClient("127.0.0.1", server.Port))
                 using (var writer = new BinaryWriter(socket.GetStream()))
@@ -255,7 +255,7 @@ internal static class Program
                 }
 
                 // Disconnect partway through a new upload; the previous durable version survives.
-                string partialTicket = server.AuthorizeTransfer("owner2", id, SharingWire.AvatarKind, info3, true);
+                var partialTicket = server.AuthorizeTransfer("owner2", id, SharingWire.AvatarKind, info3, true);
                 using (var partial = new TcpClient("127.0.0.1", server.Port))
                 using (var writer = new BinaryWriter(partial.GetStream()))
                 using (var reader = new BinaryReader(partial.GetStream()))
@@ -301,6 +301,8 @@ internal static class Program
 
 internal static class TestBundle
 {
-    internal static byte[] Encrypt(byte[] packed, string key, long characterId) =>
-        BundleCrypto.Encrypt(packed, key, BundleCrypto.Version(packed, key), characterId);
+    internal static byte[] Encrypt(byte[] packed, string key, long characterId)
+    {
+        return BundleCrypto.Encrypt(packed, key, BundleCrypto.Version(packed, key), characterId);
+    }
 }

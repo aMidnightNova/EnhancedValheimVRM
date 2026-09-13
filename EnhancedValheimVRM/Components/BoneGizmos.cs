@@ -32,8 +32,9 @@ namespace EnhancedValheimVRM
                              equipment.m_backShield, equipment.m_backMelee, equipment.m_backTwohandedMelee,
                              equipment.m_backBow, equipment.m_backTool, equipment.m_backAtgeir
                          })
-                    if (socket != null)
-                        _equipmentSockets.Add(socket);
+                {
+                    if (socket != null) _equipmentSockets.Add(socket);
+                }
             }
 
             var shader = Shader.Find("Unlit/Color");
@@ -52,7 +53,7 @@ namespace EnhancedValheimVRM
             {
                 // Use the game's actual sockets, plus any additional attachment
                 // markers in either rig. Do not restrict this to particular slots.
-                bool forearm = bone == leftForearm || bone == rightForearm;
+                var forearm = bone == leftForearm || bone == rightForearm;
                 if (!forearm && !_equipmentSockets.Contains(bone) &&
                     bone.name.IndexOf("_attach", StringComparison.OrdinalIgnoreCase) < 0)
                     continue;
@@ -83,18 +84,22 @@ namespace EnhancedValheimVRM
             enabled = visible;
             foreach (var gizmo in _gizmos)
             foreach (var line in gizmo.Axes)
-                if (line != null)
-                    line.enabled = visible;
+            {
+                if (line != null) line.enabled = visible;
+            }
         }
 
-        private void LateUpdate() => UpdateAxes();
+        private void LateUpdate()
+        {
+            UpdateAxes();
+        }
 
         private void UpdateAxes()
         {
             foreach (var gizmo in _gizmos)
             {
                 if (gizmo.Bone == null) continue;
-                for (int axis = 0; axis < gizmo.Axes.Count; axis++)
+                for (var axis = 0; axis < gizmo.Axes.Count; axis++)
                 {
                     var line = gizmo.Axes[axis];
                     if (line == null) continue;
@@ -112,10 +117,12 @@ namespace EnhancedValheimVRM
             var camera = Camera.main;
             if (camera == null || Event.current.type != EventType.Repaint) return;
             if (_labelStyle == null)
+            {
                 _labelStyle = new GUIStyle(GUI.skin.label)
                 {
                     alignment = TextAnchor.LowerCenter, fontSize = 14, fontStyle = FontStyle.Bold
                 };
+            }
 
             foreach (var gizmo in _gizmos)
             {
@@ -145,6 +152,9 @@ namespace EnhancedValheimVRM
             _gizmos.Clear();
         }
 
-        private void OnDestroy() => ClearGizmos();
+        private void OnDestroy()
+        {
+            ClearGizmos();
+        }
     }
 }

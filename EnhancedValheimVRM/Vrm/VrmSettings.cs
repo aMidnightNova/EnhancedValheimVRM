@@ -120,7 +120,10 @@ namespace EnhancedValheimVRM
         private readonly Dictionary<string, float> _weaponScales =
             new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
 
-        private static string ItemKey(string scope, bool hand) => scope + (hand ? "|hand" : "|back");
+        private static string ItemKey(string scope, bool hand)
+        {
+            return scope + (hand ? "|hand" : "|back");
+        }
 
         public float GetWeaponScale(string prefabName)
         {
@@ -132,10 +135,10 @@ namespace EnhancedValheimVRM
         private bool TryParseWeaponScaleLine(string key, string value)
         {
             if (!key.Equals(nameof(WeaponScale), StringComparison.OrdinalIgnoreCase)) return false;
-            int comma = value.IndexOf(',');
+            var comma = value.IndexOf(',');
             if (comma < 0) return false;
-            string prefabName = value.Substring(0, comma).Trim();
-            string scaleText = value.Substring(comma + 1).Trim();
+            var prefabName = value.Substring(0, comma).Trim();
+            var scaleText = value.Substring(comma + 1).Trim();
             if (prefabName.Length == 0 || !(ParseValue(typeof(float), scaleText) is float scale))
                 throw new InvalidDataException("Cannot parse named WeaponScale: " + value);
             _weaponScales[prefabName] = scale;
@@ -165,7 +168,7 @@ namespace EnhancedValheimVRM
         // Accepts "<Class>[Hand](Pos|Rot)=[name,]<x,y,z>"; returns false when the key is not one.
         private bool TryParseItemLine(string key, string value)
         {
-            bool hand = false;
+            var hand = false;
             string suffix;
             if (key.EndsWith("Pos", StringComparison.OrdinalIgnoreCase))
                 suffix = "Pos";
@@ -173,7 +176,7 @@ namespace EnhancedValheimVRM
                 suffix = "Rot";
             else
                 return false;
-            string cls = key.Substring(0, key.Length - 3);
+            var cls = key.Substring(0, key.Length - 3);
             if (cls.EndsWith("Hand", StringComparison.OrdinalIgnoreCase))
             {
                 hand = true;
@@ -181,11 +184,11 @@ namespace EnhancedValheimVRM
             }
 
             if (ClassAliases.TryGetValue(cls, out var alias)) cls = alias;
-            string canonical = Array.Find(ItemClasses, c => c.Equals(cls, StringComparison.OrdinalIgnoreCase));
+            var canonical = Array.Find(ItemClasses, c => c.Equals(cls, StringComparison.OrdinalIgnoreCase));
             if (canonical == null) return false;
             string scope = canonical, vectorText = value;
-            int comma = value.IndexOf(',');
-            int open = value.IndexOfAny(new[] { '<', '(' });
+            var comma = value.IndexOf(',');
+            var open = value.IndexOfAny(new[] { '<', '(' });
             if (comma >= 0 && (open < 0 || comma < open))
             {
                 scope = value.Substring(0, comma).Trim();
@@ -195,7 +198,7 @@ namespace EnhancedValheimVRM
 
             var vector = ParseVector3(vectorText);
             if (vector == null) throw new InvalidDataException("Cannot parse setting " + key + ": " + value);
-            string itemKey = ItemKey(scope, hand);
+            var itemKey = ItemKey(scope, hand);
             if (!_items.TryGetValue(itemKey, out var adjustment))
                 _items[itemKey] = adjustment = new ItemAdjustment { Class = canonical };
             if (suffix == "Pos")
@@ -218,10 +221,7 @@ namespace EnhancedValheimVRM
 
             _path = Path.Combine(Constants.Vrm.Dir, $"settings_{playerName}.txt");
 
-            if (File.Exists(_path))
-            {
-                Load();
-            }
+            if (File.Exists(_path)) Load();
         }
 
         public string GetSettingsFilePath()
@@ -232,9 +232,7 @@ namespace EnhancedValheimVRM
         private void InitializePropertyTracking()
         {
             foreach (var field in typeof(VrmSettings).GetFields(BindingFlags.Public | BindingFlags.Instance))
-            {
                 _fields[field.Name] = field;
-            }
         }
 
         public VrmSettings(string playerName, string sharedSettings)
@@ -248,42 +246,50 @@ namespace EnhancedValheimVRM
             var lines = new List<string>();
             foreach (var field in typeof(VrmSettings).GetFields(BindingFlags.Public | BindingFlags.Instance))
             {
-                object value = field.GetValue(this);
+                var value = field.GetValue(this);
                 string text;
                 if (value is Vector3 vector)
+                {
                     text = string.Format(CultureInfo.InvariantCulture,
                         "({0:R},{1:R},{2:R})",
                         vector.x,
                         vector.y,
                         vector.z);
+                }
                 else if (value is float number)
                     text = number.ToString("R", CultureInfo.InvariantCulture);
                 else
                     text = Convert.ToString(value, CultureInfo.InvariantCulture);
+
                 lines.Add(field.Name + "=" + text);
             }
 
             // Per-weapon lines travel with the shared settings too.
             foreach (var pair in _items)
             {
-                int bar = pair.Key.LastIndexOf('|');
-                string scope = pair.Key.Substring(0, bar);
-                bool hand = pair.Key.EndsWith("|hand", StringComparison.Ordinal);
-                bool isClass = scope.Equals(pair.Value.Class, StringComparison.OrdinalIgnoreCase);
-                string prefix = pair.Value.Class + (hand ? "Hand" : "");
-                string name = isClass ? "" : scope + ",";
+                var bar = pair.Key.LastIndexOf('|');
+                var scope = pair.Key.Substring(0, bar);
+                var hand = pair.Key.EndsWith("|hand", StringComparison.Ordinal);
+                var isClass = scope.Equals(pair.Value.Class, StringComparison.OrdinalIgnoreCase);
+                var prefix = pair.Value.Class + (hand ? "Hand" : "");
+                var name = isClass ? "" : scope + ",";
                 if (pair.Value.HasPos)
+                {
                     lines.Add(prefix + "Pos=" + name + string.Format(CultureInfo.InvariantCulture,
                         "({0:R},{1:R},{2:R})",
                         pair.Value.Pos.x,
                         pair.Value.Pos.y,
                         pair.Value.Pos.z));
+                }
+
                 if (pair.Value.HasRot)
+                {
                     lines.Add(prefix + "Rot=" + name + string.Format(CultureInfo.InvariantCulture,
                         "({0:R},{1:R},{2:R})",
                         pair.Value.Rot.x,
                         pair.Value.Rot.y,
                         pair.Value.Rot.z));
+                }
             }
 
             foreach (var pair in _weaponScales)
@@ -305,37 +311,27 @@ namespace EnhancedValheimVRM
 
             foreach (var line in lines)
             {
-                if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#") || line.StartsWith("//"))
-                {
-                    continue;
-                }
+                if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#") || line.StartsWith("//")) continue;
 
 
                 var parts = line.Split('=');
-                if (parts.Length != 2)
-                {
-                    continue;
-                }
+                if (parts.Length != 2) continue;
 
 
-                string key = parts[0].Trim();
-                string value = parts[1].Trim();
+                var key = parts[0].Trim();
+                var value = parts[1].Trim();
 
                 if (TryParseWeaponScaleLine(key, value)) continue;
                 if (!_fields.ContainsKey(key) && TryParseItemLine(key, value)) continue;
 
-                if (_fields.TryGetValue(key, out FieldInfo field))
+                if (_fields.TryGetValue(key, out var field))
                 {
-                    object valueOut = ParseValue(field.FieldType, value);
+                    var valueOut = ParseValue(field.FieldType, value);
 
                     if (valueOut != null)
-                    {
                         field.SetValue(this, valueOut);
-                    }
                     else
-                    {
                         throw new InvalidDataException($"Cannot parse setting {key}: {value}");
-                    }
                 }
             }
 
@@ -346,15 +342,21 @@ namespace EnhancedValheimVRM
         {
             foreach (var pair in _items)
             foreach (var v in new[] { pair.Value.Pos, pair.Value.Rot })
+            {
                 if (float.IsNaN(v.x) || float.IsInfinity(v.x) || float.IsNaN(v.y) || float.IsInfinity(v.y) ||
                     float.IsNaN(v.z) || float.IsInfinity(v.z))
                     throw new InvalidDataException("Non-finite weapon adjustment: " + pair.Key);
+            }
+
             foreach (var pair in _weaponScales)
+            {
                 if (pair.Value <= 0 || float.IsNaN(pair.Value) || float.IsInfinity(pair.Value))
                     throw new InvalidDataException("WeaponScale override must be positive and finite: " + pair.Key);
+            }
+
             foreach (var field in _fields.Values)
             {
-                object value = field.GetValue(this);
+                var value = field.GetValue(this);
                 if (value is float number && (float.IsNaN(number) || float.IsInfinity(number)))
                     throw new InvalidDataException("Non-finite setting: " + field.Name);
                 if (value is Vector3 vector && (float.IsNaN(vector.x) || float.IsInfinity(vector.x) ||
@@ -370,8 +372,10 @@ namespace EnhancedValheimVRM
                 throw new InvalidDataException("TextureFixEmission must be between 0 and 1.");
             if (ModelScale <= 0 || WeaponScale <= 0 || InteractionDistanceScale <= 0 || SpringBoneStiffness < 0 ||
                 SpringBoneGravityPower < 0 || ModelBrightness < 0)
+            {
                 throw new InvalidDataException(
                     "Model, weapon, and interaction scales must be positive; brightness and spring multipliers must be nonnegative.");
+            }
         }
 
         private static object ParseValue(Type type, string value)
@@ -381,21 +385,12 @@ namespace EnhancedValheimVRM
             try
             {
                 if (type == typeof(string))
-                {
                     valueOut = value;
-                }
                 else if (type == typeof(float))
-                {
                     valueOut = float.Parse(value, CultureInfo.InvariantCulture);
-                }
                 else if (type == typeof(bool))
-                {
                     valueOut = bool.Parse(value);
-                }
-                else if (type == typeof(Vector3))
-                {
-                    valueOut = ParseVector3(value);
-                }
+                else if (type == typeof(Vector3)) valueOut = ParseVector3(value);
             }
             catch (Exception)
             {
@@ -409,15 +404,15 @@ namespace EnhancedValheimVRM
         {
             vectorString = vectorString.Trim('<', '>').Trim();
             vectorString = vectorString.Trim('(', ')');
-            string[] components = vectorString.Split(',');
+            var components = vectorString.Split(',');
 
             if (components.Length == 3)
             {
                 try
                 {
-                    float x = float.Parse(components[0].Trim(), CultureInfo.InvariantCulture);
-                    float y = float.Parse(components[1].Trim(), CultureInfo.InvariantCulture);
-                    float z = float.Parse(components[2].Trim(), CultureInfo.InvariantCulture);
+                    var x = float.Parse(components[0].Trim(), CultureInfo.InvariantCulture);
+                    var y = float.Parse(components[1].Trim(), CultureInfo.InvariantCulture);
+                    var z = float.Parse(components[2].Trim(), CultureInfo.InvariantCulture);
                     return new Vector3(x, y, z);
                 }
                 catch (FormatException)

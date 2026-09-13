@@ -32,8 +32,8 @@ namespace EnhancedValheimVRM
             string result = null;
             if (item != null)
             {
-                string type = item.m_itemData.m_shared.m_itemType.ToString();
-                string skill = item.m_itemData.m_shared.m_skillType.ToString();
+                var type = item.m_itemData.m_shared.m_itemType.ToString();
+                var skill = item.m_itemData.m_shared.m_skillType.ToString();
                 if (type == "Shield")
                     result = "Shield";
                 else if (type == "Torch")
@@ -76,11 +76,11 @@ namespace EnhancedValheimVRM
                 SpecialRigs.Clear();
             }
 
-            if (SpecialRigs.TryGetValue(itemName, out bool special)) return special;
+            if (SpecialRigs.TryGetValue(itemName, out var special)) return special;
             var prefab = _database.GetItemPrefab(itemName.GetStableHashCode());
             if (prefab == null) return false;
             var item = prefab.GetComponent<ItemDrop>();
-            string type = item != null ? item.m_itemData.m_shared.m_itemType.ToString() : "";
+            var type = item != null ? item.m_itemData.m_shared.m_itemType.ToString() : "";
             special = (type == "OneHandedWeapon" || type == "TwoHandedWeapon" || type == "TwoHandedWeaponLeft" ||
                     type == "Bow" || type == "Tool" || type == "Torch" || type == "Shield") &&
                 HasOwnHandRig(prefab.transform.Find("attach_skin"));
@@ -93,12 +93,14 @@ namespace EnhancedValheimVRM
         private static int _spawnGeneration;
         private const string TestWeaponTag = "EnhancedValheimVRM.DevWeapon";
 
-        private static string TestOwner(Player player) =>
-            player.GetPlayerID().ToString(System.Globalization.CultureInfo.InvariantCulture) + ":";
+        private static string TestOwner(Player player)
+        {
+            return player.GetPlayerID().ToString(System.Globalization.CultureInfo.InvariantCulture) + ":";
+        }
 
         private static ItemDrop[] TestDrops(Player player)
         {
-            string owner = TestOwner(player);
+            var owner = TestOwner(player);
             return UnityEngine.Object.FindObjectsByType<ItemDrop>(FindObjectsInactive.Include, FindObjectsSortMode.None)
                 .Where(drop => drop != null && drop.m_itemData?.m_customData != null &&
                     drop.m_itemData.m_customData.TryGetValue(TestWeaponTag, out var tag) &&
@@ -130,11 +132,13 @@ namespace EnhancedValheimVRM
 
         private static int TestRegion(string setName)
         {
-            string name = (setName ?? "").Replace(" ", "").Replace("_", "");
+            var name = (setName ?? "").Replace(" ", "").Replace("_", "");
             // Includes the game's Swamps/Mountains names and regional variants such as PlainsBoss.
-            for (int index = 0; index < TestRegions.Length; index++)
-                if (name.StartsWith(TestRegions[index], StringComparison.OrdinalIgnoreCase))
-                    return index;
+            for (var index = 0; index < TestRegions.Length; index++)
+            {
+                if (name.StartsWith(TestRegions[index], StringComparison.OrdinalIgnoreCase)) return index;
+            }
+
             return -1; // Generic/debug presets are not regional loadouts.
         }
 
@@ -151,9 +155,9 @@ namespace EnhancedValheimVRM
         {
             var database = ObjectDB.instance;
             var sets = ItemSets.instance;
-            int generation = _spawnGeneration;
-            string tag = TestOwner(player) + Guid.NewGuid().ToString("N");
-            Vector3 forward = player.transform.forward;
+            var generation = _spawnGeneration;
+            var tag = TestOwner(player) + Guid.NewGuid().ToString("N");
+            var forward = player.transform.forward;
             forward.y = 0;
             forward.Normalize();
             Vector3 right = Vector3.Cross(Vector3.up, forward), origin = player.transform.position + forward * 5;
@@ -174,17 +178,17 @@ namespace EnhancedValheimVRM
                         .OrderBy(drop => drop.gameObject.name, StringComparer.Ordinal)
                         .ToArray();
                     if (weapons.Length == 0) continue;
-                    Vector3 center = origin + right * ((pile % 3) - 1) * 8 + forward * (pile / 3) * 8;
-                    for (int index = 0; index < weapons.Length; index++)
+                    var center = origin + right * (pile % 3 - 1) * 8 + forward * (pile / 3) * 8;
+                    for (var index = 0; index < weapons.Length; index++)
                     {
                         if (generation != _spawnGeneration || !_spawningWeapons || player == null ||
                             player != Player.m_localPlayer ||
                             database != ObjectDB.instance || sets != ItemSets.instance)
                             yield break;
                         // All of a region's equipment stays in a small pile; only regional piles are spaced out.
-                        float angle = index * 2.399963f;
-                        float radius = 0.8f * Mathf.Sqrt((index + 0.5f) / weapons.Length);
-                        Vector3 position = center + right * (Mathf.Cos(angle) * radius) +
+                        var angle = index * 2.399963f;
+                        var radius = 0.8f * Mathf.Sqrt((index + 0.5f) / weapons.Length);
+                        var position = center + right * (Mathf.Cos(angle) * radius) +
                             forward * (Mathf.Sin(angle) * radius);
                         if (Physics.Raycast(position + Vector3.up * 20,
                                 Vector3.down,
@@ -264,7 +268,7 @@ namespace EnhancedValheimVRM
             };
             var rows = new StringBuilder("Prefab,ItemType,AttachOverride,Skill,OwnHandRig,AttachmentVariants\n");
             // Index the live collection rather than retaining an enumerator across frames.
-            for (int index = 0; database != null && index < database.m_items.Count; index++)
+            for (var index = 0; database != null && index < database.m_items.Count; index++)
             {
                 yield return null;
                 if (database == null || database != ObjectDB.instance || index >= database.m_items.Count) yield break;
@@ -273,11 +277,13 @@ namespace EnhancedValheimVRM
                 var item = prefab.GetComponent<ItemDrop>();
                 if (item == null || !types.Contains(item.m_itemData.m_shared.m_itemType.ToString())) continue;
                 var data = item.m_itemData.m_shared;
-                bool special = IsSpecialCase(prefab.name);
+                var special = IsSpecialCase(prefab.name);
                 var variants = new List<string>();
                 foreach (Transform child in prefab.transform)
-                    if (child.name.StartsWith("attach"))
-                        variants.Add(child.name);
+                {
+                    if (child.name.StartsWith("attach")) variants.Add(child.name);
+                }
+
                 rows.Append('"')
                     .Append(prefab.name.Replace("\"", "\"\""))
                     .Append("\",")
@@ -293,7 +299,7 @@ namespace EnhancedValheimVRM
                     .Append('\n');
             }
 
-            string output = rows.ToString();
+            var output = rows.ToString();
             var write = Task.Run(() =>
                 File.WriteAllText(Path.Combine(Constants.Vrm.Dir, "weapon_attachment_audit.csv"), output));
             while (!write.IsCompleted) yield return null;

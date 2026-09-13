@@ -24,15 +24,17 @@ namespace EnhancedValheimVRM
         private static void CaptureGameShaders()
         {
             foreach (var shader in Resources.FindObjectsOfTypeAll<Shader>())
-                if (!GameShaders.ContainsKey(shader.name))
-                    GameShaders.Add(shader.name, shader);
+            {
+                if (!GameShaders.ContainsKey(shader.name)) GameShaders.Add(shader.name, shader);
+            }
         }
 
         private static void AddShaders(Object[] assets)
         {
             foreach (var asset in assets)
-                if (asset is Shader shader)
-                    Shaders[shader.name] = shader;
+            {
+                if (asset is Shader shader) Shaders[shader.name] = shader;
+            }
         }
 
         internal static void EnsureLoadedForMenu()
@@ -49,9 +51,12 @@ namespace EnhancedValheimVRM
                 // Like the old local loader, menu construction is synchronous.
                 // Reuse an existing request if returning from a world during its load.
                 if (_bundle == null)
+                {
                     _bundle = _bundleRequest != null
                         ? _bundleRequest.assetBundle
                         : AssetBundle.LoadFromFile(BundlePath);
+                }
+
                 if (_bundle == null)
                 {
                     Logger.LogWarning("VRM shader bundle could not be loaded.");

@@ -60,19 +60,26 @@ internal static class RpcChecks
         };
     }
 
-    private static ZPackage Check(long request, long id, BundleInfo info) =>
-        Packet(1, request, id, info.Version, profileVersion: info.ProfileVersion);
+    private static ZPackage Check(long request, long id, BundleInfo info)
+    {
+        return Packet(1, request, id, info.Version, profileVersion: info.ProfileVersion);
+    }
 
-    private static ZPackage KeyRequest(long request, long id, BundleInfo info) =>
-        Packet(4,
+    private static ZPackage KeyRequest(long request, long id, BundleInfo info)
+    {
+        return Packet(4,
             request,
             id,
             info.Version,
             info.Hash,
             profileVersion: info.ProfileVersion,
             profileHash: info.ProfileHash);
+    }
 
-    private static Message Last(ZNetPeer peer, int op) => peer.m_rpc.Sent.Select(Read).Last(m => m.Op == op);
+    private static Message Last(ZNetPeer peer, int op)
+    {
+        return peer.m_rpc.Sent.Select(Read).Last(m => m.Op == op);
+    }
 
     private static async Task Drain(AvatarTcpServer storage, Func<bool> until)
     {
@@ -117,11 +124,11 @@ internal static class RpcChecks
             check(Last(owner, 13).Request == 384L * 1048576,
                 "Server did not announce its default compressed bundle limit");
             var recipient = Add(net, 3002);
-            string key = BundleCrypto.GenerateKey();
-            byte[] packed = BundleCrypto.PackAvatar(new byte[64]);
-            byte[] profile = BundleCrypto.PackProfile("", "[Default]\nDefault=True");
-            byte[] encrypted = TestBundle.Encrypt(packed, key, 3001);
-            byte[] encryptedProfile = TestBundle.Encrypt(profile, key, 3001);
+            var key = BundleCrypto.GenerateKey();
+            var packed = BundleCrypto.PackAvatar(new byte[64]);
+            var profile = BundleCrypto.PackProfile("", "[Default]\nDefault=True");
+            var encrypted = TestBundle.Encrypt(packed, key, 3001);
+            var encryptedProfile = TestBundle.Encrypt(profile, key, 3001);
             var info = new BundleInfo
             {
                 Version = BundleCrypto.Version(packed, key),
@@ -146,7 +153,7 @@ internal static class RpcChecks
             await Drain(storage, () => owner.m_rpc.Sent.Select(Read).Any(m => m.Request == 2));
             check(Last(owner, 7).Hash == "", "Unuploaded blob advertised");
             owner.m_rpc.Deliver(Packet(2, 3, 3001, info.Version, info.Hash, SharingWire.AvatarKind));
-            string ticket = Last(owner, 7).Ticket;
+            var ticket = Last(owner, 7).Ticket;
             check(ticket.Length == 32, "RPC did not issue upload ticket");
             var client = new AvatarTcpClient("127.0.0.1", storage.Port, 750000);
             await Task.Run(() => client.UploadBlob(3001, ticket, encrypted, default));
@@ -161,7 +168,7 @@ internal static class RpcChecks
                 SharingWire.ProfileKind,
                 profileVersion: info.ProfileVersion,
                 profileHash: info.ProfileHash));
-            string profileTicket = Last(owner, 7).Ticket;
+            var profileTicket = Last(owner, 7).Ticket;
             check(profileTicket.Length == 32, "RPC did not issue the settings upload ticket");
             await Task.Run(() => client.UploadBlob(3001, profileTicket, encryptedProfile, default));
             check(!recipient.m_rpc.Sent.Select(Read).Any(m => m.Op == 8),
@@ -177,7 +184,7 @@ internal static class RpcChecks
             owner.m_rpc.Deliver(Packet(16, id: 3001, version: "mesh", hash: "0", value: "Paci_3"));
             check(Last(recipient, 17).Value == "Paci_3" && Last(recipient, 17).Hash == "0",
                 "Mesh change did not propagate immediately");
-            int changes = recipient.m_rpc.Sent.Select(Read).Count(m => m.Op == 17);
+            var changes = recipient.m_rpc.Sent.Select(Read).Count(m => m.Op == 17);
             recipient.m_rpc.Deliver(Packet(16, id: 3001, version: "blend", hash: "50", value: "Smile"));
             owner.m_rpc.Deliver(Packet(16, id: 3001, version: "blend", hash: "NaN", value: "Smile"));
             check(recipient.m_rpc.Sent.Select(Read).Count(m => m.Op == 17) == changes,
@@ -190,7 +197,7 @@ internal static class RpcChecks
                 "Reselecting outfit retained manual overrides");
             check(Last(late, 8).Hash == info.Hash, "Late joiner missed available blob");
             recipient.m_rpc.Deliver(KeyRequest(5, 3001, info));
-            long keyRequest = Last(owner, 10).Request;
+            var keyRequest = Last(owner, 10).Request;
             // First world entry publishes our own avatar while we await someone else's key.
             recipient.m_rpc.Deliver(Packet(1, 80, 3002, new string('a', 64), profileVersion: new string('a', 64)));
             await Drain(storage, () => recipient.m_rpc.Sent.Select(Read).Any(m => m.Request == 80));
@@ -202,7 +209,7 @@ internal static class RpcChecks
                 grant.ProfileTicket.Length == 32,
                 "RPC key response did not reach requester with both transfer tickets");
             check(!late.m_rpc.Sent.Select(Read).Any(m => m.Value == key), "Key broadcast to unrelated peer");
-            int absentBefore = recipient.m_rpc.Sent.Count(p => Read(p).Op == 9);
+            var absentBefore = recipient.m_rpc.Sent.Count(p => Read(p).Op == 9);
             owner.m_rpc.Deliver(Check(70, 3001, info));
             await Drain(storage, () => owner.m_rpc.Sent.Select(Read).Any(m => m.Request == 70));
             check(recipient.m_rpc.Sent.Count(p => Read(p).Op == 9) == absentBefore &&
@@ -250,7 +257,7 @@ internal static class RpcChecks
             reconnect.m_rpc.Deliver(Check(72, 3001, info));
             await Drain(storage, () => reconnect.m_rpc.Sent.Select(Read).Any(m => m.Request == 72));
             recipient.m_rpc.Deliver(KeyRequest(84, 3001, info));
-            long cancelledRequest = Last(reconnect, 10).Request;
+            var cancelledRequest = Last(reconnect, 10).Request;
             recipient.m_rpc.Deliver(Packet(18, 84, 3001));
             reconnect.m_rpc.Deliver(Packet(5, cancelledRequest, value: key));
             check(!recipient.m_rpc.Sent.Select(Read).Any(m => m.Op == 7 && m.Request == 84),
@@ -314,11 +321,11 @@ internal static class RpcChecks
                 stop.Token,
                 SharingRpc.Epoch);
             await Drain(null, () => server.m_rpc.Sent.Select(Read).Any(m => m.Op == 4));
-            long first = Last(server, 4).Request;
+            var first = Last(server, 4).Request;
             var clock = System.Diagnostics.Stopwatch.StartNew();
             // No first response: it must time out at 2s, cancel, and send a new request.
             await Drain(null, () => server.m_rpc.Sent.Select(Read).Count(m => m.Op == 4) >= 2);
-            long second = Last(server, 4).Request;
+            var second = Last(server, 4).Request;
             check(second != first && clock.Elapsed.TotalSeconds >= 1.8 && clock.Elapsed.TotalSeconds < 3,
                 "First key retry retained the old 30-second timeout or retried too soon");
             check(server.m_rpc.Sent.Select(Read).Any(m => m.Op == 18 && m.Request == first),
@@ -338,7 +345,7 @@ internal static class RpcChecks
             check(!receive.IsCompleted, "A stale grant completed the new key request");
             stop.Cancel();
             await Drain(null, () => receive.IsCompleted);
-            bool cancelled = false;
+            var cancelled = false;
             try
             {
                 await receive;

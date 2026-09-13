@@ -47,20 +47,30 @@ namespace EnhancedValheimVRM
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> ImportedKeys =
             new System.Collections.Concurrent.ConcurrentDictionary<string, byte>();
 
-        internal static bool IsImportedKey(string key) => key != null && ImportedKeys.ContainsKey(key);
+        internal static bool IsImportedKey(string key)
+        {
+            return key != null && ImportedKeys.ContainsKey(key);
+        }
 
-        internal static string SharedKey(long characterId, string version, VrmSettings settings) =>
-            "shared-version:" + characterId + ":" + version + BakedSuffix(settings);
+        internal static string SharedKey(long characterId, string version, VrmSettings settings)
+        {
+            return "shared-version:" + characterId + ":" + version + BakedSuffix(settings);
+        }
 
         // Only baked material options invalidate imports. Socket, sizing, outfit
         // and spring changes reapply to fresh clones of the existing import.
-        private static string BakedSuffix(VrmSettings settings) =>
-            ":" + settings.ModelBrightness.ToString("R", CultureInfo.InvariantCulture) + ":" +
-            settings.UseMToonShader + ":" + settings.AttemptTextureFix + ":" +
-            (settings.UsesCreatureShader ? "creature" : "player") + ":" +
-            settings.TextureFixEmission.ToString("R", CultureInfo.InvariantCulture);
+        private static string BakedSuffix(VrmSettings settings)
+        {
+            return ":" + settings.ModelBrightness.ToString("R", CultureInfo.InvariantCulture) + ":" +
+                settings.UseMToonShader + ":" + settings.AttemptTextureFix + ":" +
+                (settings.UsesCreatureShader ? "creature" : "player") + ":" +
+                settings.TextureFixEmission.ToString("R", CultureInfo.InvariantCulture);
+        }
 
-        internal static void Retain(Entry entry) => entry.LiveClones++;
+        internal static void Retain(Entry entry)
+        {
+            entry.LiveClones++;
+        }
 
         internal static void Release(Entry entry)
         {
@@ -75,11 +85,13 @@ namespace EnhancedValheimVRM
                 return;
             var retired = new List<string>();
             foreach (var pair in Entries)
+            {
                 if (pair.Key != latest && pair.Value.Path == path && pair.Value.Completed && pair.Value.LiveClones == 0)
                 {
                     if (pair.Value.Root != null) Object.Destroy(pair.Value.Root);
                     retired.Add(pair.Key);
                 }
+            }
 
             foreach (var key in retired)
             {
@@ -118,27 +130,32 @@ namespace EnhancedValheimVRM
                     else if (source.Bytes == null)
                         throw new InvalidDataException("A shared model without a verified version needs its bytes.");
                     else
+                    {
                         using (var hash = SHA256.Create())
+                        {
                             source.Key = "shared:" + bundle.CharacterId + ":" +
                                 Convert.ToBase64String(hash.ComputeHash(source.Bytes)) + BakedSuffix(source.Settings);
+                        }
+                    }
+
                     source.OutfitText = bundle.Outfits;
                 }
                 else
                 {
-                    source.Path = System.IO.Path.Combine(Constants.Vrm.Dir, name + ".vrm");
+                    source.Path = Path.Combine(Constants.Vrm.Dir, name + ".vrm");
                     if (!File.Exists(source.Path))
                     {
                         if (!useDefault || !File.Exists(Constants.Vrm.DefaultPath))
                             throw new FileNotFoundException("No avatar for " + name);
                         source.Path = Constants.Vrm.DefaultPath;
-                        name = System.IO.Path.GetFileNameWithoutExtension(Constants.Vrm.DefaultName);
+                        name = Path.GetFileNameWithoutExtension(Constants.Vrm.DefaultName);
                     }
 
                     source.Settings = new VrmSettings(name);
                     var file = new FileInfo(source.Path);
                     source.Key = source.Path + ":" + file.Length + ":" + file.LastWriteTimeUtc.Ticks;
-                    source.OutfitPath = System.IO.Path.Combine(Constants.Vrm.Dir,
-                        "outfits_" + System.IO.Path.GetFileNameWithoutExtension(source.Path).ToLowerInvariant() +
+                    source.OutfitPath = Path.Combine(Constants.Vrm.Dir,
+                        "outfits_" + Path.GetFileNameWithoutExtension(source.Path).ToLowerInvariant() +
                         ".txt");
                     if (File.Exists(source.OutfitPath))
                     {
@@ -171,8 +188,10 @@ namespace EnhancedValheimVRM
             }
         }
 
-        internal static bool IsImported(string key) =>
-            Entries.TryGetValue(key, out var entry) && entry.Imported && entry.Root != null;
+        internal static bool IsImported(string key)
+        {
+            return Entries.TryGetValue(key, out var entry) && entry.Imported && entry.Root != null;
+        }
 
         internal static Entry GetForMenu(Source source)
         {
@@ -188,9 +207,9 @@ namespace EnhancedValheimVRM
             {
                 var timer = Settings.LogLoadTiming ? System.Diagnostics.Stopwatch.StartNew() : null;
                 PatchShaderFind.EnsureLoadedForMenu();
-                double shadersMs = (timer?.Elapsed.TotalMilliseconds ?? 0);
+                var shadersMs = timer?.Elapsed.TotalMilliseconds ?? 0;
                 var bytes = File.ReadAllBytes(source.Path);
-                double readMs = (timer?.Elapsed.TotalMilliseconds ?? 0);
+                var readMs = timer?.Elapsed.TotalMilliseconds ?? 0;
                 var data = new GlbBinaryParser(bytes, source.Path).Parse();
                 try
                 {
@@ -201,15 +220,18 @@ namespace EnhancedValheimVRM
                     importer = new Vrm10Importer(Vrm10Data.Parse(data));
                 }
 
-                double parseMs = (timer?.Elapsed.TotalMilliseconds ?? 0);
+                var parseMs = timer?.Elapsed.TotalMilliseconds ?? 0;
                 var loaded = importer.Load();
                 if (timer != null)
+                {
                     entry.ImportTiming = string.Format(CultureInfo.InvariantCulture,
                         "cold shaders={0:F0}ms, read={1:F0}ms, parse/context={2:F0}ms, native={3:F0}ms",
                         shadersMs,
                         readMs - shadersMs,
                         parseMs - readMs,
                         (timer?.Elapsed.TotalMilliseconds ?? 0) - parseMs);
+                }
+
                 Finish(entry, loaded);
                 Entries[source.Key] = entry;
                 ImportedKeys[source.Key] = 0;
@@ -298,8 +320,11 @@ namespace EnhancedValheimVRM
             var parsing = Task.Run<object>(() =>
             {
                 if (source.Bytes == null && !File.Exists(source.Path))
+                {
                     throw new InvalidOperationException(
                         "The shared model is no longer imported; it will be fetched again.");
+                }
+
                 var bytes = source.Bytes ?? File.ReadAllBytes(source.Path);
                 var data = new GlbBinaryParser(bytes, source.Path).Parse();
                 try
@@ -313,16 +338,19 @@ namespace EnhancedValheimVRM
             });
             while (!parsing.IsCompleted) yield return null;
             var parsed = parsing.GetAwaiter().GetResult();
-            double parseMs = (timer?.Elapsed.TotalMilliseconds ?? 0);
+            var parseMs = timer?.Elapsed.TotalMilliseconds ?? 0;
             if (timer != null)
+            {
                 Logger.Log("Avatar import for " + source.Name + ": read/parse completed in " + parseMs.ToString("F0") +
                     "ms; shader preparation started");
-            double queueMs = (timer?.Elapsed.TotalMilliseconds ?? 0);
+            }
+
+            var queueMs = timer?.Elapsed.TotalMilliseconds ?? 0;
             ImporterContext importer = null;
             try
             {
                 yield return PatchShaderFind.EnsureLoaded();
-                double shadersMs = (timer?.Elapsed.TotalMilliseconds ?? 0);
+                var shadersMs = timer?.Elapsed.TotalMilliseconds ?? 0;
                 importer = parsed is VRMData vrm0
                     ? (ImporterContext)new VRMImporterContext(vrm0, null, new TextureDeserializerAsync())
                     : new Vrm10Importer((Vrm10Data)parsed, null, new TextureDeserializerAsync());
@@ -337,12 +365,15 @@ namespace EnhancedValheimVRM
 
                 var loaded = loading.GetAwaiter().GetResult();
                 if (timer != null)
+                {
                     entry.ImportTiming = string.Format(CultureInfo.InvariantCulture,
                         "cold read/parse={0:F0}ms, queue={1:F0}ms, shaders={2:F0}ms, native/frames={3:F0}ms",
                         parseMs,
                         queueMs - parseMs,
                         shadersMs - queueMs,
                         (timer?.Elapsed.TotalMilliseconds ?? 0) - shadersMs);
+                }
+
                 if (timer != null) Logger.Log("Avatar import for " + source.Name + ": " + entry.ImportTiming);
                 Finish(entry, loaded);
                 ImportedKeys[source.Key] = 0;
@@ -355,8 +386,10 @@ namespace EnhancedValheimVRM
                     var root = PersistentImportAwaitCaller.GetRoot(importer);
                     if (root != null) Object.Destroy(root);
                     foreach (var node in importer.Nodes)
+                    {
                         if (node != null && node.parent == null && node.gameObject != root)
                             Object.Destroy(node.gameObject);
+                    }
                 }
 
                 importer?.Dispose();

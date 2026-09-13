@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
@@ -13,10 +13,7 @@ namespace EnhancedValheimVRM
             // that type is present, without touching any client avatar types.
             var startupType = typeof(ZNet).Assembly.GetType("FejdStartup", false);
             var originalMethod = startupType?.GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (originalMethod == null)
-            {
-                return;
-            }
+            if (originalMethod == null) return;
 
             var postfix = new HarmonyMethod(typeof(PatchFejdStartup), nameof(Postfix));
 

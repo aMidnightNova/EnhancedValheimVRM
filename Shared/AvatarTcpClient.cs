@@ -54,8 +54,11 @@ namespace EnhancedValheimVRM.Sharing
         public void UploadBlob(long id, string ticket, byte[] encrypted, CancellationToken cancellation)
         {
             if (encrypted.Length > BundleLimitBytes)
+            {
                 throw new InvalidDataException("Encrypted ZIP exceeds the server bundle limit (" +
                     BundleLimitBytes / 1048576 + " MiB).");
+            }
+
             using (var client = Connect(cancellation))
             using (cancellation.Register(() => Task.Run(() => client.Close())))
             using (var stream = client.GetStream())
@@ -85,7 +88,7 @@ namespace EnhancedValheimVRM.Sharing
                 SharingWire.WriteText(writer, ticket);
                 writer.Flush();
                 if (!reader.ReadBoolean()) throw new IOException("The avatar is no longer available on the server.");
-                byte[] encrypted = SharingWire.ReadBytes(reader, BundleLimitBytes);
+                var encrypted = SharingWire.ReadBytes(reader, BundleLimitBytes);
                 if (BundleCrypto.Hash(encrypted) != expectedHash)
                     throw new InvalidDataException("Downloaded bundle hash mismatch.");
                 return encrypted;
@@ -103,13 +106,13 @@ namespace EnhancedValheimVRM.Sharing
             Action<string> timing)
         {
             string hash = info.HashOf(kind), version = info.VersionOf(kind);
-            string path = Path.Combine(directory, SharingWire.BlobFileName(kind, info.Hash));
-            string label = kind == SharingWire.AvatarKind ? "model" : "settings";
+            var path = Path.Combine(directory, SharingWire.BlobFileName(kind, info.Hash));
+            var label = kind == SharingWire.AvatarKind ? "model" : "settings";
             var clock = timing == null ? null : System.Diagnostics.Stopwatch.StartNew();
-            bool fromCache = File.Exists(path) && new FileInfo(path).Length <= BundleLimitBytes;
+            var fromCache = File.Exists(path) && new FileInfo(path).Length <= BundleLimitBytes;
             timing?.Invoke(label + ": " + (fromCache ? "loading from local cache" : "downloading from server"));
-            byte[] encrypted = fromCache ? File.ReadAllBytes(path) : Download(id, hash, ticket, cancellation);
-            double readMs = clock?.Elapsed.TotalMilliseconds ?? 0;
+            var encrypted = fromCache ? File.ReadAllBytes(path) : Download(id, hash, ticket, cancellation);
+            var readMs = clock?.Elapsed.TotalMilliseconds ?? 0;
             timing?.Invoke(label + ": received " + (encrypted.Length / 1048576.0).ToString("F1") + " MB in " +
                 readMs.ToString("F0") + "ms");
             cancellation.ThrowIfCancellationRequested();
@@ -131,7 +134,7 @@ namespace EnhancedValheimVRM.Sharing
 
             if (!fromCache)
             {
-                double cacheStart = clock?.Elapsed.TotalMilliseconds ?? 0;
+                var cacheStart = clock?.Elapsed.TotalMilliseconds ?? 0;
                 Directory.CreateDirectory(directory);
                 AtomicWrite(path, encrypted);
                 timing?.Invoke(label + ": saved to local cache in " +
@@ -156,7 +159,7 @@ namespace EnhancedValheimVRM.Sharing
             Func<string, bool> modelAlreadyImported = null)
         {
             info.Validate();
-            string directory = Path.Combine(cacheDirectory,
+            var directory = Path.Combine(cacheDirectory,
                 id.ToString(System.Globalization.CultureInfo.InvariantCulture));
             var clock = timing == null ? null : System.Diagnostics.Stopwatch.StartNew();
             var bundle = new AvatarBundle
@@ -176,7 +179,7 @@ namespace EnhancedValheimVRM.Sharing
                     timing);
                 BundleCrypto.UnpackProfile(plaintext, out bundle.Settings, out bundle.Outfits);
                 BundleCrypto.ClearBytes(ref plaintext);
-                double profileMs = clock?.Elapsed.TotalMilliseconds ?? 0;
+                var profileMs = clock?.Elapsed.TotalMilliseconds ?? 0;
                 cancellation.ThrowIfCancellationRequested();
                 if (modelAlreadyImported != null && modelAlreadyImported(bundle.Settings))
                 {
@@ -213,7 +216,7 @@ namespace EnhancedValheimVRM.Sharing
 
         public static void AtomicWrite(string path, byte[] bytes)
         {
-            string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            var temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
             try
             {
                 File.WriteAllBytes(temporary, bytes);

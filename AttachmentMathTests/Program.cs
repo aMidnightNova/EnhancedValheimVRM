@@ -39,8 +39,8 @@ internal static class Program
         Near(math.transform(parent, position), new float3(30, 40, 49.96f), "Rotated grip target in world space");
 
         // Import-unit changes must not change the intended world-space grip distance.
-        foreach (float importScale in new[] { 0.01f, 1, 100 })
-        foreach (float avatarRatio in new[] { 0.5f, 1, 2 })
+        foreach (var importScale in new[] { 0.01f, 1, 100 })
+        foreach (var avatarRatio in new[] { 0.5f, 1, 2 })
         {
             parent = float4x4.TRS(new float3(3, 4, 5), identity, new float3(importScale));
             var offset = new float3(0.03f, -0.04f, 0.07f);
@@ -49,7 +49,7 @@ internal static class Program
             Near(math.transform(parent, position) - new float3(3, 4, 5),
                 offset * avatarRatio,
                 "Avatar ratio must apply once");
-            for (int repeat = 0; repeat < 3; repeat++)
+            for (var repeat = 0; repeat < 3; repeat++)
             {
                 Check(AttachmentMath.TryMapSocket(parent, identity, identity, offset, avatarRatio, out var repeated),
                     "Repeated mapping failed");
@@ -105,7 +105,7 @@ internal static class Program
             "Nested displacement mapping");
 
         // The desired weapon size remains linear in avatar size, not squared by the VRM root.
-        foreach (float ratio in new[] { 0.5f, 1, 2 })
+        foreach (var ratio in new[] { 0.5f, 1, 2 })
         {
             parent = float4x4.Scale(new float3(ratio));
             Check(AttachmentMath.TryLocalScale(parent, identity, new float3(1), out var socketScale),
@@ -135,8 +135,8 @@ internal static class Program
 
         // Regression: assigning a 0.13 m back offset directly below a 100x socket
         // places the item 13 m away, even when its mesh scale has been corrected.
-        foreach (float socketScale in new[] { 0.01f, 1f, 100f })
-        foreach (float avatarRatio in new[] { 0.5f, 0.9043996f, 2f })
+        foreach (var socketScale in new[] { 0.01f, 1f, 100f })
+        foreach (var avatarRatio in new[] { 0.5f, 0.9043996f, 2f })
         {
             var socketPosition = new float3(20, 50, 4);
             var socketMatrix = float4x4.TRS(socketPosition, worldTurn, new float3(socketScale));

@@ -34,14 +34,16 @@ namespace EnhancedValheimVRM
         internal static void SelectionReceived(long id)
         {
             foreach (var player in Player.GetAllPlayers())
+            {
                 if (player != null && player != Player.m_localPlayer && player.GetPlayerID() == id)
                     ApplyPending(player);
+            }
         }
 
         private static void ApplyPending(Player player)
         {
             if (player == null || player.IsDead()) return;
-            string name = SharingRpc.GetOutfit(player.GetPlayerID());
+            var name = SharingRpc.GetOutfit(player.GetPlayerID());
             var avatar = player.GetVrmInstance();
             if (avatar == null || !avatar.IsDisplayed || avatar.IsCorpse) return;
             var outfits = avatar.GetGameObject()?.GetComponent<OutfitController>();

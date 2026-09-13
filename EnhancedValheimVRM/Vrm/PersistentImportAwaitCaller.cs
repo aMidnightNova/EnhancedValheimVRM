@@ -13,8 +13,10 @@ namespace EnhancedValheimVRM
         private static readonly System.Reflection.FieldInfo RootField =
             HarmonyLib.AccessTools.Field(typeof(ImporterContext), "Root");
 
-        internal static GameObject GetRoot(ImporterContext importer) =>
-            importer == null ? null : RootField.GetValue(importer) as GameObject;
+        internal static GameObject GetRoot(ImporterContext importer)
+        {
+            return importer == null ? null : RootField.GetValue(importer) as GameObject;
+        }
 
         private static int _frame = -1;
         private static float _start, _budget;

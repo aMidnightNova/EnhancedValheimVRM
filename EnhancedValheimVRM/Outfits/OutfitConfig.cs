@@ -20,8 +20,10 @@ namespace EnhancedValheimVRM
         public readonly List<OutfitDefinition> Outfits = new List<OutfitDefinition>();
         public OutfitDefinition Default => Outfits.Find(outfit => outfit.IsDefault);
 
-        public OutfitDefinition Find(string name) =>
-            Outfits.Find(outfit => string.Equals(outfit.Name, name, StringComparison.OrdinalIgnoreCase));
+        public OutfitDefinition Find(string name)
+        {
+            return Outfits.Find(outfit => string.Equals(outfit.Name, name, StringComparison.OrdinalIgnoreCase));
+        }
 
         public static OutfitConfig Parse(string text)
         {
@@ -30,19 +32,19 @@ namespace EnhancedValheimVRM
             var config = new OutfitConfig();
             OutfitDefinition current = null;
             var keys = new HashSet<string>(StringComparer.Ordinal);
-            int lineNumber = 0;
+            var lineNumber = 0;
             using (var reader = new StringReader(text))
             {
                 string raw;
                 while ((raw = reader.ReadLine()) != null)
                 {
                     lineNumber++;
-                    string line = raw.Trim();
+                    var line = raw.Trim();
                     if (line.Length == 0 || line.StartsWith("#") || line.StartsWith("//") || line.StartsWith(";"))
                         continue;
                     if (line.StartsWith("[") && line.EndsWith("]"))
                     {
-                        string name = line.Substring(1, line.Length - 2).Trim();
+                        var name = line.Substring(1, line.Length - 2).Trim();
                         Sharing.SharingWire.ValidateOutfitName(name);
                         if (config.Find(name) != null || config.Outfits.Count >= 64)
                             throw new InvalidDataException("Duplicate outfit name or too many outfits.");
@@ -52,11 +54,11 @@ namespace EnhancedValheimVRM
                         continue;
                     }
 
-                    int equals = line.IndexOf('=');
+                    var equals = line.IndexOf('=');
                     if (current == null || equals < 1)
                         throw new InvalidDataException("Invalid outfit entry at line " + lineNumber);
-                    string key = line.Substring(0, equals).Trim();
-                    string value = line.Substring(equals + 1).Trim();
+                    var key = line.Substring(0, equals).Trim();
+                    var value = line.Substring(equals + 1).Trim();
                     if (!keys.Add(key.Equals("Default", StringComparison.OrdinalIgnoreCase) ? "Default" : key))
                         throw new InvalidDataException("Duplicate outfit entry at line " + lineNumber);
                     if (key.Equals("Default", StringComparison.OrdinalIgnoreCase) &&

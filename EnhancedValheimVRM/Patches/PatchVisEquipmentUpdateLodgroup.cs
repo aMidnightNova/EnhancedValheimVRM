@@ -24,9 +24,11 @@ namespace EnhancedValheimVRM
             }
 
             var settings = vrm.GetSettings();
-            foreach (string field in new[] { "m_hairItemInstance", "m_beardItemInstance" })
-                if (equipment.TryGetField<VisEquipment, GameObject>(field, out var hair))
-                    hair.SetActive(false);
+            foreach (var field in new[] { "m_hairItemInstance", "m_beardItemInstance" })
+            {
+                if (equipment.TryGetField<VisEquipment, GameObject>(field, out var hair)) hair.SetActive(false);
+            }
+
             SetListVisible(equipment, "m_chestItemInstances", settings.ChestVisible);
             SetListVisible(equipment, "m_legItemInstances", settings.LegsVisible);
             SetListVisible(equipment, "m_shoulderItemInstances", settings.ShouldersVisible);
@@ -56,8 +58,9 @@ namespace EnhancedValheimVRM
         {
             if (!equipment.TryGetField<VisEquipment, List<GameObject>>(field, out var items)) return;
             foreach (var item in items)
-                if (item != null)
-                    item.SetActive(visible);
+            {
+                if (item != null) item.SetActive(visible);
+            }
         }
 
         private static void SetHand(VisEquipment equipment,
@@ -67,7 +70,7 @@ namespace EnhancedValheimVRM
             VrmSettings settings)
         {
             if (!equipment.TryGetField<VisEquipment, GameObject>(field + "Instance", out var item)) return;
-            string name = equipment.GetEquippedItemName(field);
+            var name = equipment.GetEquippedItemName(field);
             if (settings.TryGetItemAdjustment(name, GameItem.ClassOf(name), true, out var itemPos, out var itemRot))
             {
                 offset += itemPos;
@@ -84,9 +87,9 @@ namespace EnhancedValheimVRM
         {
             if (!equipment.TryGetField<VisEquipment, GameObject>(field + "Instance", out var item)) return;
             var reference = EquipmentTransformReference.Get(item.transform);
-            Vector3 offset = right ? settings.RightHandBackItemPos : settings.LeftHandBackItemPos;
-            Vector3 rotation = right ? settings.RightHandBackItemRot : settings.LeftHandBackItemRot;
-            string name = equipment.GetEquippedItemName(field);
+            var offset = right ? settings.RightHandBackItemPos : settings.LeftHandBackItemPos;
+            var rotation = right ? settings.RightHandBackItemRot : settings.LeftHandBackItemRot;
+            var name = equipment.GetEquippedItemName(field);
             if (settings.TryGetItemAdjustment(name, GameItem.ClassOf(name), false, out var itemPos, out var itemRot))
             {
                 offset += itemPos;
@@ -102,7 +105,7 @@ namespace EnhancedValheimVRM
         {
             // Recreate any rig that was attached before the VRM became ready, and
             // rebuild skinned clothing whose renderer visibility was previously hidden.
-            foreach (string slot in new[]
+            foreach (var slot in new[]
                      {
                          "LeftItem", "RightItem", "HelmetItem", "ChestItem", "LegItem", "ShoulderItem",
                          "UtilityItem", "TrinketItem", "LeftBackItem", "RightBackItem"

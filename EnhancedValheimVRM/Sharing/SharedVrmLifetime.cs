@@ -22,8 +22,10 @@ namespace EnhancedValheimVRM
         public void Release()
         {
             foreach (var resource in ExtraResources)
-                if (resource != null)
-                    Destroy(resource);
+            {
+                if (resource != null) Destroy(resource);
+            }
+
             ExtraResources.Clear();
             ConvertedMaterials.Clear();
             MaterialReady = null;
@@ -32,6 +34,9 @@ namespace EnhancedValheimVRM
             release?.Invoke();
         }
 
-        private void OnDestroy() => Release();
+        private void OnDestroy()
+        {
+            Release();
+        }
     }
 }

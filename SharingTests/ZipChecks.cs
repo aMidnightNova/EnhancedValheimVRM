@@ -12,7 +12,7 @@ internal static class ZipChecks
 {
     private static void Reject(Action action, Action<bool, string> check, string name)
     {
-        bool rejected = false;
+        var rejected = false;
         try
         {
             action();
@@ -30,9 +30,14 @@ internal static class ZipChecks
         using (var output = new MemoryStream())
         {
             using (var zip = new ZipArchive(output, ZipArchiveMode.Create, true))
+            {
                 foreach (var entry in entries)
+                {
                     using (var file = zip.CreateEntry(entry.name).Open())
                         file.Write(entry.bytes, 0, entry.bytes.Length);
+                }
+            }
+
             return output.ToArray();
         }
     }
@@ -40,13 +45,13 @@ internal static class ZipChecks
     internal static async Task Run(string root, Action<bool, string> check)
     {
         const long id = 4567;
-        string key = BundleCrypto.GenerateKey();
+        var key = BundleCrypto.GenerateKey();
         var vrm = new byte[2 * 1024 * 1024];
         // Repeated model-like data makes compression measurable rather than timing-dependent.
-        for (int i = 0; i < vrm.Length; i++) vrm[i] = (byte)(i % 127);
+        for (var i = 0; i < vrm.Length; i++) vrm[i] = (byte)(i % 127);
         const string settingsText = "AllowShare=True\r\n# café\n", outfitsText = "[Default]\nDefault=True\n";
-        byte[] packed = BundleCrypto.PackAvatar(vrm);
-        byte[] profile = BundleCrypto.PackProfile(settingsText, outfitsText);
+        var packed = BundleCrypto.PackAvatar(vrm);
+        var profile = BundleCrypto.PackProfile(settingsText, outfitsText);
         check(packed[0] == 'P' && packed[1] == 'K' && profile[0] == 'P', "Plaintext bundles are not ZIPs");
         check(packed.Length < vrm.Length / 10, "Bundle compression was not applied");
         using (var zip = new ZipArchive(new MemoryStream(packed), ZipArchiveMode.Read))
@@ -57,12 +62,14 @@ internal static class ZipChecks
         }
 
         using (var zip = new ZipArchive(new MemoryStream(profile), ZipArchiveMode.Read))
+        {
             check(zip.Entries.Select(e => e.FullName).SequenceEqual(new[] { "settings.txt", "outfits.txt" }),
                 "Settings ZIP must contain exactly settings.txt and outfits.txt");
+        }
 
         check(packed.SequenceEqual(BundleCrypto.PackAvatar(vrm)), "Identical files produced different ZIP versions");
         check(BundleCrypto.UnpackAvatar(packed).SequenceEqual(vrm), "Model ZIP roundtrip changed the file");
-        BundleCrypto.UnpackProfile(profile, out string settings, out string outfits);
+        BundleCrypto.UnpackProfile(profile, out var settings, out var outfits);
         check(settings == settingsText && outfits == outfitsText, "Settings ZIP roundtrip changed files");
         BundleCrypto.UnpackProfile(BundleCrypto.PackProfile(settingsText, ""), out _, out outfits);
         check(outfits == "", "Empty outfit file was lost");
@@ -104,8 +111,8 @@ internal static class ZipChecks
             "Oversized decompressed text accepted");
         Reject(() => BundleCrypto.UnpackAvatar(new byte[] { 1, 2, 3 }), check, "Malformed ZIP accepted");
 
-        byte[] encrypted = TestBundle.Encrypt(packed, key, id);
-        byte[] encryptedProfile = TestBundle.Encrypt(profile, key, id);
+        var encrypted = TestBundle.Encrypt(packed, key, id);
+        var encryptedProfile = TestBundle.Encrypt(profile, key, id);
         var info = new BundleInfo
         {
             Version = modelVersion,
@@ -113,7 +120,7 @@ internal static class ZipChecks
             ProfileVersion = profileVersion,
             ProfileHash = BundleCrypto.Hash(encryptedProfile)
         };
-        bool versionRejected = false;
+        var versionRejected = false;
         try
         {
             BundleCrypto.Decrypt(encrypted, key, new string('b', 64), id);
@@ -124,7 +131,7 @@ internal static class ZipChecks
         }
 
         check(versionRejected, "Authentication did not bind the announced version");
-        bool characterRejected = false;
+        var characterRejected = false;
         try
         {
             BundleCrypto.Decrypt(encrypted, key, modelVersion, id + 1);
@@ -138,7 +145,7 @@ internal static class ZipChecks
 
         string cache = Path.Combine(root, "zip-cache"), directory = Path.Combine(cache, id.ToString());
         Directory.CreateDirectory(directory);
-        string path = Path.Combine(directory, info.Hash + ".vrm.bundle");
+        var path = Path.Combine(directory, info.Hash + ".vrm.bundle");
         File.WriteAllBytes(path, encrypted);
         File.WriteAllBytes(Path.Combine(directory, info.Hash + ".settings.bundle"), encryptedProfile);
         var modified = File.GetLastWriteTimeUtc(path);
@@ -150,9 +157,12 @@ internal static class ZipChecks
             stages.Any(stage => stage.StartsWith("verified in")),
             "Load stages did not report both blobs");
         check(!stages.Any(stage => stage.Contains(key)), "Load stages leaked the sharing secret");
-        foreach (string word in new[] { "key", "ticket", "AES", "HMAC", "cipher", "encrypt", "decrypt", "RPC", "TCP" })
+        foreach (var word in new[] { "key", "ticket", "AES", "HMAC", "cipher", "encrypt", "decrypt", "RPC", "TCP" })
+        {
             check(!stages.Any(stage => stage.IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0),
                 "Load stages mention protocol detail: " + word);
+        }
+
         var limited = new AvatarTcpClient("unused.invalid", 1, 750000) { BundleLimitBytes = 64 };
         Reject(() => limited.UploadBlob(id, "", encrypted, default),
             check,
@@ -190,7 +200,7 @@ internal static class ZipChecks
         using (var cancel = new CancellationTokenSource())
         {
             cancel.Cancel();
-            bool cancelled = false;
+            var cancelled = false;
             try
             {
                 client.Receive(id, info, key, cache, cancel.Token, "", "", null);
@@ -264,9 +274,9 @@ internal static class ZipChecks
         server.m_rpc.Deliver(RpcChecks.Packet(13, SharingWire.DefaultBundleLimitBytes, version: "1", value: "6067"));
         SharingRpc.ClientReady();
         var client = new AvatarTcpClient("unused.invalid", 1, 750000);
-        byte[] zip = BundleCrypto.PackAvatar(vrm);
-        string version = BundleCrypto.Version(zip, key), hash = new string('a', 64);
-        byte[] profile = BundleCrypto.PackProfile(settingsText, "");
+        var zip = BundleCrypto.PackAvatar(vrm);
+        string version = BundleCrypto.Version(zip, key), hash = new('a', 64);
+        var profile = BundleCrypto.PackProfile(settingsText, "");
         var stored = new BundleInfo
         {
             Version = version,
@@ -274,8 +284,8 @@ internal static class ZipChecks
             ProfileVersion = BundleCrypto.Version(profile, key),
             ProfileHash = new string('c', 64)
         };
-        int packs = 0;
-        Func<byte[]> packAvatar = () =>
+        var packs = 0;
+        var packAvatar = () =>
         {
             packs++;
             return zip;
@@ -304,7 +314,7 @@ internal static class ZipChecks
         check(profile.All(b => b == 0),
             "Plaintext settings ZIP retained while awaiting permission to transfer ciphertext");
         server.m_rpc.Deliver(Reply(Request(offer), value: "error"));
-        bool failed = false;
+        var failed = false;
         try
         {
             await publication;
@@ -357,7 +367,7 @@ internal static class ZipChecks
                 "Plaintext model ZIP retained while awaiting permission to transfer ciphertext");
             cancel.Cancel();
             SharingRpc.Tick(null);
-            bool cancelled = false;
+            var cancelled = false;
             try
             {
                 await publication;

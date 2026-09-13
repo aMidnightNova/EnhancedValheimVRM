@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace EnhancedValheimVRM
 {
@@ -7,13 +7,9 @@ namespace EnhancedValheimVRM
         public static void Set<T1, T2>(this Dictionary<T1, T2> dict, T1 key, T2 value)
         {
             if (value == null)
-            {
                 dict.Remove(key);
-            }
             else
-            {
                 dict[key] = value;
-            }
         }
     }
 }

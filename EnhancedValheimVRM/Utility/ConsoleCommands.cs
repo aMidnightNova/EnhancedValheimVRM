@@ -41,7 +41,7 @@ namespace EnhancedValheimVRM
 
                     if (args.Args.Length >= 3 && args.Args[1].Equals("dev", StringComparison.OrdinalIgnoreCase))
                     {
-                        bool twoHanded = args.Args.Length == 4 &&
+                        var twoHanded = args.Args.Length == 4 &&
                             args.Args[2].Equals("weapons", StringComparison.OrdinalIgnoreCase) &&
                             args.Args[3].Equals("twohanded", StringComparison.OrdinalIgnoreCase);
                         if (args.Args.Length != 3 && !twoHanded)
@@ -63,11 +63,11 @@ namespace EnhancedValheimVRM
                         return;
                     }
 
-                    string group = args.Args[1];
-                    string action = args.Args.Length > 2 ? args.Args[2] : "list";
+                    var group = args.Args[1];
+                    var action = args.Args.Length > 2 ? args.Args[2] : "list";
                     if (group.Equals("settings", StringComparison.OrdinalIgnoreCase))
                     {
-                        bool auto = args.Args.Length == 4 && action.Equals("auto", StringComparison.OrdinalIgnoreCase);
+                        var auto = args.Args.Length == 4 && action.Equals("auto", StringComparison.OrdinalIgnoreCase);
                         if (!auto && (args.Args.Length != 3 ||
                                 !action.Equals("reload", StringComparison.OrdinalIgnoreCase)))
                         {
@@ -85,7 +85,7 @@ namespace EnhancedValheimVRM
 
                         if (auto)
                         {
-                            bool on = args.Args[3].Equals("on", StringComparison.OrdinalIgnoreCase);
+                            var on = args.Args[3].Equals("on", StringComparison.OrdinalIgnoreCase);
                             if (!on && !args.Args[3].Equals("off", StringComparison.OrdinalIgnoreCase))
                             {
                                 args.Context.AddString("Usage: /vrm settings auto on | off");
@@ -121,7 +121,7 @@ namespace EnhancedValheimVRM
 
                     if (group.Equals("toggle", StringComparison.OrdinalIgnoreCase))
                     {
-                        string part = string.Join(" ", args.Args.Skip(2)).Trim().Trim('"');
+                        var part = string.Join(" ", args.Args.Skip(2)).Trim().Trim('"');
                         args.Context.AddString(outfits.Toggle(part) ? "Toggled: " + part : "Unknown mesh: " + part);
                         return;
                     }
@@ -137,7 +137,7 @@ namespace EnhancedValheimVRM
                             return;
                         }
 
-                        string shape = string.Join(" ", args.Args.Skip(2).Take(args.Args.Length - 3)).Trim().Trim('"');
+                        var shape = string.Join(" ", args.Args.Skip(2).Take(args.Args.Length - 3)).Trim().Trim('"');
                         args.Context.AddString(outfits.Override(shape, true, weight, true)
                             ? "Blendshape: " + shape + " = " + weight
                             : "Unknown blendshape: " + shape);

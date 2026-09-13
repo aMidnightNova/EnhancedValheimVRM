@@ -11,15 +11,15 @@ using EnhancedValheimVRM;
 
 internal static class Program
 {
-    static int checks;
+    private static int checks;
 
-    static void Check(bool condition, string message)
+    private static void Check(bool condition, string message)
     {
         if (!condition) throw new Exception(message);
         checks++;
     }
 
-    static void Until(Func<bool> done)
+    private static void Until(Func<bool> done)
     {
         var timeout = DateTime.UtcNow.AddSeconds(10);
         while (!done())
@@ -30,13 +30,15 @@ internal static class Program
         }
     }
 
-    static VrmAssetCache.Source Source(string key, byte first = 1) =>
-        new VrmAssetCache.Source
+    private static VrmAssetCache.Source Source(string key, byte first = 1)
+    {
+        return new VrmAssetCache.Source
         {
             Key = key, Path = key + ".vrm", Bytes = new byte[] { first, 2, 3 }, Settings = new VrmSettings("test")
         };
+    }
 
-    static void Main()
+    private static void Main()
     {
         UniGLTF.GlbBinaryParser.CallerThread = Environment.CurrentManagedThreadId;
         var first = VrmAssetCache.Get(Source("menu"));
@@ -47,7 +49,7 @@ internal static class Program
         Check(!first.Completed, "An unfinished native import must yield back to the caller");
         Check(UniGLTF.GlbBinaryParser.AllOffThread, "GLB parsing must never run on the caller/main thread");
         var second = VrmAssetCache.Get(Source("remote"));
-        for (int i = 0; i < 20; i++)
+        for (var i = 0; i < 20; i++)
         {
             CoroutineHelper.Instance.Tick();
             Thread.Sleep(1);
@@ -90,7 +92,7 @@ internal static class Program
         Check(afterFailure.Error == null, "A failed native import must not block unrelated players");
         Check(VrmInstance.Prepared == 4,
             "Materials must be processed once per successful cold import, never per cache hit");
-        string directory = Path.Combine(Path.GetTempPath(), "evrm-source-" + Guid.NewGuid());
+        var directory = Path.Combine(Path.GetTempPath(), "evrm-source-" + Guid.NewGuid());
         Directory.CreateDirectory(directory);
         try
         {
@@ -165,7 +167,7 @@ namespace UnityEngine
 
     public class GameObject : Object
     {
-        readonly Dictionary<Type, object> components = new Dictionary<Type, object>();
+        private readonly Dictionary<Type, object> components = new();
         public bool active = true;
 
         public GameObject()
@@ -180,8 +182,10 @@ namespace UnityEngine
             return result;
         }
 
-        public T GetComponent<T>() where T : class =>
-            components.TryGetValue(typeof(T), out var value) ? value as T : null;
+        public T GetComponent<T>() where T : class
+        {
+            return components.TryGetValue(typeof(T), out var value) ? value as T : null;
+        }
 
         public void SetActive(bool value)
         {
@@ -191,7 +195,7 @@ namespace UnityEngine
 
     public class Animator
     {
-        public Avatar avatar = new Avatar();
+        public Avatar avatar = new();
     }
 
     public class Avatar
@@ -209,7 +213,7 @@ namespace UniGLTF
 {
     public class GlbBinaryParser
     {
-        readonly byte[] bytes;
+        private readonly byte[] bytes;
         public static int CallerThread;
         public static bool AllOffThread = true;
 
@@ -229,7 +233,7 @@ namespace UniGLTF
     public class RuntimeGltfInstance
     {
         public UnityEngine.GameObject Root;
-        public List<UnityEngine.Renderer> VisibleRenderers = new List<UnityEngine.Renderer>();
+        public List<UnityEngine.Renderer> VisibleRenderers = new();
 
         public void TransferOwnership(Action<object, UnityEngine.Object> take)
         {
@@ -240,13 +244,16 @@ namespace UniGLTF
     public class ImporterContext : IDisposable
     {
         protected UnityEngine.GameObject Root;
-        public readonly List<UnityEngine.Transform> Nodes = new List<UnityEngine.Transform>();
+        public readonly List<UnityEngine.Transform> Nodes = new();
 
-        public static readonly Queue<TaskCompletionSource<RuntimeGltfInstance>> Pending =
-            new Queue<TaskCompletionSource<RuntimeGltfInstance>>();
+        public static readonly Queue<TaskCompletionSource<RuntimeGltfInstance>> Pending = new();
 
         public static int Starts;
-        public RuntimeGltfInstance Load() => new RuntimeGltfInstance { Root = new UnityEngine.GameObject() };
+
+        public RuntimeGltfInstance Load()
+        {
+            return new RuntimeGltfInstance { Root = new UnityEngine.GameObject() };
+        }
 
         public Task<RuntimeGltfInstance> LoadAsync(object caller)
         {
@@ -256,11 +263,15 @@ namespace UniGLTF
             return task.Task;
         }
 
-        public static void FinishOne() =>
+        public static void FinishOne()
+        {
             Pending.Dequeue().SetResult(new RuntimeGltfInstance { Root = new UnityEngine.GameObject() });
+        }
 
-        public static void FailOne() =>
+        public static void FailOne()
+        {
             Pending.Dequeue().SetException(new InvalidOperationException("Test native failure"));
+        }
 
         public void Dispose() { }
     }
@@ -285,7 +296,10 @@ namespace UniVRM10
 {
     public class Vrm10Data
     {
-        public static Vrm10Data Parse(object data) => new Vrm10Data();
+        public static Vrm10Data Parse(object data)
+        {
+            return new Vrm10Data();
+        }
     }
 
     public class Vrm10Importer : UniGLTF.ImporterContext
@@ -300,9 +314,11 @@ namespace HarmonyLib
 {
     public static class AccessTools
     {
-        public static System.Reflection.FieldInfo Field(Type type, string name) =>
-            type.GetField(name,
+        public static System.Reflection.FieldInfo Field(Type type, string name)
+        {
+            return type.GetField(name,
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        }
     }
 }
 
@@ -325,7 +341,10 @@ namespace EnhancedValheimVRM
 
     public class OutfitConfig
     {
-        public static OutfitConfig Parse(string text) => new OutfitConfig();
+        public static OutfitConfig Parse(string text)
+        {
+            return new OutfitConfig();
+        }
     }
 
     public static class Constants
@@ -352,7 +371,7 @@ namespace EnhancedValheimVRM
     {
         public void NotifyMaterial(object material) { }
 
-        public readonly List<UnityEngine.Object> ExtraResources = new List<UnityEngine.Object>();
+        public readonly List<UnityEngine.Object> ExtraResources = new();
     }
 
     public static class Settings
@@ -368,12 +387,14 @@ namespace EnhancedValheimVRM
 
         public void Protect() { }
 
-        public static UnityEngine.GameObject GetRoot(UniGLTF.ImporterContext importer) =>
-            importer == null
+        public static UnityEngine.GameObject GetRoot(UniGLTF.ImporterContext importer)
+        {
+            return importer == null
                 ? null
                 : typeof(UniGLTF.ImporterContext).GetField("Root",
                         System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
                     .GetValue(importer) as UnityEngine.GameObject;
+        }
     }
 
     public static class PatchShaderFind
@@ -399,8 +420,8 @@ namespace EnhancedValheimVRM
 
     public class CoroutineHelper
     {
-        public static readonly CoroutineHelper Instance = new CoroutineHelper();
-        readonly List<Stack<IEnumerator>> routines = new List<Stack<IEnumerator>>();
+        public static readonly CoroutineHelper Instance = new();
+        private readonly List<Stack<IEnumerator>> routines = new();
 
         public void StartCoroutine(IEnumerator work)
         {

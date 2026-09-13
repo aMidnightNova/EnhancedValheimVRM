@@ -1,4 +1,4 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using UnityEngine;
 using VRMShaders;
 
@@ -23,13 +23,9 @@ namespace EnhancedValheimVRM
                     break;
                 default:
                     if (string.IsNullOrEmpty(textureInfo.DataMimeType))
-                    {
                         Logger.Log($"Texture image MIME type is empty.");
-                    }
                     else
-                    {
                         Logger.Log($"Texture image MIME type `{textureInfo.DataMimeType}` is not supported.");
-                    }
 
                     break;
             }

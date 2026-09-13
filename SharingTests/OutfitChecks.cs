@@ -28,7 +28,7 @@ internal static class OutfitChecks
         var renamed =
             OutfitConfig.Parse("[Anything]\nDefault=False\n[My usual clothes]\nDefault=True\nmesh:Body=True\n");
         check(renamed.Default.Name == "My usual clothes", "Default must come from flag, not section name or order");
-        foreach (string invalid in new[]
+        foreach (var invalid in new[]
                  {
                      "[A]\nDefault=False", "[A]\nDefault=True\n[B]\nDefault=True",
                      "[A]\nDefault=True\n[a]\nDefault=False", "[A]\nDefault=True\nblendshape:Body:Test=NaN",
@@ -37,7 +37,7 @@ internal static class OutfitChecks
                      "[A]\nDefault=True\nblendshape:Body:=25"
                  })
         {
-            bool rejected = false;
+            var rejected = false;
             try
             {
                 OutfitConfig.Parse(invalid);
@@ -50,9 +50,9 @@ internal static class OutfitChecks
             check(rejected, "Malformed outfit accepted: " + invalid);
         }
 
-        string key = BundleCrypto.GenerateKey();
+        var key = BundleCrypto.GenerateKey();
         var packed = BundleCrypto.PackProfile("", importedText);
-        BundleCrypto.UnpackProfile(packed, out _, out string outfits);
+        BundleCrypto.UnpackProfile(packed, out _, out var outfits);
         check(outfits == importedText, "Outfits lost from bundle");
         var originalVersion = BundleCrypto.Version(packed, key);
         check(BundleCrypto.Version(BundleCrypto.PackProfile("", importedText.Replace("Default=True", "Default=False")),

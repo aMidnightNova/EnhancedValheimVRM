@@ -39,8 +39,11 @@ namespace EnhancedValheimVRM
             var network = ZNet.instance;
             if (network != null && network.IsServer() && !network.IsDedicated() && ZNet.IsOpenServer() &&
                 Settings.EnableSharingServer)
+            {
                 Logger.LogOnce("sharing-player-host",
                     "Player-hosted VRM sharing is disabled: no verified TCP hole-punch path is implemented. Dedicated-server sharing remains available.");
+            }
+
             if (network == null || !SharingEndpoint.ShouldHost(network.IsServer(),
                     network.IsDedicated(),
                     Settings.EnableSharingServer))
@@ -55,7 +58,7 @@ namespace EnhancedValheimVRM
                 _port == Settings.SharingPort &&
                 _bindAddress == Settings.SharingBindAddress && _dedicated == network.IsDedicated())
                 return;
-            bool failed = _serving?.IsFaulted ?? false;
+            var failed = _serving?.IsFaulted ?? false;
             StopHost();
             if (failed)
             {
@@ -127,7 +130,14 @@ namespace EnhancedValheimVRM
             _network = null;
         }
 
-        private void OnDestroy() => StopHost();
-        private void OnApplicationQuit() => StopHost();
+        private void OnDestroy()
+        {
+            StopHost();
+        }
+
+        private void OnApplicationQuit()
+        {
+            StopHost();
+        }
     }
 }

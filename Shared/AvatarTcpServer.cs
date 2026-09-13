@@ -61,11 +61,14 @@ namespace EnhancedValheimVRM.Sharing
             SharingWire.ValidateHash(version);
             SharingWire.ValidateHash(info.Hash); // Both files are named by the model hash.
             foreach (var pair in _tickets)
+            {
                 if (pair.Value.Expires < DateTime.UtcNow && _tickets.TryRemove(pair.Key, out var expired) &&
                     !_active.ContainsKey(pair.Key))
                     expired.Stop.Dispose();
+            }
+
             if (_tickets.Count >= 256) throw new IOException("Too many pending transfers.");
-            string ticket = Guid.NewGuid().ToString("N");
+            var ticket = Guid.NewGuid().ToString("N");
             _tickets[ticket] = new Transfer
             {
                 Session = session,
@@ -80,7 +83,10 @@ namespace EnhancedValheimVRM.Sharing
             return ticket;
         }
 
-        public void RevokeSession(string session) => Revoke(transfer => transfer.Session == session);
+        public void RevokeSession(string session)
+        {
+            Revoke(transfer => transfer.Session == session);
+        }
 
         public void RevokeCharacter(long id)
         {
@@ -90,13 +96,16 @@ namespace EnhancedValheimVRM.Sharing
         private void Revoke(Func<Transfer, bool> matches)
         {
             foreach (var pair in _tickets)
+            {
                 if (matches(pair.Value) && _tickets.TryRemove(pair.Key, out var pending))
                 {
                     pending.Revoked = true;
                     if (!_active.ContainsKey(pair.Key)) pending.Stop.Dispose();
                 }
+            }
 
             foreach (var transfer in _active.Values)
+            {
                 if (matches(transfer))
                 {
                     transfer.Revoked = true;
@@ -109,6 +118,7 @@ namespace EnhancedValheimVRM.Sharing
                     var client = transfer.Client;
                     if (client != null) _ = Task.Run(() => client.Close());
                 }
+            }
         }
 
         // Worker-only disk access. Encrypted files/manifests intentionally survive disconnects.
@@ -129,7 +139,7 @@ namespace EnhancedValheimVRM.Sharing
 
         private BundleInfo ReadManifest(long id)
         {
-            string path = Path.Combine(CharacterDirectory(id), "current");
+            var path = Path.Combine(CharacterDirectory(id), "current");
             if (!File.Exists(path)) return null;
             try
             {
@@ -214,11 +224,14 @@ namespace EnhancedValheimVRM.Sharing
             using (var writer = new BinaryWriter(stream))
             {
                 if (reader.ReadInt32() != SharingWire.Magic)
+                {
                     throw new InvalidDataException(
                         "EnhancedValheimVRM: unsupported TCP transfer header. Use matching mod builds on the server and clients, then restart them.");
-                byte direction = reader.ReadByte();
-                long id = reader.ReadInt64();
-                string ticket = SharingWire.ReadText(reader, 64);
+                }
+
+                var direction = reader.ReadByte();
+                var id = reader.ReadInt64();
+                var ticket = SharingWire.ReadText(reader, 64);
                 if (!_tickets.TryGetValue(ticket, out var transfer))
                 {
                     writer.Write(false);
@@ -314,11 +327,11 @@ namespace EnhancedValheimVRM.Sharing
 
         private BundleInfo Upload(Transfer transfer, BinaryReader reader, CancellationToken cancellation)
         {
-            int length = reader.ReadInt32();
+            var length = reader.ReadInt32();
             if (length < 64 || length > BundleLimitBytes) throw new InvalidDataException("Invalid upload size.");
-            string directory = CharacterDirectory(transfer.Id);
+            var directory = CharacterDirectory(transfer.Id);
             Directory.CreateDirectory(directory);
-            string temporary = Path.Combine(directory, Guid.NewGuid().ToString("N") + ".tmp");
+            var temporary = Path.Combine(directory, Guid.NewGuid().ToString("N") + ".tmp");
             try
             {
                 using (var hash = System.Security.Cryptography.SHA256.Create())
@@ -326,12 +339,12 @@ namespace EnhancedValheimVRM.Sharing
                     using (var output = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                     {
                         var buffer = new byte[65536];
-                        int remaining = length;
+                        var remaining = length;
                         while (remaining > 0)
                         {
                             cancellation.ThrowIfCancellationRequested();
                             if (transfer.Revoked) throw new OperationCanceledException();
-                            int count = reader.Read(buffer, 0, Math.Min(buffer.Length, remaining));
+                            var count = reader.Read(buffer, 0, Math.Min(buffer.Length, remaining));
                             if (count == 0) throw new EndOfStreamException();
                             hash.TransformBlock(buffer, 0, count, null, 0);
                             output.Write(buffer, 0, count);
@@ -351,7 +364,7 @@ namespace EnhancedValheimVRM.Sharing
                 {
                     cancellation.ThrowIfCancellationRequested();
                     if (transfer.Revoked) throw new OperationCanceledException();
-                    string destination = Path.Combine(directory,
+                    var destination = Path.Combine(directory,
                         SharingWire.BlobFileName(transfer.Kind, transfer.FileHash));
                     // The model file is immutable per hash; the settings file is replaced in place.
                     if (transfer.Kind == SharingWire.ProfileKind && File.Exists(destination)) File.Delete(destination);

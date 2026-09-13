@@ -84,7 +84,7 @@ namespace EnhancedValheimVRM
 
         private static int Depth(Transform transform)
         {
-            int depth = 0;
+            var depth = 0;
             while (transform.parent != null)
             {
                 depth++;
@@ -99,8 +99,10 @@ namespace EnhancedValheimVRM
             if (_hips?.Source == null || _hips.Target == null) return;
             _hips.Target.position = _hips.Source.position + _hips.Source.rotation * _hipOffset;
             foreach (var bone in _bones)
+            {
                 if (bone.Source != null && bone.Target != null)
                     bone.Target.rotation = bone.Source.rotation * bone.RotationOffset;
+            }
         }
     }
 }

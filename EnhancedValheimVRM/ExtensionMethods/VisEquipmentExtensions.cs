@@ -25,7 +25,7 @@ namespace EnhancedValheimVRM
             if (equipment == null || string.IsNullOrEmpty(fieldName) ||
                 !fieldName.StartsWith("m_", StringComparison.Ordinal) || fieldName.Length < 3)
                 return null;
-            string currentField = "m_current" + char.ToUpperInvariant(fieldName[2]) + fieldName.Substring(3) + "Hash";
+            var currentField = "m_current" + char.ToUpperInvariant(fieldName[2]) + fieldName.Substring(3) + "Hash";
             if (!(ReadField(equipment, currentField) is int hash) || hash == 0) return null;
             return ObjectDB.instance != null ? ObjectDB.instance.GetItemPrefab(hash)?.name : null;
         }

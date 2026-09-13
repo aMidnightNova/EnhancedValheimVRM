@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -76,7 +76,7 @@ namespace EnhancedValheimVRM
 
         private static bool IsAssemblyInDirectory(Assembly assembly, string[] assemblyFiles)
         {
-            string assemblyLocation = assembly.Location;
+            var assemblyLocation = assembly.Location;
             return assemblyFiles.Any(file => file.Equals(assemblyLocation, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -89,8 +89,8 @@ namespace EnhancedValheimVRM
                 try
                 {
                     harmony.Patch(method,
-                        prefix: new HarmonyMethod(typeof(PatchAllUpdateMethods), nameof(GenericPrefix)),
-                        postfix: new HarmonyMethod(typeof(PatchAllUpdateMethods), nameof(GenericPostfix)));
+                        new HarmonyMethod(typeof(PatchAllUpdateMethods), nameof(GenericPrefix)),
+                        new HarmonyMethod(typeof(PatchAllUpdateMethods), nameof(GenericPostfix)));
                     //Logger.Log($"Patched {methodName} in {type.FullName}");
                 }
                 catch (Exception ex)
@@ -121,15 +121,12 @@ namespace EnhancedValheimVRM
         {
             __state.Stopwatch.Stop();
 
-            int elapsedMilliseconds = (int)__state.Stopwatch.Elapsed.TotalMilliseconds;
-            string methodName = $"{__state.CallingMethod.DeclaringType.FullName}.{__state.CallingMethod.Name}";
+            var elapsedMilliseconds = (int)__state.Stopwatch.Elapsed.TotalMilliseconds;
+            var methodName = $"{__state.CallingMethod.DeclaringType.FullName}.{__state.CallingMethod.Name}";
 
-            if (!methodCallTimestamps.ContainsKey(methodName))
-            {
-                methodCallTimestamps[methodName] = new List<long>();
-            }
+            if (!methodCallTimestamps.ContainsKey(methodName)) methodCallTimestamps[methodName] = new List<long>();
 
-            long currentTimestamp = Stopwatch.GetTimestamp();
+            var currentTimestamp = Stopwatch.GetTimestamp();
             methodCallTimestamps[methodName].Add(currentTimestamp);
 
             // Remove timestamps that are outside the time window
