@@ -6,7 +6,7 @@ using System.IO;
 
 internal sealed class ZPackage
 {
-    private readonly MemoryStream _stream = new();
+    private readonly MemoryStream _stream = new MemoryStream();
 
     public int Size()
     {
@@ -52,7 +52,7 @@ internal sealed class ZPackage
 internal sealed class ZRpc
 {
     private Action<ZRpc, ZPackage> _handler;
-    public readonly List<ZPackage> Sent = new();
+    public readonly List<ZPackage> Sent = new List<ZPackage>();
 
     public void Register<T>(string name, Action<ZRpc, T> handler)
     {
@@ -73,7 +73,7 @@ internal sealed class ZRpc
 
 internal sealed class ZNetPeer
 {
-    public ZRpc m_rpc = new();
+    public ZRpc m_rpc = new ZRpc();
     public long m_playerID;
     public long m_uid;
     public ZDOID m_characterID;
@@ -93,7 +93,7 @@ internal readonly struct ZDOID
         Value = value;
     }
 
-    public static readonly ZDOID None = new(0);
+    public static readonly ZDOID None = new ZDOID(0);
 
     public static bool operator ==(ZDOID a, ZDOID b)
     {
@@ -138,8 +138,8 @@ internal sealed class ZDO
 
 internal sealed class ZDOMan
 {
-    public static ZDOMan instance = new();
-    internal readonly Dictionary<ZDOID, ZDO> Objects = new();
+    public static ZDOMan instance = new ZDOMan();
+    internal readonly Dictionary<ZDOID, ZDO> Objects = new Dictionary<ZDOID, ZDO>();
 
     public ZDO GetZDO(ZDOID id)
     {
@@ -151,7 +151,7 @@ internal sealed class ZNet
 {
     public static ZNet instance;
     public bool Server = true;
-    public readonly List<ZNetPeer> Peers = new();
+    public readonly List<ZNetPeer> Peers = new List<ZNetPeer>();
 
     public bool IsServer()
     {

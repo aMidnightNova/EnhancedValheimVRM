@@ -275,7 +275,7 @@ internal static class ZipChecks
         SharingRpc.ClientReady();
         var client = new AvatarTcpClient("unused.invalid", 1, 750000);
         var zip = BundleCrypto.PackAvatar(vrm);
-        string version = BundleCrypto.Version(zip, key), hash = new('a', 64);
+        string version = BundleCrypto.Version(zip, key), hash = new string('a', 64);
         var profile = BundleCrypto.PackProfile(settingsText, "");
         var stored = new BundleInfo
         {
