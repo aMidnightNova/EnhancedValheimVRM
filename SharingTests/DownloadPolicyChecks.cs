@@ -96,10 +96,7 @@ internal static class DownloadPolicyChecks
         private readonly Stopwatch _timer = Stopwatch.StartNew();
         private readonly int _length;
 
-        public bool Accepted
-        {
-            get;
-        }
+        public bool Accepted { get; }
 
         public Download(int port, string hash)
         {

@@ -102,17 +102,9 @@ namespace EnhancedValheimVRM
 
         public class GenericPState
         {
-            public Stopwatch Stopwatch
-            {
-                get;
-                set;
-            }
+            public Stopwatch Stopwatch { get; set; }
 
-            public MethodBase CallingMethod
-            {
-                get;
-                set;
-            }
+            public MethodBase CallingMethod { get; set; }
         }
 
         public static void GenericPrefix(out GenericPState __state)

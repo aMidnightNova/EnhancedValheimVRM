@@ -8,11 +8,7 @@ namespace EnhancedValheimVRM.Sharing
 {
     public sealed class AvatarTcpClient
     {
-        public int BundleLimitBytes
-        {
-            get;
-            set;
-        } = SharingWire.DefaultBundleLimitBytes;
+        public int BundleLimitBytes { get; set; } = SharingWire.DefaultBundleLimitBytes;
 
         private readonly string _host;
         private readonly int _port;

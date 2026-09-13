@@ -1,6 +1,5 @@
 # formatting rules so rider / resharper keep the code in the original style
-# (allman braces, one statement per line, no packed one-liner blocks).
-# run "Code > Reformat Code" or "Code Cleanup > Built-in: Reformat Code" to apply.
+# (braces, one statement per line, no packed one-liner blocks).
 root = true
 
 [*]
@@ -24,8 +23,9 @@ csharp_new_line_before_members_in_object_initializers = true
 csharp_new_line_before_members_in_anonymous_types = true
 csharp_new_line_between_query_expression_clauses = true
 
-# no `if (x) { a; b; }` on one line, and no `a; b;` on one line
-csharp_preserve_single_line_blocks = false
+# no `a; b;` on one line. (do not add csharp_preserve_single_line_blocks=false or
+# resharper place_simple_blocks_on_single_line=false here: resharper maps both onto the
+# same switch that expands `{ get; set; }` out.)
 csharp_preserve_single_line_statements = false
 
 # indentation
@@ -49,11 +49,14 @@ csharp_prefer_braces = when_multiline:suggestion
 
 # resharper / rider specific
 resharper_csharp_brace_style = next_line
-resharper_csharp_place_simple_blocks_on_single_line = false
 resharper_csharp_place_simple_embedded_statement_on_same_line = if_owner_is_single_line
 resharper_csharp_place_simple_case_statement_on_same_line = false
 resharper_csharp_place_simple_anonymousmethod_on_single_line = true
 resharper_csharp_place_simple_initializer_on_single_line = true
+resharper_csharp_place_abstract_accessorholder_on_single_line = true
+resharper_csharp_place_simple_accessorholder_on_single_line = true
+resharper_csharp_keep_existing_declaration_block_arrangement = false
+resharper_csharp_place_simple_accessor_on_single_line = true
 resharper_csharp_keep_existing_linebreaks = true
 resharper_csharp_keep_existing_embedded_arrangement = false
 resharper_csharp_keep_existing_arrangement = false

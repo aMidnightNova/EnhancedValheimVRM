@@ -52,17 +52,9 @@ namespace EnhancedValheimVRM
         private readonly Dictionary<SkinnedMeshRenderer, Dictionary<int, float>> _weights =
             new Dictionary<SkinnedMeshRenderer, Dictionary<int, float>>();
 
-        public string CurrentName
-        {
-            get;
-            private set;
-        } = "";
+        public string CurrentName { get; private set; } = "";
 
-        public string SourceText
-        {
-            get;
-            private set;
-        } = "";
+        public string SourceText { get; private set; } = "";
 
         public IEnumerable<string> Names =>
             _config?.Outfits.Select(outfit => outfit.Name) ?? Enumerable.Empty<string>();
