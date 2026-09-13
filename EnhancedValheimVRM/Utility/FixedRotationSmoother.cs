@@ -11,7 +11,10 @@ namespace EnhancedValheimVRM
         private float3 _samplePosition;
         private quaternion _previous, _current;
 
-        public void Reset() => _ready = false;
+        public void Reset()
+        {
+            _ready = false;
+        }
 
         public quaternion Sample(quaternion rotation,
             float3 position,
@@ -19,7 +22,7 @@ namespace EnhancedValheimVRM
             float renderTime,
             float fixedDelta)
         {
-            bool discontinuity = !_ready || fixedDelta <= 0 || !math.isfinite(fixedDelta) ||
+            var discontinuity = !_ready || fixedDelta <= 0 || !math.isfinite(fixedDelta) ||
                 fixedTime < _sampleTime || fixedTime - _sampleTime > fixedDelta * 2.5f ||
                 math.distancesq(position, _samplePosition) > 25f ||
                 // A turn over 90 degrees in one sample is a snap/teleport, not locomotion.
@@ -41,7 +44,7 @@ namespace EnhancedValheimVRM
                 _samplePosition = position;
             }
 
-            float alpha = math.saturate((renderTime - fixedTime) / fixedDelta);
+            var alpha = math.saturate((renderTime - fixedTime) / fixedDelta);
             return math.slerp(_previous, _current, alpha);
         }
     }

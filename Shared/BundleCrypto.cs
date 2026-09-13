@@ -53,8 +53,11 @@ namespace EnhancedValheimVRM.Sharing
         private static byte[] Derive(string key, string purpose)
         {
             if (!IsValidKey(key))
+            {
                 throw new CryptographicException(
                     "Your sharing secret is invalid; clear Security.VrmKey in the config to regenerate it.");
+            }
+
             using (var hmac = new HMACSHA256(Convert.FromBase64String(key)))
                 return hmac.ComputeHash(Encoding.ASCII.GetBytes("EnhancedValheimVRM/v1/" + purpose));
         }
@@ -99,7 +102,7 @@ namespace EnhancedValheimVRM.Sharing
                 finally
                 {
                     // MemoryStream.Dispose alone does not erase its backing array.
-                    byte[] buffer = stream.GetBuffer();
+                    var buffer = stream.GetBuffer();
                     Array.Clear(buffer, 0, buffer.Length);
                 }
             }
@@ -114,7 +117,7 @@ namespace EnhancedValheimVRM.Sharing
 
         private static void WriteTextEntry(ZipArchive archive, string name, string text)
         {
-            byte[] bytes = Utf8.GetBytes(text);
+            var bytes = Utf8.GetBytes(text);
             try
             {
                 WriteEntry(archive, name, bytes);
@@ -192,15 +195,15 @@ namespace EnhancedValheimVRM.Sharing
         private static byte[] ReadEntry(ZipArchiveEntry entry, int maximum)
         {
             ValidateEntrySize(entry, maximum);
-            byte[] result = new byte[(int)entry.Length];
+            var result = new byte[(int)entry.Length];
             try
             {
                 using (var input = entry.Open())
                 {
-                    int offset = 0;
+                    var offset = 0;
                     while (offset < result.Length)
                     {
-                        int count = input.Read(result, offset, Math.Min(65536, result.Length - offset));
+                        var count = input.Read(result, offset, Math.Min(65536, result.Length - offset));
                         if (count == 0) throw new EndOfStreamException("Truncated ZIP entry.");
                         offset += count;
                     }
@@ -219,7 +222,7 @@ namespace EnhancedValheimVRM.Sharing
 
         private static string ReadTextEntry(ZipArchiveEntry entry, int maximum)
         {
-            byte[] bytes = ReadEntry(entry, maximum);
+            var bytes = ReadEntry(entry, maximum);
             try
             {
                 return Utf8.GetString(bytes);
@@ -253,7 +256,7 @@ namespace EnhancedValheimVRM.Sharing
             {
                 aes.Key = Derive(key, "encryption");
                 aes.GenerateIV();
-                int cipherLength = (plaintext.Length / 16 + 1) * 16;
+                var cipherLength = (plaintext.Length / 16 + 1) * 16;
                 var encrypted = new byte[16 + cipherLength + 32];
                 Array.Copy(aes.IV, encrypted, 16);
                 using (var output = new MemoryStream(encrypted, 16, cipherLength, true))
@@ -264,7 +267,7 @@ namespace EnhancedValheimVRM.Sharing
                     crypto.FlushFinalBlock();
                 }
 
-                byte[] tag = Authenticate(encrypted, encrypted.Length - 32, key, version, characterId);
+                var tag = Authenticate(encrypted, encrypted.Length - 32, key, version, characterId);
                 Array.Copy(tag, 0, encrypted, encrypted.Length - 32, 32);
                 return encrypted;
             }
@@ -276,15 +279,17 @@ namespace EnhancedValheimVRM.Sharing
             using (var hmac = new HMACSHA256(Derive(key, "authentication")))
             {
                 hmac.TransformBlock(encrypted, 0, count, null, 0);
-                byte[] identity =
+                var identity =
                     Encoding.ASCII.GetBytes(version + ":" + characterId.ToString(CultureInfo.InvariantCulture));
                 hmac.TransformFinalBlock(identity, 0, identity.Length);
                 return hmac.Hash;
             }
         }
 
-        public static byte[] Decrypt(byte[] bundle, string key, string version, long characterId) =>
-            DecryptTimed(bundle, key, version, characterId, null);
+        public static byte[] Decrypt(byte[] bundle, string key, string version, long characterId)
+        {
+            return DecryptTimed(bundle, key, version, characterId, null);
+        }
 
         internal static byte[] DecryptTimed(byte[] bundle,
             string key,
@@ -295,12 +300,12 @@ namespace EnhancedValheimVRM.Sharing
             var clock = timing == null ? null : System.Diagnostics.Stopwatch.StartNew();
             if (bundle.Length < 64 || bundle.Length > SharingWire.MaxBundleBytes)
                 throw new InvalidDataException("Invalid encrypted bundle size.");
-            int authenticatedLength = bundle.Length - 32;
-            byte[] expected = Authenticate(bundle, authenticatedLength, key, version, characterId);
-            int difference = 0;
-            for (int i = 0; i < expected.Length; i++) difference |= expected[i] ^ bundle[authenticatedLength + i];
+            var authenticatedLength = bundle.Length - 32;
+            var expected = Authenticate(bundle, authenticatedLength, key, version, characterId);
+            var difference = 0;
+            for (var i = 0; i < expected.Length; i++) difference |= expected[i] ^ bundle[authenticatedLength + i];
             if (difference != 0) throw new CryptographicException("Bundle authentication failed.");
-            double verifyMs = clock?.Elapsed.TotalMilliseconds ?? 0;
+            var verifyMs = clock?.Elapsed.TotalMilliseconds ?? 0;
             clock?.Restart();
             using (var aes = Aes.Create())
             {

@@ -34,9 +34,9 @@ namespace EnhancedValheimVRM.Sharing
 
         public static byte[] ReadBytes(BinaryReader reader, int maximum)
         {
-            int length = reader.ReadInt32();
+            var length = reader.ReadInt32();
             if (length < 0 || length > maximum) throw new InvalidDataException("Invalid frame size.");
-            byte[] bytes = reader.ReadBytes(length);
+            var bytes = reader.ReadBytes(length);
             if (bytes.Length != length) throw new EndOfStreamException();
             return bytes;
         }
@@ -62,9 +62,10 @@ namespace EnhancedValheimVRM.Sharing
             if (string.IsNullOrWhiteSpace(name) || name.Length > 80 || Encoding.UTF8.GetByteCount(name) > 256 ||
                 name.IndexOfAny(new[] { '[', ']', '\r', '\n' }) >= 0)
                 throw new InvalidDataException("Invalid outfit name.");
-            foreach (char character in name)
-                if (char.IsControl(character))
-                    throw new InvalidDataException("Invalid outfit name.");
+            foreach (var character in name)
+            {
+                if (char.IsControl(character)) throw new InvalidDataException("Invalid outfit name.");
+            }
         }
 
         public static bool IsValidOverride(string name, bool blend, float value)
@@ -72,9 +73,11 @@ namespace EnhancedValheimVRM.Sharing
             if (string.IsNullOrWhiteSpace(name) || name.Length > 128 || Encoding.UTF8.GetByteCount(name) > 256 ||
                 float.IsNaN(value) || float.IsInfinity(value))
                 return false;
-            foreach (char c in name)
-                if (char.IsControl(c))
-                    return false;
+            foreach (var c in name)
+            {
+                if (char.IsControl(c)) return false;
+            }
+
             return blend ? value >= 0 && value <= 100 : value == 0 || value == 1;
         }
 
@@ -86,9 +89,10 @@ namespace EnhancedValheimVRM.Sharing
         public static void ValidateHash(string hash)
         {
             if (hash == null || hash.Length != 64) throw new InvalidDataException("Invalid hash.");
-            foreach (char c in hash)
-                if (!(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'f'))
-                    throw new InvalidDataException("Invalid hash.");
+            foreach (var c in hash)
+            {
+                if (!(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'f')) throw new InvalidDataException("Invalid hash.");
+            }
         }
 
         public static void WriteThrottled(BinaryWriter writer,
@@ -111,7 +115,7 @@ namespace EnhancedValheimVRM.Sharing
             while (true)
             {
                 cancellation.ThrowIfCancellationRequested();
-                int count = input.Read(buffer, 0, buffer.Length);
+                var count = input.Read(buffer, 0, buffer.Length);
                 if (count == 0) break;
                 limiter.WaitForBytes(count, cancellation);
                 output.Write(buffer, 0, count);
@@ -133,18 +137,29 @@ namespace EnhancedValheimVRM.Sharing
         public string Key => Hash + ":" + ProfileHash;
 
         // Integrity hash and version of one blob; both files are named by the model hash.
-        public string HashOf(string kind) => kind == SharingWire.AvatarKind ? Hash : ProfileHash;
-        public string VersionOf(string kind) => kind == SharingWire.AvatarKind ? Version : ProfileVersion;
+        public string HashOf(string kind)
+        {
+            return kind == SharingWire.AvatarKind ? Hash : ProfileHash;
+        }
 
-        public bool SameAs(BundleInfo other) =>
-            other != null && other.Version == Version && other.Hash == Hash &&
-            other.ProfileVersion == ProfileVersion && other.ProfileHash == ProfileHash;
+        public string VersionOf(string kind)
+        {
+            return kind == SharingWire.AvatarKind ? Version : ProfileVersion;
+        }
 
-        public BundleInfo Clone() =>
-            new BundleInfo
+        public bool SameAs(BundleInfo other)
+        {
+            return other != null && other.Version == Version && other.Hash == Hash &&
+                other.ProfileVersion == ProfileVersion && other.ProfileHash == ProfileHash;
+        }
+
+        public BundleInfo Clone()
+        {
+            return new BundleInfo
             {
                 Version = Version, Hash = Hash, ProfileVersion = ProfileVersion, ProfileHash = ProfileHash
             };
+        }
 
         public void Validate()
         {

@@ -6,10 +6,10 @@ internal static class SettingsChecks
 {
     public static void Run(Action<bool, string> check)
     {
-        string directory = Path.Combine(Path.GetTempPath(), "evrm-settings-" + Guid.NewGuid().ToString("N"));
+        var directory = Path.Combine(Path.GetTempPath(), "evrm-settings-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         Constants.Vrm.Dir = directory;
-        string path = Path.Combine(directory, "settings_Test.txt");
+        var path = Path.Combine(directory, "settings_Test.txt");
         try
         {
             File.WriteAllText(path,
@@ -55,7 +55,7 @@ internal static class SettingsChecks
                 Math.Abs(shared.GetWeaponScale("BowDraugrFang") - 1.2f) < 0.000001f,
                 "Weapon scale lines lost in shared settings");
             File.WriteAllText(path, "BowPos=Draugrfang\n");
-            bool badWeapon = false;
+            var badWeapon = false;
             try
             {
                 new VrmSettings("Test");
@@ -66,7 +66,7 @@ internal static class SettingsChecks
             }
 
             check(badWeapon, "Weapon line without a vector accepted");
-            foreach (string bad in new[]
+            foreach (var bad in new[]
                      {
                          "ModelScale=0", "ModelScale=banana", "ModelScale=NaN", "WeaponScale=0",
                          "WeaponScale=BowDraugrFang,NaN", "WeaponScale=,1.2", "SpringBoneStiffness=-1",
@@ -74,7 +74,7 @@ internal static class SettingsChecks
                      })
             {
                 File.WriteAllText(path, bad);
-                bool rejected = false;
+                var rejected = false;
                 try
                 {
                     new VrmSettings("Test");

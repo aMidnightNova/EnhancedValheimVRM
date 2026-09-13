@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace EnhancedValheimVRM
 {
@@ -15,28 +15,18 @@ namespace EnhancedValheimVRM
 
             _vrmEyes = BoneLookup.Get(_playerAnimator, HumanBodyBones.LeftEye);
 
-            if (_vrmEyes == null)
-            {
-                _vrmEyes = BoneLookup.Get(_playerAnimator, HumanBodyBones.Head);
-            }
+            if (_vrmEyes == null) _vrmEyes = BoneLookup.Get(_playerAnimator, HumanBodyBones.Head);
 
-            if (_vrmEyes == null)
-            {
-                _vrmEyes = BoneLookup.Get(_playerAnimator, HumanBodyBones.Neck);
-            }
+            if (_vrmEyes == null) _vrmEyes = BoneLookup.Get(_playerAnimator, HumanBodyBones.Neck);
 
 
             if (player != null)
-            {
                 _playerEyes = player.m_eye;
-            }
             else
-            {
                 Logger.LogError("Player component or m_eye is null. Ensure the component exists.");
-            }
         }
 
-        void LateUpdate()
+        private void LateUpdate()
         {
             if (_playerEyes && _vrmEyes)
             {

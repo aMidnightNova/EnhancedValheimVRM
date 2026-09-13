@@ -1,468 +1,472 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
-            Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
+          Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{56266ABF-B3F1-44F5-8790-D269FE536067}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <Version>1.0.1</Version>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>EnhancedValheimVRM</RootNamespace>
+    <AssemblyName>EnhancedValheimVRM</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <LangVersion>8</LangVersion>
+    <FrameworkPathOverride Condition="'$(OS)' == 'Unix'">/usr/lib/mono/4.7.1-api</FrameworkPathOverride>
+  </PropertyGroup>
+  <!-- Match the neighboring ValheimVRM development installation; explicit overrides take precedence. -->
+  <PropertyGroup>
+    <VALHEIM_INSTALL Condition="'$(VALHEIM_INSTALL)' == '' and '$(OS)' != 'Windows_NT'">$(HOME)/.local/share/Steam/steamapps/common/Valheim</VALHEIM_INSTALL>
+    <UNIVRM_UNITY_LIBS Condition="'$(UNIVRM_UNITY_LIBS)' == ''">$(VALHEIM_INSTALL)/valheim_Data</UNIVRM_UNITY_LIBS>
+    <EnhancedProjectRoot>$(MSBuildProjectDirectory)/..</EnhancedProjectRoot>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="netstandard">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\netstandard.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System"/>
+    <Reference Include="System.IO.Compression">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\System.IO.Compression.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Core"/>
+    <Reference Include="System.Data"/>
+    <Reference Include="System.Xml"/>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Outfits\OutfitConfig.cs"/>
+    <Compile Include="Outfits\OutfitController.cs"/>
+    <Compile Include="Outfits\OutfitRpc.cs"/>
+    <Compile Include="Components\BoneGizmos.cs"/>
+    <Compile Include="Components\AttachmentReference.cs"/>
+    <Compile Include="Components\EquipmentTransformReference.cs"/>
+    <Compile Include="Utility\AttachmentMath.cs"/>
+    <Compile Include="Utility\FixedRotationSmoother.cs"/>
+    <Compile Include="ExtensionMethods\VisEquipmentExtensions.cs"/>
+    <Compile Include="Constants.cs"/>
+    <Compile Include="Sharing\SharedVrmLifetime.cs"/>
+    <Compile Include="..\Shared\SharingWire.cs">
+      <Link>Sharing\SharingWire.cs</Link>
+    </Compile>
+    <Compile Include="..\Shared\BandwidthLimiter.cs">
+      <Link>Sharing\BandwidthLimiter.cs</Link>
+    </Compile>
+    <Compile Include="..\Shared\SharingDownloadPolicy.cs">
+      <Link>Sharing\SharingDownloadPolicy.cs</Link>
+    </Compile>
+    <Compile Include="..\Shared\BundleCrypto.cs">
+      <Link>Sharing\BundleCrypto.cs</Link>
+    </Compile>
+    <Compile Include="..\Shared\AvatarTcpClient.cs">
+      <Link>Sharing\AvatarTcpClient.cs</Link>
+    </Compile>
+    <Compile Include="..\Shared\AvatarTcpServer.cs">
+      <Link>Sharing\AvatarTcpServer.cs</Link>
+    </Compile>
+    <Compile Include="..\Shared\SharingEndpoint.cs">
+      <Link>Sharing\SharingEndpoint.cs</Link>
+    </Compile>
+    <Compile Include="Sharing\EmbeddedSharingHost.cs"/>
+    <Compile Include="Sharing\SharingPortDiscovery.cs"/>
+    <Compile Include="Sharing\SharingRpc.cs"/>
+    <Compile Include="Sharing\PeerCharacter.cs"/>
+    <Compile Include="Components\VrmAnimator.cs"/>
+    <Compile Include="Components\VrmEyeAnimator.cs"/>
+    <Compile Include="Components\VrmMToonFix.cs"/>
+    <Compile Include="ExtensionMethods\DictionaryExtensions.cs"/>
+    <Compile Include="ExtensionMethods\GenericExtensions.cs"/>
+    <Compile Include="ExtensionMethods\PlayerExtensions.cs"/>
+    <Compile Include="Patches\PatchFejdStartup.cs"/>
+    <Compile Include="Patches\PatchAvatarLoadingScreen.cs"/>
+    <Compile Include="Patches\PatchGameCameraGetCameraBaseOffset.cs"/>
+    <Compile Include="Patches\PatchCharacterGetHeadPoint.cs"/>
+    <Compile Include="Patches\PatchMonoUpdater.cs"/>
+    <Compile Include="Patches\PatchHumanoidOnRagdollCreated.cs"/>
+    <Compile Include="Patches\PatchPlayerAwake.cs"/>
+    <Compile Include="Patches\PatchPlayerOnDeath.cs"/>
+    <Compile Include="Patches\PatchPlayerOnDestroy.cs"/>
+    <Compile Include="Patches\PatchCharacterSetVisible.cs"/>
+    <Compile Include="Patches\PatchShaderFind.cs"/>
+    <Compile Include="Patches\PatchUnityUpdates.cs"/>
+    <Compile Include="Patches\PatchVisEquipmentAttachItem.cs"/>
+    <Compile Include="Patches\PatchVisEquipmentUpdateLodgroup.cs"/>
+    <Compile Include="Plugin.cs"/>
+    <Compile Include="Properties\AssemblyInfo.cs"/>
+    <Compile Include="Settings.cs"/>
+    <Compile Include="GameItem.cs"/>
+    <Compile Include="Utility\BoneLookup.cs"/>
+    <Compile Include="Utility\BoneNames.cs"/>
+    <Compile Include="Components\SpringSettingsReference.cs"/>
+    <Compile Include="Components\VrmRagdoll.cs"/>
+    <Compile Include="Utility\ConsoleCommands.cs"/>
+    <Compile Include="Utility\CoroutineHelper.cs"/>
+    <Compile Include="Utility\Logger.cs"/>
+    <Compile Include="Utility\TextureDeserializer.cs"/>
+    <Compile Include="Utility\Utils.cs"/>
+    <Compile Include="Utility\FileTransferController.cs"/>
+    <Compile Include="Vrm\VrmController.cs"/>
+    <Compile Include="Vrm\VrmInstance.cs"/>
+    <Compile Include="Vrm\VrmAssetCache.cs"/>
+    <Compile Include="Vrm\PersistentImportAwaitCaller.cs"/>
+    <Compile Include="Vrm\VrmSettings.cs"/>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.3"/>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+
+
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>$(VALHEIM_INSTALL)\BepInEx\core\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_utils">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\assembly_utils.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_guiutils">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\assembly_guiutils.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_valheim">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\assembly_valheim.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
+
+
+    <Reference Include="BepInEx">
+      <HintPath>$(VALHEIM_INSTALL)\BepInEx\core\BepInEx.dll</HintPath>
+    </Reference>
+
+
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <!--    <Reference Include="UniUnlit">-->
+    <!--      <HintPath>$(UNIVRM_UNITY_LIBS)\UniUnlit.dll</HintPath>-->
+    <!--    </Reference>-->
+    <Reference Include="VRM">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRM.dll</HintPath>
+    </Reference>
+    <Reference Include="VRM10">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRM10.dll</HintPath>
+    </Reference>
+    <Reference Include="VrmLib">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VrmLib.dll</HintPath>
+    </Reference>
+    <Reference Include="VRMShaders.GLTF.IO.Runtime">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.GLTF.IO.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="VRMShaders.GLTF.UniUnlit.Runtime">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.GLTF.UniUnlit.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="VRMShaders.VRM.IO.Runtime">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.VRM.IO.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="VRMShaders.VRM10.Format.Runtime">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.VRM10.Format.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="VRMShaders.VRM10.MToon10.Runtime">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.VRM10.MToon10.Runtime.dll</HintPath>
+    </Reference>
+
+    <Reference Include="FastSpringBone">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\FastSpringBone.dll</HintPath>
+    </Reference>
+    <Reference Include="FastSpringBone10">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\FastSpringBone10.dll</HintPath>
+    </Reference>
+    <!--    <Reference Include="MeshUtility">-->
+    <!--      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\MeshUtility.dll</HintPath>-->
+    <!--    </Reference>-->
+    <Reference Include="MToon">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\MToon.dll</HintPath>
+    </Reference>
+    <!--    <Reference Include="ShaderProperty.Runtime">-->
+    <!--      <HintPath>$(UNIVRM_UNITY_LIBS)\ShaderProperty.Runtime.dll</HintPath>-->
+    <!--    </Reference>-->
+    <Reference Include="UniGLTF">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\UniGLTF.dll</HintPath>
+    </Reference>
+    <Reference Include="UniGLTF.Utils">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\UniGLTF.Utils.dll</HintPath>
+    </Reference>
+    <!--    <Reference Include="UniGLTF.Editor">-->
+    <!--      <HintPath>$(UNIVRM_UNITY_LIBS)\UniGLTF.Editor.dll</HintPath>-->
+    <!--    </Reference>-->
+    <Reference Include="UniHumanoid">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\UniHumanoid.dll</HintPath>
+    </Reference>
+    <Reference Include="AsyncImageLoader">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\AsyncImageLoader.Runtime.dll</HintPath>
+    </Reference>
+
+    <Reference Include="Unity.Burst">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\Unity.Burst.dll</HintPath>
+    </Reference>
+
+    <Reference Include="Unity.Mathematics">
+      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\Unity.Mathematics.dll</HintPath>
+    </Reference>
+    <!-- FreeImage is a native runtime library, not a managed assembly reference. -->
+  </ItemGroup>
+
+
+  <Target Name="ValidateGamePaths" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(VALHEIM_INSTALL)/valheim_Data/Managed/assembly_valheim.dll')"
+           Text="VALHEIM_INSTALL must point to the Valheim installation used for this build."/>
+    <Error Condition="!Exists('$(VALHEIM_INSTALL)/BepInEx/core/BepInEx.dll')"
+           Text="BepInEx was not found under VALHEIM_INSTALL/BepInEx/core."/>
+    <Error Condition="!Exists('$(UNIVRM_UNITY_LIBS)/Managed/VRM.dll')"
+           Text="UNIVRM_UNITY_LIBS must point to the data directory containing Managed/VRM.dll."/>
+  </Target>
+
+  <!-- Linux uses dependencies already installed in valheim_Data/Managed. -->
+  <Target Name="DeployLinuxBuild" AfterTargets="Build"
+          Condition="'$(OS)' != 'Windows_NT' and '$(DeployToGame)' != 'false'">
     <PropertyGroup>
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <ProjectGuid>{56266ABF-B3F1-44F5-8790-D269FE536067}</ProjectGuid>
-        <OutputType>Library</OutputType>
-        <Version>1.0.1</Version>
-        <AppDesignerFolder>Properties</AppDesignerFolder>
-        <RootNamespace>EnhancedValheimVRM</RootNamespace>
-        <AssemblyName>EnhancedValheimVRM</AssemblyName>
-        <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-        <FileAlignment>512</FileAlignment>
-        <LangVersion>8</LangVersion>
-        <FrameworkPathOverride Condition="'$(OS)' == 'Unix'">/usr/lib/mono/4.7.1-api</FrameworkPathOverride>
+      <BepInExPluginPath Condition="'$(BepInExPluginPath)' == ''">$(VALHEIM_INSTALL)/BepInEx/plugins</BepInExPluginPath>
+      <EnhancedVrmDataPath Condition="'$(EnhancedVrmDataPath)' == ''">$(VALHEIM_INSTALL)/EnhancedValheimVRM</EnhancedVrmDataPath>
     </PropertyGroup>
-    <!-- Match the neighboring ValheimVRM development installation; explicit overrides take precedence. -->
+    <MakeDir Directories="$(BepInExPluginPath);$(EnhancedVrmDataPath)/shaders"/>
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BepInExPluginPath)"/>
+    <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(BepInExPluginPath)"
+          Condition="Exists('$(TargetDir)$(TargetName).pdb')"/>
+    <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/UniVRM.shaders"
+          DestinationFiles="$(EnhancedVrmDataPath)/shaders/UniVrm.shaders"/>
+    <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/OldUniVrm.shaders"
+          DestinationFolder="$(EnhancedVrmDataPath)/shaders"/>
+    <Delete Files="$(BepInExPluginPath)/$(TargetFileName).mdb"/>
+    <Delete Files="$(BepInExPluginPath)/$(TargetName).pdb"
+            Condition="!Exists('$(TargetDir)$(TargetName).pdb')"/>
+    <Message Importance="high" Text="Deployed $(TargetFileName) and debug symbols to $(BepInExPluginPath), shaders to $(EnhancedVrmDataPath)/shaders."/>
+  </Target>
+
+  <Target Name="PackageLinuxRelease" AfterTargets="Build" BeforeTargets="DeployLinuxBuild"
+          Condition="'$(OS)' != 'Windows_NT' and '$(Configuration)' == 'Release'">
     <PropertyGroup>
-        <VALHEIM_INSTALL Condition="'$(VALHEIM_INSTALL)' == '' and '$(OS)' != 'Windows_NT'">$(HOME)/.local/share/Steam/steamapps/common/Valheim</VALHEIM_INSTALL>
-        <UNIVRM_UNITY_LIBS Condition="'$(UNIVRM_UNITY_LIBS)' == ''">$(VALHEIM_INSTALL)/valheim_Data</UNIVRM_UNITY_LIBS>
-        <EnhancedProjectRoot>$(MSBuildProjectDirectory)/..</EnhancedProjectRoot>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-        <PlatformTarget>AnyCPU</PlatformTarget>
-        <DebugSymbols>true</DebugSymbols>
-        <DebugType>full</DebugType>
-        <Optimize>false</Optimize>
-        <OutputPath>bin\Debug\</OutputPath>
-        <DefineConstants>DEBUG;TRACE</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-        <PlatformTarget>AnyCPU</PlatformTarget>
-        <DebugType>pdbonly</DebugType>
-        <Optimize>true</Optimize>
-        <OutputPath>bin\Release\</OutputPath>
-        <DefineConstants>TRACE</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-        <DebugType>portable</DebugType>
+      <ReleasePackageRoot>$(EnhancedProjectRoot)/artifacts/release-package</ReleasePackageRoot>
+      <ReleasePath>$(ReleasePackageRoot)/release</ReleasePath>
+      <ReleaseArchive>$(EnhancedProjectRoot)/artifacts/EnhancedValheimVRM-$(Version).zip</ReleaseArchive>
+      <FreeImagePath>$(UNIVRM_UNITY_LIBS)/Plugins/x86_64/FreeImage.dll</FreeImagePath>
+      <FreeImagePath Condition="!Exists('$(FreeImagePath)')">$(UNIVRM_UNITY_LIBS)/Managed/FreeImage.dll</FreeImagePath>
     </PropertyGroup>
     <ItemGroup>
-        <Reference Include="netstandard">
-            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\netstandard.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="System"/>
-        <Reference Include="System.IO.Compression">
-            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\System.IO.Compression.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="System.Core"/>
-        <Reference Include="System.Data"/>
-        <Reference Include="System.Xml"/>
+      <ReleaseLibraryName Include="FastSpringBone;FastSpringBone10;MToon;UniGLTF;UniHumanoid;VRM;VRM10;VrmLib;UniGLTF.Utils"/>
+      <ReleaseLibraryName Include="VRMShaders.GLTF.IO.Runtime;VRMShaders.GLTF.UniUnlit.Runtime;VRMShaders.VRM.IO.Runtime;VRMShaders.VRM10.Format.Runtime;VRMShaders.VRM10.MToon10.Runtime"/>
+      <ReleaseLibraryName Include="AsyncImageLoader.Runtime;Unity.Burst;Unity.Mathematics"/>
+      <ReleaseLibrary Include="@(ReleaseLibraryName->'$(UNIVRM_UNITY_LIBS)/Managed/%(Identity).dll')"/>
+      <ReleaseLibrary Include="$(FreeImagePath)"/>
+      <ReleaseDocumentation Include="$(EnhancedProjectRoot)/README.md;$(EnhancedProjectRoot)/WEAPONS.md;$(EnhancedProjectRoot)/outfits_Example.txt.example;$(EnhancedProjectRoot)/settings_Example.txt.example;$(EnhancedProjectRoot)/settings____Default.txt.example"/>
     </ItemGroup>
+    <RemoveDir Directories="$(ReleasePackageRoot)"/>
+    <MakeDir Directories="$(ReleasePath)/BepInEx/plugins;$(ReleasePath)/valheim_Data/Managed;$(ReleasePath)/EnhancedValheimVRM/shaders"/>
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ReleasePath)/BepInEx/plugins"/>
+    <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/UniVRM.shaders"
+          DestinationFiles="$(ReleasePath)/EnhancedValheimVRM/shaders/UniVrm.shaders"/>
+    <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/OldUniVrm.shaders"
+          DestinationFolder="$(ReleasePath)/EnhancedValheimVRM/shaders"/>
+    <Copy SourceFiles="@(ReleaseLibrary)" DestinationFolder="$(ReleasePath)/valheim_Data/Managed"/>
+    <Copy SourceFiles="@(ReleaseDocumentation)" DestinationFolder="$(ReleasePath)/EnhancedValheimVRM"/>
+    <ZipDirectory SourceDirectory="$(ReleasePackageRoot)" DestinationFile="$(ReleaseArchive)" Overwrite="true"/>
+    <Message Importance="high" Text="Created release archive: $(ReleaseArchive)"/>
+    <CallTarget Targets="PackageThunderstoreRelease"/>
+  </Target>
+
+  <Target Name="PackageThunderstoreRelease" Condition="'$(Configuration)' == 'Release'">
+    <PropertyGroup>
+      <ThunderstorePackageRoot Condition="'$(OS)' != 'Windows_NT'">$(EnhancedProjectRoot)/artifacts/thunderstore-package</ThunderstorePackageRoot>
+      <ThunderstoreArchive Condition="'$(OS)' != 'Windows_NT'">$(EnhancedProjectRoot)/artifacts/EnhancedValheimVRM-$(Version)-Thunderstore.zip</ThunderstoreArchive>
+      <ThunderstoreReleasePath Condition="'$(OS)' != 'Windows_NT'">$(EnhancedProjectRoot)/artifacts/release-package/release/</ThunderstoreReleasePath>
+      <ThunderstorePackageRoot Condition="'$(OS)' == 'Windows_NT'">$(SolutionDir)packaged\thunderstore-package</ThunderstorePackageRoot>
+      <ThunderstoreArchive Condition="'$(OS)' == 'Windows_NT'">$(SolutionDir)packaged\EnhancedValheimVRM-$(Version)-Thunderstore.zip</ThunderstoreArchive>
+      <ThunderstoreReleasePath Condition="'$(OS)' == 'Windows_NT'">$(SolutionDir)release\</ThunderstoreReleasePath>
+      <ThunderstoreManifest>{
+        &quot;name&quot;: &quot;EnhancedValheimVRM&quot;,
+        &quot;version_number&quot;: &quot;$(Version)&quot;,
+        &quot;website_url&quot;: &quot;https://github.com/aMidnightNova/EnhancedValheimVRM&quot;,
+        &quot;description&quot;: &quot;Enhanced VRM avatar support for Valheim.&quot;,
+        &quot;dependencies&quot;: [
+        &quot;denikson-BepInExPack_Valheim-5.4.2350&quot;
+        ]
+        }
+      </ThunderstoreManifest>
+    </PropertyGroup>
+    <RemoveDir Directories="$(ThunderstorePackageRoot)"/>
+    <MakeDir Directories="$(ThunderstorePackageRoot)"/>
     <ItemGroup>
-        <Compile Include="Outfits\OutfitConfig.cs" />
-        <Compile Include="Outfits\OutfitController.cs" />
-        <Compile Include="Outfits\OutfitRpc.cs" />
-        <Compile Include="Components\BoneGizmos.cs" />
-        <Compile Include="Components\AttachmentReference.cs" />
-        <Compile Include="Components\EquipmentTransformReference.cs" />
-        <Compile Include="Utility\AttachmentMath.cs" />
-        <Compile Include="Utility\FixedRotationSmoother.cs" />
-        <Compile Include="ExtensionMethods\VisEquipmentExtensions.cs" />
-        <Compile Include="Constants.cs" />
-        <Compile Include="Sharing\SharedVrmLifetime.cs" />
-        <Compile Include="..\Shared\SharingWire.cs"><Link>Sharing\SharingWire.cs</Link></Compile>
-        <Compile Include="..\Shared\BandwidthLimiter.cs"><Link>Sharing\BandwidthLimiter.cs</Link></Compile>
-        <Compile Include="..\Shared\SharingDownloadPolicy.cs"><Link>Sharing\SharingDownloadPolicy.cs</Link></Compile>
-        <Compile Include="..\Shared\BundleCrypto.cs"><Link>Sharing\BundleCrypto.cs</Link></Compile>
-        <Compile Include="..\Shared\AvatarTcpClient.cs"><Link>Sharing\AvatarTcpClient.cs</Link></Compile>
-        <Compile Include="..\Shared\AvatarTcpServer.cs"><Link>Sharing\AvatarTcpServer.cs</Link></Compile>
-        <Compile Include="..\Shared\SharingEndpoint.cs"><Link>Sharing\SharingEndpoint.cs</Link></Compile>
-        <Compile Include="Sharing\EmbeddedSharingHost.cs" />
-        <Compile Include="Sharing\SharingPortDiscovery.cs" />
-        <Compile Include="Sharing\SharingRpc.cs" />
-        <Compile Include="Sharing\PeerCharacter.cs" />
-        <Compile Include="Components\VrmAnimator.cs" />
-        <Compile Include="Components\VrmEyeAnimator.cs" />
-        <Compile Include="Components\VrmMToonFix.cs" />
-        <Compile Include="ExtensionMethods\DictionaryExtensions.cs" />
-        <Compile Include="ExtensionMethods\GenericExtensions.cs" />
-        <Compile Include="ExtensionMethods\PlayerExtensions.cs" />
-        <Compile Include="Patches\PatchFejdStartup.cs" />
-        <Compile Include="Patches\PatchAvatarLoadingScreen.cs" />
-        <Compile Include="Patches\PatchGameCameraGetCameraBaseOffset.cs" />
-        <Compile Include="Patches\PatchCharacterGetHeadPoint.cs" />
-        <Compile Include="Patches\PatchMonoUpdater.cs" />
-        <Compile Include="Patches\PatchHumanoidOnRagdollCreated.cs" />
-        <Compile Include="Patches\PatchPlayerAwake.cs" />
-        <Compile Include="Patches\PatchPlayerOnDeath.cs" />
-        <Compile Include="Patches\PatchPlayerOnDestroy.cs" />
-        <Compile Include="Patches\PatchCharacterSetVisible.cs" />
-        <Compile Include="Patches\PatchShaderFind.cs" />
-        <Compile Include="Patches\PatchUnityUpdates.cs" />
-        <Compile Include="Patches\PatchVisEquipmentAttachItem.cs" />
-        <Compile Include="Patches\PatchVisEquipmentUpdateLodgroup.cs" />
-        <Compile Include="Plugin.cs" />
-        <Compile Include="Properties\AssemblyInfo.cs" />
-        <Compile Include="Settings.cs" />
-        <Compile Include="GameItem.cs" />
-        <Compile Include="Utility\BoneLookup.cs" />
-        <Compile Include="Utility\BoneNames.cs" />
-        <Compile Include="Components\SpringSettingsReference.cs" />
-        <Compile Include="Components\VrmRagdoll.cs" />
-        <Compile Include="Utility\ConsoleCommands.cs" />
-        <Compile Include="Utility\CoroutineHelper.cs" />
-        <Compile Include="Utility\Logger.cs" />
-        <Compile Include="Utility\TextureDeserializer.cs" />
-        <Compile Include="Utility\Utils.cs" />
-        <Compile Include="Utility\FileTransferController.cs" />
-        <Compile Include="Vrm\VrmController.cs" />
-        <Compile Include="Vrm\VrmInstance.cs" />
-        <Compile Include="Vrm\VrmAssetCache.cs" />
-        <Compile Include="Vrm\PersistentImportAwaitCaller.cs" />
-        <Compile Include="Vrm\VrmSettings.cs" />
+      <ThunderstoreRuntimeFile Include="$(ThunderstoreReleasePath)**/*"/>
     </ItemGroup>
+    <Copy SourceFiles="@(ThunderstoreRuntimeFile)"
+          DestinationFiles="@(ThunderstoreRuntimeFile->'$(ThunderstorePackageRoot)/%(RecursiveDir)%(Filename)%(Extension)')"/>
+    <Copy SourceFiles="$(EnhancedProjectRoot)/README.md" DestinationFolder="$(ThunderstorePackageRoot)"/>
+    <Copy SourceFiles="$(EnhancedProjectRoot)/icon.png" DestinationFolder="$(ThunderstorePackageRoot)"/>
+    <WriteLinesToFile File="$(ThunderstorePackageRoot)/manifest.json"
+                      Lines="$(ThunderstoreManifest)" Overwrite="true" Encoding="ASCII"/>
+    <ZipDirectory SourceDirectory="$(ThunderstorePackageRoot)"
+                  DestinationFile="$(ThunderstoreArchive)" Overwrite="true"/>
+    <RemoveDir Directories="$(ThunderstorePackageRoot)"/>
+    <Message Importance="high" Text="Created Thunderstore archive: $(ThunderstoreArchive)"/>
+  </Target>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent"
+          Condition="'$(OS)' == 'Windows_NT' and '$(DeployToGame)' != 'false'">
+    <!-- Set Paths -->
+    <PropertyGroup>
+      <BepInExPluginPath>$(VALHEIM_INSTALL)\BepInEx\plugins\</BepInExPluginPath>
+      <ManagedPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\</ManagedPath>
+      <ValheimInstallPath>$(VALHEIM_INSTALL)\</ValheimInstallPath>
+      <UniVrmLibsPathManaged>$(UNIVRM_UNITY_LIBS)\Managed</UniVrmLibsPathManaged>
+      <UniVrmLibsPathPlugins>$(UNIVRM_UNITY_LIBS)\Plugins\x86_64</UniVrmLibsPathPlugins>
+      <Pdb2MdbPath>$(SolutionDir)pdb2mdb.exe</Pdb2MdbPath>
+      <!--      <UnstrippedCorlibPath>$(VALHEIM_INSTALL)\unstripped_corlib\</UnstrippedCorlibPath>-->
+    </PropertyGroup>
+
+    <PropertyGroup>
+      <ReleasePath>$(SolutionDir)release\</ReleasePath>
+      <ReleaseManagedPath>$(ReleasePath)valheim_Data\Managed\</ReleaseManagedPath>
+      <ReleasePluginPath>$(ReleasePath)BepInEx\plugins\</ReleasePluginPath>
+    </PropertyGroup>
+
+
+    <!-- Delete old files from BepInExPluginPath -->
+    <Exec Command="del &quot;$(BepInExPluginPath)$(TargetFileName)&quot;"/>
+    <Exec Command="del &quot;$(BepInExPluginPath)$(TargetName).pdb&quot;"/>
+    <Exec Command="del &quot;$(BepInExPluginPath)$(TargetFileName).mdb&quot;"/>
+
+    <!-- Copyable files -->
     <ItemGroup>
-        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.3" />
+      <!-- UNI VRM -->
+      <LibFiles Include="$(UniVrmLibsPathManaged)\FastSpringBone.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\FastSpringBone10.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\MToon.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\UniGLTF.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\UniHumanoid.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\VRM.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\VRM10.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\VrmLib.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\UniGLTF.Utils.dll"/>
+
+      <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.GLTF.IO.Runtime.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.GLTF.UniUnlit.Runtime.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.VRM.IO.Runtime.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.VRM10.Format.Runtime.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.VRM10.MToon10.Runtime.dll"/>
+
+      <!-- AsyncImageLoader -->
+
+      <LibFiles Include="$(UniVrmLibsPathManaged)\AsyncImageLoader.Runtime.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\Unity.Burst.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathManaged)\Unity.Mathematics.dll"/>
+      <LibFiles Include="$(UniVrmLibsPathPlugins)\FreeImage.dll"/>
+
+      <!--      <LibFiles Include="$(LibsPath)\System.dll" />-->
+
+      <!-- Unstripped_corlib  -->
+      <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.dll" />-->
+      <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.CoreModule.dll" />-->
+      <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.AnimationModule.dll" />-->
+      <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.AssetBundleModule.dll" />-->
+      <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.PhysicsModule.dll" />-->
+      <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.UI.dll" />-->
+
     </ItemGroup>
-    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 
 
+    <!-- COPY FILES TO LOCAL VALHIEM -->
+    <Copy SourceFiles="@(LibFiles)" DestinationFolder="$(ManagedPath)"/>
+
+    <MakeDir Directories="$(ValheimInstallPath)EnhancedValheimVRM\" Condition=" '$(Configuration)' == 'Debug' "/>
+    <MakeDir Directories="$(ValheimInstallPath)EnhancedValheimVRM\shaders\" Condition=" '$(Configuration)' == 'Debug' "/>
+
+    <Exec Command="copy &quot;$(SolutionDir)shaders\UniVrm.shaders&quot; &quot;$(ValheimInstallPath)EnhancedValheimVRM\shaders\UniVrm.shaders&quot;"/>
+    <Exec Command="copy &quot;$(SolutionDir)shaders\OldUniVrm.shaders&quot; &quot;$(ValheimInstallPath)EnhancedValheimVRM\shaders\OldUniVrm.shaders&quot;"/>
+
+    <!-- DEBUG BUILD STUFF -->
+    <Exec Condition=" '$(Configuration)' == 'Debug' " Command="&quot;$(Pdb2MdbPath)&quot; &quot;$(TargetPath)&quot;"/>
+    <Exec Condition=" '$(Configuration)' == 'Debug' " Command="copy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(BepInExPluginPath)$(TargetFileName)&quot;"/>
+    <Exec Condition=" '$(Configuration)' == 'Debug' " Command="copy &quot;$(TargetDir)$(TargetName).pdb&quot; &quot;$(BepInExPluginPath)$(TargetName).pdb&quot;"/>
+    <Exec Condition=" '$(Configuration)' == 'Debug' " Command="copy &quot;$(TargetDir)$(TargetFileName).mdb&quot; &quot;$(BepInExPluginPath)$(TargetFileName).mdb&quot;"/>
 
 
+    <!-- RELEASE BUILD STUFF -->
+
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="if exist &quot;$(ReleasePath)&quot; rd /s /q &quot;$(ReleasePath)&quot;"/>
+
+    <MakeDir Directories="$(ReleasePath)" Condition=" '$(Configuration)' == 'Release' "/>
+    <MakeDir Directories="$(SolutionDir)packaged" Condition=" '$(Configuration)' == 'Release' "/>
+    <MakeDir Directories="$(ReleasePath)EnhancedValheimVRM\" Condition=" '$(Configuration)' == 'Release' "/>
+    <MakeDir Directories="$(ReleasePath)EnhancedValheimVRM\shaders\" Condition=" '$(Configuration)' == 'Release' "/>
+
+    <MakeDir Directories="$(ReleaseManagedPath)" Condition=" '$(Configuration)' == 'Release' "/>
+    <MakeDir Directories="$(ReleasePluginPath)" Condition=" '$(Configuration)' == 'Release' "/>
 
 
+    <!-- Copy EnhancedValheimVRM.dll to correct places -->
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(BepInExPluginPath)$(TargetFileName)&quot;"/>
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(ReleasePluginPath)$(TargetFileName)&quot;"/>
 
 
-    <ItemGroup>
-        <Reference Include="0Harmony">
-            <HintPath>$(VALHEIM_INSTALL)\BepInEx\core\0Harmony.dll</HintPath>
-        </Reference>
-        <Reference Include="assembly_utils">
-            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\assembly_utils.dll</HintPath>
-        </Reference>
-        <Reference Include="assembly_guiutils">
-            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\assembly_guiutils.dll</HintPath>
-        </Reference>
-        <Reference Include="assembly_valheim">
-            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\assembly_valheim.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine">
-            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.dll</HintPath>
-        </Reference>
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)shaders\UniVrm.shaders&quot; &quot;$(ReleasePath)EnhancedValheimVRM\shaders\UniVrm.shaders&quot;"/>
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)shaders\OldUniVrm.shaders&quot; &quot;$(ReleasePath)EnhancedValheimVRM\shaders\OldUniVrm.shaders&quot;"/>
 
 
-        <Reference Include="BepInEx">
-            <HintPath>$(VALHEIM_INSTALL)\BepInEx\core\BepInEx.dll</HintPath>
-        </Reference>
+    <Copy Condition=" '$(Configuration)' == 'Release' " SourceFiles="@(LibFiles)" DestinationFolder="$(ReleaseManagedPath)"/>
+
+    <!--  Copy Other Project files  -->
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)settings____Default.txt.example&quot; &quot;$(ReleasePath)EnhancedValheimVRM\settings___Default.txt.example&quot;"/>
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)settings_Example.txt.example&quot; &quot;$(ReleasePath)EnhancedValheimVRM\settings_Example.txt.example&quot;"/>
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)README.md&quot; &quot;$(ReleasePath)EnhancedValheimVRM\README.md&quot;"/>
 
 
-        <Reference Include="UnityEngine.AnimationModule">
-            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.AssetBundleModule">
-            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.CoreModule">
-            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.IMGUIModule">
-            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.TextRenderingModule">
-            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.PhysicsModule">
-            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UI">
-            <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.UI.dll</HintPath>
-        </Reference>
-        <!--    <Reference Include="UniUnlit">-->
-        <!--      <HintPath>$(UNIVRM_UNITY_LIBS)\UniUnlit.dll</HintPath>-->
-        <!--    </Reference>-->
-        <Reference Include="VRM">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRM.dll</HintPath>
-        </Reference>
-        <Reference Include="VRM10">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRM10.dll</HintPath>
-        </Reference>
-        <Reference Include="VrmLib">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VrmLib.dll</HintPath>
-        </Reference>
-        <Reference Include="VRMShaders.GLTF.IO.Runtime">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.GLTF.IO.Runtime.dll</HintPath>
-        </Reference>
-        <Reference Include="VRMShaders.GLTF.UniUnlit.Runtime">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.GLTF.UniUnlit.Runtime.dll</HintPath>
-        </Reference>
-        <Reference Include="VRMShaders.VRM.IO.Runtime">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.VRM.IO.Runtime.dll</HintPath>
-        </Reference>
-        <Reference Include="VRMShaders.VRM10.Format.Runtime">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.VRM10.Format.Runtime.dll</HintPath>
-        </Reference>
-        <Reference Include="VRMShaders.VRM10.MToon10.Runtime">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\VRMShaders.VRM10.MToon10.Runtime.dll</HintPath>
-        </Reference>
-
-        <Reference Include="FastSpringBone">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\FastSpringBone.dll</HintPath>
-        </Reference>
-        <Reference Include="FastSpringBone10">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\FastSpringBone10.dll</HintPath>
-        </Reference>
-        <!--    <Reference Include="MeshUtility">-->
-        <!--      <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\MeshUtility.dll</HintPath>-->
-        <!--    </Reference>-->
-        <Reference Include="MToon">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\MToon.dll</HintPath>
-        </Reference>
-        <!--    <Reference Include="ShaderProperty.Runtime">-->
-        <!--      <HintPath>$(UNIVRM_UNITY_LIBS)\ShaderProperty.Runtime.dll</HintPath>-->
-        <!--    </Reference>-->
-        <Reference Include="UniGLTF">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\UniGLTF.dll</HintPath>
-        </Reference>
-        <Reference Include="UniGLTF.Utils">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\UniGLTF.Utils.dll</HintPath>
-        </Reference>
-        <!--    <Reference Include="UniGLTF.Editor">-->
-        <!--      <HintPath>$(UNIVRM_UNITY_LIBS)\UniGLTF.Editor.dll</HintPath>-->
-        <!--    </Reference>-->
-        <Reference Include="UniHumanoid">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\UniHumanoid.dll</HintPath>
-        </Reference>
-        <Reference Include="AsyncImageLoader">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\AsyncImageLoader.Runtime.dll</HintPath>
-        </Reference>
-
-        <Reference Include="Unity.Burst">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\Unity.Burst.dll</HintPath>
-        </Reference>
-
-        <Reference Include="Unity.Mathematics">
-            <HintPath>$(UNIVRM_UNITY_LIBS)\Managed\Unity.Mathematics.dll</HintPath>
-        </Reference>
-        <!-- FreeImage is a native runtime library, not a managed assembly reference. -->
-    </ItemGroup>
-    
-
-    
-    <Target Name="ValidateGamePaths" BeforeTargets="ResolveReferences">
-        <Error Condition="!Exists('$(VALHEIM_INSTALL)/valheim_Data/Managed/assembly_valheim.dll')"
-               Text="VALHEIM_INSTALL must point to the Valheim installation used for this build." />
-        <Error Condition="!Exists('$(VALHEIM_INSTALL)/BepInEx/core/BepInEx.dll')"
-               Text="BepInEx was not found under VALHEIM_INSTALL/BepInEx/core." />
-        <Error Condition="!Exists('$(UNIVRM_UNITY_LIBS)/Managed/VRM.dll')"
-               Text="UNIVRM_UNITY_LIBS must point to the data directory containing Managed/VRM.dll." />
-    </Target>
-
-    <!-- Linux uses dependencies already installed in valheim_Data/Managed. -->
-    <Target Name="DeployLinuxBuild" AfterTargets="Build"
-            Condition="'$(OS)' != 'Windows_NT' and '$(DeployToGame)' != 'false'">
-        <PropertyGroup>
-            <BepInExPluginPath Condition="'$(BepInExPluginPath)' == ''">$(VALHEIM_INSTALL)/BepInEx/plugins</BepInExPluginPath>
-            <EnhancedVrmDataPath Condition="'$(EnhancedVrmDataPath)' == ''">$(VALHEIM_INSTALL)/EnhancedValheimVRM</EnhancedVrmDataPath>
-        </PropertyGroup>
-        <MakeDir Directories="$(BepInExPluginPath);$(EnhancedVrmDataPath)/shaders" />
-        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BepInExPluginPath)" />
-        <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(BepInExPluginPath)"
-              Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
-        <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/UniVRM.shaders"
-              DestinationFiles="$(EnhancedVrmDataPath)/shaders/UniVrm.shaders" />
-        <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/OldUniVrm.shaders"
-              DestinationFolder="$(EnhancedVrmDataPath)/shaders" />
-        <Delete Files="$(BepInExPluginPath)/$(TargetFileName).mdb" />
-        <Delete Files="$(BepInExPluginPath)/$(TargetName).pdb"
-                Condition="!Exists('$(TargetDir)$(TargetName).pdb')" />
-        <Message Importance="high" Text="Deployed $(TargetFileName) and debug symbols to $(BepInExPluginPath), shaders to $(EnhancedVrmDataPath)/shaders." />
-    </Target>
-
-    <Target Name="PackageLinuxRelease" AfterTargets="Build" BeforeTargets="DeployLinuxBuild"
-            Condition="'$(OS)' != 'Windows_NT' and '$(Configuration)' == 'Release'">
-        <PropertyGroup>
-            <ReleasePackageRoot>$(EnhancedProjectRoot)/artifacts/release-package</ReleasePackageRoot>
-            <ReleasePath>$(ReleasePackageRoot)/release</ReleasePath>
-            <ReleaseArchive>$(EnhancedProjectRoot)/artifacts/EnhancedValheimVRM-$(Version).zip</ReleaseArchive>
-            <FreeImagePath>$(UNIVRM_UNITY_LIBS)/Plugins/x86_64/FreeImage.dll</FreeImagePath>
-            <FreeImagePath Condition="!Exists('$(FreeImagePath)')">$(UNIVRM_UNITY_LIBS)/Managed/FreeImage.dll</FreeImagePath>
-        </PropertyGroup>
-        <ItemGroup>
-            <ReleaseLibraryName Include="FastSpringBone;FastSpringBone10;MToon;UniGLTF;UniHumanoid;VRM;VRM10;VrmLib;UniGLTF.Utils" />
-            <ReleaseLibraryName Include="VRMShaders.GLTF.IO.Runtime;VRMShaders.GLTF.UniUnlit.Runtime;VRMShaders.VRM.IO.Runtime;VRMShaders.VRM10.Format.Runtime;VRMShaders.VRM10.MToon10.Runtime" />
-            <ReleaseLibraryName Include="AsyncImageLoader.Runtime;Unity.Burst;Unity.Mathematics" />
-            <ReleaseLibrary Include="@(ReleaseLibraryName->'$(UNIVRM_UNITY_LIBS)/Managed/%(Identity).dll')" />
-            <ReleaseLibrary Include="$(FreeImagePath)" />
-            <ReleaseDocumentation Include="$(EnhancedProjectRoot)/README.md;$(EnhancedProjectRoot)/WEAPONS.md;$(EnhancedProjectRoot)/outfits_Example.txt.example;$(EnhancedProjectRoot)/settings_Example.txt.example;$(EnhancedProjectRoot)/settings____Default.txt.example" />
-        </ItemGroup>
-        <RemoveDir Directories="$(ReleasePackageRoot)" />
-        <MakeDir Directories="$(ReleasePath)/BepInEx/plugins;$(ReleasePath)/valheim_Data/Managed;$(ReleasePath)/EnhancedValheimVRM/shaders" />
-        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ReleasePath)/BepInEx/plugins" />
-        <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/UniVRM.shaders"
-              DestinationFiles="$(ReleasePath)/EnhancedValheimVRM/shaders/UniVrm.shaders" />
-        <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/OldUniVrm.shaders"
-              DestinationFolder="$(ReleasePath)/EnhancedValheimVRM/shaders" />
-        <Copy SourceFiles="@(ReleaseLibrary)" DestinationFolder="$(ReleasePath)/valheim_Data/Managed" />
-        <Copy SourceFiles="@(ReleaseDocumentation)" DestinationFolder="$(ReleasePath)/EnhancedValheimVRM" />
-        <ZipDirectory SourceDirectory="$(ReleasePackageRoot)" DestinationFile="$(ReleaseArchive)" Overwrite="true" />
-        <Message Importance="high" Text="Created release archive: $(ReleaseArchive)" />
-        <CallTarget Targets="PackageThunderstoreRelease" />
-    </Target>
-
-    <Target Name="PackageThunderstoreRelease" Condition="'$(Configuration)' == 'Release'">
-        <PropertyGroup>
-            <ThunderstorePackageRoot Condition="'$(OS)' != 'Windows_NT'">$(EnhancedProjectRoot)/artifacts/thunderstore-package</ThunderstorePackageRoot>
-            <ThunderstoreArchive Condition="'$(OS)' != 'Windows_NT'">$(EnhancedProjectRoot)/artifacts/EnhancedValheimVRM-$(Version)-Thunderstore.zip</ThunderstoreArchive>
-            <ThunderstoreReleasePath Condition="'$(OS)' != 'Windows_NT'">$(EnhancedProjectRoot)/artifacts/release-package/release/</ThunderstoreReleasePath>
-            <ThunderstorePackageRoot Condition="'$(OS)' == 'Windows_NT'">$(SolutionDir)packaged\thunderstore-package</ThunderstorePackageRoot>
-            <ThunderstoreArchive Condition="'$(OS)' == 'Windows_NT'">$(SolutionDir)packaged\EnhancedValheimVRM-$(Version)-Thunderstore.zip</ThunderstoreArchive>
-            <ThunderstoreReleasePath Condition="'$(OS)' == 'Windows_NT'">$(SolutionDir)release\</ThunderstoreReleasePath>
-            <ThunderstoreManifest>{
-  &quot;name&quot;: &quot;EnhancedValheimVRM&quot;,
-  &quot;version_number&quot;: &quot;$(Version)&quot;,
-  &quot;website_url&quot;: &quot;https://github.com/aMidnightNova/EnhancedValheimVRM&quot;,
-  &quot;description&quot;: &quot;Enhanced VRM avatar support for Valheim.&quot;,
-  &quot;dependencies&quot;: [
-    &quot;denikson-BepInExPack_Valheim-5.4.2350&quot;
-  ]
-}</ThunderstoreManifest>
-        </PropertyGroup>
-        <RemoveDir Directories="$(ThunderstorePackageRoot)" />
-        <MakeDir Directories="$(ThunderstorePackageRoot)" />
-        <ItemGroup>
-            <ThunderstoreRuntimeFile Include="$(ThunderstoreReleasePath)**/*" />
-        </ItemGroup>
-        <Copy SourceFiles="@(ThunderstoreRuntimeFile)"
-              DestinationFiles="@(ThunderstoreRuntimeFile->'$(ThunderstorePackageRoot)/%(RecursiveDir)%(Filename)%(Extension)')" />
-        <Copy SourceFiles="$(EnhancedProjectRoot)/README.md" DestinationFolder="$(ThunderstorePackageRoot)" />
-        <Copy SourceFiles="$(EnhancedProjectRoot)/icon.png" DestinationFolder="$(ThunderstorePackageRoot)" />
-        <WriteLinesToFile File="$(ThunderstorePackageRoot)/manifest.json"
-                          Lines="$(ThunderstoreManifest)" Overwrite="true" Encoding="ASCII" />
-        <ZipDirectory SourceDirectory="$(ThunderstorePackageRoot)"
-                      DestinationFile="$(ThunderstoreArchive)" Overwrite="true" />
-        <RemoveDir Directories="$(ThunderstorePackageRoot)" />
-        <Message Importance="high" Text="Created Thunderstore archive: $(ThunderstoreArchive)" />
-    </Target>
-
-    <Target Name="PostBuild" AfterTargets="PostBuildEvent"
-            Condition="'$(OS)' == 'Windows_NT' and '$(DeployToGame)' != 'false'">
-        <!-- Set Paths -->
-        <PropertyGroup>
-            <BepInExPluginPath>$(VALHEIM_INSTALL)\BepInEx\plugins\</BepInExPluginPath>
-            <ManagedPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\</ManagedPath>
-            <ValheimInstallPath>$(VALHEIM_INSTALL)\</ValheimInstallPath>
-            <UniVrmLibsPathManaged>$(UNIVRM_UNITY_LIBS)\Managed</UniVrmLibsPathManaged>
-            <UniVrmLibsPathPlugins>$(UNIVRM_UNITY_LIBS)\Plugins\x86_64</UniVrmLibsPathPlugins>
-            <Pdb2MdbPath>$(SolutionDir)pdb2mdb.exe</Pdb2MdbPath>
-            <!--      <UnstrippedCorlibPath>$(VALHEIM_INSTALL)\unstripped_corlib\</UnstrippedCorlibPath>-->
-        </PropertyGroup>
-
-        <PropertyGroup>
-            <ReleasePath>$(SolutionDir)release\</ReleasePath>
-            <ReleaseManagedPath>$(ReleasePath)valheim_Data\Managed\</ReleaseManagedPath>
-            <ReleasePluginPath>$(ReleasePath)BepInEx\plugins\</ReleasePluginPath>
-        </PropertyGroup>
+    <!-- Zip for release -->
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="powershell -command &quot;Compress-Archive -Path '$(ReleasePath)' -DestinationPath '$(SolutionDir)packaged\EnhancedValheimVRM-$(Version).zip'&quot; -Force"/>
+    <CallTarget Targets="PackageThunderstoreRelease" Condition=" '$(Configuration)' == 'Release' "/>
 
 
-        <!-- Delete old files from BepInExPluginPath -->
-        <Exec Command="del &quot;$(BepInExPluginPath)$(TargetFileName)&quot;" />
-        <Exec Command="del &quot;$(BepInExPluginPath)$(TargetName).pdb&quot;" />
-        <Exec Command="del &quot;$(BepInExPluginPath)$(TargetFileName).mdb&quot;" />
-
-        <!-- Copyable files -->
-        <ItemGroup>
-            <!-- UNI VRM -->
-            <LibFiles Include="$(UniVrmLibsPathManaged)\FastSpringBone.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\FastSpringBone10.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\MToon.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\UniGLTF.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\UniHumanoid.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\VRM.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\VRM10.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\VrmLib.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\UniGLTF.Utils.dll" />
-
-            <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.GLTF.IO.Runtime.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.GLTF.UniUnlit.Runtime.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.VRM.IO.Runtime.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.VRM10.Format.Runtime.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\VRMShaders.VRM10.MToon10.Runtime.dll" />
-
-            <!-- AsyncImageLoader -->
-
-            <LibFiles Include="$(UniVrmLibsPathManaged)\AsyncImageLoader.Runtime.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\Unity.Burst.dll" />
-            <LibFiles Include="$(UniVrmLibsPathManaged)\Unity.Mathematics.dll" />
-            <LibFiles Include="$(UniVrmLibsPathPlugins)\FreeImage.dll" />
-
-            <!--      <LibFiles Include="$(LibsPath)\System.dll" />-->
-
-            <!-- Unstripped_corlib  -->
-            <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.dll" />-->
-            <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.CoreModule.dll" />-->
-            <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.AnimationModule.dll" />-->
-            <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.AssetBundleModule.dll" />-->
-            <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.PhysicsModule.dll" />-->
-            <!--      <LibFiles Include="$(ManagedPath)\UnityEngine.UI.dll" />-->
-
-        </ItemGroup>
-
-
-        <!-- COPY FILES TO LOCAL VALHIEM -->
-        <Copy SourceFiles="@(LibFiles)" DestinationFolder="$(ManagedPath)" />
-
-        <MakeDir Directories="$(ValheimInstallPath)EnhancedValheimVRM\" Condition=" '$(Configuration)' == 'Debug' " />
-        <MakeDir Directories="$(ValheimInstallPath)EnhancedValheimVRM\shaders\" Condition=" '$(Configuration)' == 'Debug' " />
-        
-        <Exec Command="copy &quot;$(SolutionDir)shaders\UniVrm.shaders&quot; &quot;$(ValheimInstallPath)EnhancedValheimVRM\shaders\UniVrm.shaders&quot;" />
-        <Exec Command="copy &quot;$(SolutionDir)shaders\OldUniVrm.shaders&quot; &quot;$(ValheimInstallPath)EnhancedValheimVRM\shaders\OldUniVrm.shaders&quot;" />
-
-        <!-- DEBUG BUILD STUFF -->
-        <Exec Condition=" '$(Configuration)' == 'Debug' " Command="&quot;$(Pdb2MdbPath)&quot; &quot;$(TargetPath)&quot;" />
-        <Exec Condition=" '$(Configuration)' == 'Debug' " Command="copy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(BepInExPluginPath)$(TargetFileName)&quot;" />
-        <Exec Condition=" '$(Configuration)' == 'Debug' " Command="copy &quot;$(TargetDir)$(TargetName).pdb&quot; &quot;$(BepInExPluginPath)$(TargetName).pdb&quot;" />
-        <Exec Condition=" '$(Configuration)' == 'Debug' " Command="copy &quot;$(TargetDir)$(TargetFileName).mdb&quot; &quot;$(BepInExPluginPath)$(TargetFileName).mdb&quot;" />
-
-
-
-
-        <!-- RELEASE BUILD STUFF -->
-
-        <Exec Condition=" '$(Configuration)' == 'Release' " Command="if exist &quot;$(ReleasePath)&quot; rd /s /q &quot;$(ReleasePath)&quot;" />
-
-        <MakeDir Directories="$(ReleasePath)" Condition=" '$(Configuration)' == 'Release' " />
-        <MakeDir Directories="$(SolutionDir)packaged" Condition=" '$(Configuration)' == 'Release' " />
-        <MakeDir Directories="$(ReleasePath)EnhancedValheimVRM\" Condition=" '$(Configuration)' == 'Release' " />
-        <MakeDir Directories="$(ReleasePath)EnhancedValheimVRM\shaders\" Condition=" '$(Configuration)' == 'Release' " />
-
-        <MakeDir Directories="$(ReleaseManagedPath)" Condition=" '$(Configuration)' == 'Release' " />
-        <MakeDir Directories="$(ReleasePluginPath)" Condition=" '$(Configuration)' == 'Release' " />
-
-
-        <!-- Copy EnhancedValheimVRM.dll to correct places -->
-        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(BepInExPluginPath)$(TargetFileName)&quot;" />
-        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(ReleasePluginPath)$(TargetFileName)&quot;" />
-
-
-        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)shaders\UniVrm.shaders&quot; &quot;$(ReleasePath)EnhancedValheimVRM\shaders\UniVrm.shaders&quot;" />
-        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)shaders\OldUniVrm.shaders&quot; &quot;$(ReleasePath)EnhancedValheimVRM\shaders\OldUniVrm.shaders&quot;" />
-
-
-        <Copy Condition=" '$(Configuration)' == 'Release' " SourceFiles="@(LibFiles)" DestinationFolder="$(ReleaseManagedPath)" />
-
-        <!--  Copy Other Project files  -->
-        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)settings____Default.txt.example&quot; &quot;$(ReleasePath)EnhancedValheimVRM\settings___Default.txt.example&quot;" />
-        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)settings_Example.txt.example&quot; &quot;$(ReleasePath)EnhancedValheimVRM\settings_Example.txt.example&quot;" />
-        <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)README.md&quot; &quot;$(ReleasePath)EnhancedValheimVRM\README.md&quot;" />
-
-
-
-        <!-- Zip for release -->
-        <Exec Condition=" '$(Configuration)' == 'Release' " Command="powershell -command &quot;Compress-Archive -Path '$(ReleasePath)' -DestinationPath '$(SolutionDir)packaged\EnhancedValheimVRM-$(Version).zip'&quot; -Force" />
-        <CallTarget Targets="PackageThunderstoreRelease" Condition=" '$(Configuration)' == 'Release' " />
-
-
-
-    </Target>
+  </Target>
 
 </Project>

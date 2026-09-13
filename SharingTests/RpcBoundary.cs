@@ -6,26 +6,63 @@ using System.IO;
 
 internal sealed class ZPackage
 {
-    private readonly MemoryStream _stream = new MemoryStream();
-    public int Size() => (int)_stream.Length;
-    public void Rewind() => _stream.Position = 0;
-    public void Write(int value) => new BinaryWriter(_stream).Write(value);
-    public void Write(long value) => new BinaryWriter(_stream).Write(value);
-    public void Write(string value) => new BinaryWriter(_stream).Write(value);
-    public int ReadInt() => new BinaryReader(_stream).ReadInt32();
-    public long ReadLong() => new BinaryReader(_stream).ReadInt64();
-    public string ReadString() => new BinaryReader(_stream).ReadString();
+    private readonly MemoryStream _stream = new();
+
+    public int Size()
+    {
+        return (int)_stream.Length;
+    }
+
+    public void Rewind()
+    {
+        _stream.Position = 0;
+    }
+
+    public void Write(int value)
+    {
+        new BinaryWriter(_stream).Write(value);
+    }
+
+    public void Write(long value)
+    {
+        new BinaryWriter(_stream).Write(value);
+    }
+
+    public void Write(string value)
+    {
+        new BinaryWriter(_stream).Write(value);
+    }
+
+    public int ReadInt()
+    {
+        return new BinaryReader(_stream).ReadInt32();
+    }
+
+    public long ReadLong()
+    {
+        return new BinaryReader(_stream).ReadInt64();
+    }
+
+    public string ReadString()
+    {
+        return new BinaryReader(_stream).ReadString();
+    }
 }
 
 internal sealed class ZRpc
 {
     private Action<ZRpc, ZPackage> _handler;
-    public readonly List<ZPackage> Sent = new List<ZPackage>();
+    public readonly List<ZPackage> Sent = new();
 
-    public void Register<T>(string name, Action<ZRpc, T> handler) =>
+    public void Register<T>(string name, Action<ZRpc, T> handler)
+    {
         _handler = (rpc, package) => handler(rpc, (T)(object)package);
+    }
 
-    public void Invoke(string name, params object[] args) => Sent.Add((ZPackage)args[0]);
+    public void Invoke(string name, params object[] args)
+    {
+        Sent.Add((ZPackage)args[0]);
+    }
 
     public void Deliver(ZPackage package)
     {
@@ -36,11 +73,15 @@ internal sealed class ZRpc
 
 internal sealed class ZNetPeer
 {
-    public ZRpc m_rpc = new ZRpc();
+    public ZRpc m_rpc = new();
     public long m_playerID;
     public long m_uid;
     public ZDOID m_characterID;
-    public bool IsReady() => true;
+
+    public bool IsReady()
+    {
+        return true;
+    }
 }
 
 internal readonly struct ZDOID
@@ -52,11 +93,27 @@ internal readonly struct ZDOID
         Value = value;
     }
 
-    public static readonly ZDOID None = new ZDOID(0);
-    public static bool operator ==(ZDOID a, ZDOID b) => a.Value == b.Value;
-    public static bool operator !=(ZDOID a, ZDOID b) => a.Value != b.Value;
-    public override bool Equals(object other) => other is ZDOID id && id == this;
-    public override int GetHashCode() => Value.GetHashCode();
+    public static readonly ZDOID None = new(0);
+
+    public static bool operator ==(ZDOID a, ZDOID b)
+    {
+        return a.Value == b.Value;
+    }
+
+    public static bool operator !=(ZDOID a, ZDOID b)
+    {
+        return a.Value != b.Value;
+    }
+
+    public override bool Equals(object other)
+    {
+        return other is ZDOID id && id == this;
+    }
+
+    public override int GetHashCode()
+    {
+        return Value.GetHashCode();
+    }
 }
 
 internal static class ZDOVars
@@ -67,39 +124,78 @@ internal static class ZDOVars
 internal sealed class ZDO
 {
     internal long Owner, CharacterId;
-    public long GetOwner() => Owner;
-    public long GetLong(int key, long fallback) => CharacterId;
+
+    public long GetOwner()
+    {
+        return Owner;
+    }
+
+    public long GetLong(int key, long fallback)
+    {
+        return CharacterId;
+    }
 }
 
 internal sealed class ZDOMan
 {
-    public static ZDOMan instance = new ZDOMan();
-    internal readonly Dictionary<ZDOID, ZDO> Objects = new Dictionary<ZDOID, ZDO>();
-    public ZDO GetZDO(ZDOID id) => Objects.TryGetValue(id, out var value) ? value : null;
+    public static ZDOMan instance = new();
+    internal readonly Dictionary<ZDOID, ZDO> Objects = new();
+
+    public ZDO GetZDO(ZDOID id)
+    {
+        return Objects.TryGetValue(id, out var value) ? value : null;
+    }
 }
 
 internal sealed class ZNet
 {
     public static ZNet instance;
     public bool Server = true;
-    public readonly List<ZNetPeer> Peers = new List<ZNetPeer>();
-    public bool IsServer() => Server;
-    public bool IsDedicated() => Server;
-    public List<ZNetPeer> GetPeers() => Peers;
-    public ZNetPeer GetServerPeer() => Server || Peers.Count == 0 ? null : Peers[0];
+    public readonly List<ZNetPeer> Peers = new();
+
+    public bool IsServer()
+    {
+        return Server;
+    }
+
+    public bool IsDedicated()
+    {
+        return Server;
+    }
+
+    public List<ZNetPeer> GetPeers()
+    {
+        return Peers;
+    }
+
+    public ZNetPeer GetServerPeer()
+    {
+        return Server || Peers.Count == 0 ? null : Peers[0];
+    }
 }
 
 internal sealed class Player
 {
     public static Player m_localPlayer;
     public long Id;
-    public long GetPlayerID() => Id;
-    public FakeAvatar GetVrmInstance() => new FakeAvatar();
+
+    public long GetPlayerID()
+    {
+        return Id;
+    }
+
+    public FakeAvatar GetVrmInstance()
+    {
+        return new FakeAvatar();
+    }
 }
 
 internal sealed class FakeAvatar
 {
-    public FakeSettings GetSettings() => new FakeSettings();
+    public FakeSettings GetSettings()
+    {
+        return new FakeSettings();
+    }
 }
 
 internal sealed class FakeSettings
@@ -111,7 +207,10 @@ namespace EnhancedValheimVRM
 {
     internal static class VrmController
     {
-        internal static FakeAvatar FindSharingInstance(Player player) => player?.GetVrmInstance();
+        internal static FakeAvatar FindSharingInstance(Player player)
+        {
+            return player?.GetVrmInstance();
+        }
     }
 
     internal static class Settings
@@ -147,7 +246,10 @@ namespace EnhancedValheimVRM
 
     internal static class FileTransferController
     {
-        public static string PlayerLabel(long id) => "player " + id;
+        public static string PlayerLabel(long id)
+        {
+            return "player " + id;
+        }
 
         public static void ForgetCharacter(long id) { }
 

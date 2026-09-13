@@ -58,7 +58,7 @@ namespace EnhancedValheimVRM
 
             // These weapons have a rig containing both hands; ordinary weapons follow
             // the reparented sockets without any per-frame bone adjustment.
-            GameObject rig = GameItem.IsSpecialCase(RightHandItemInstanceName) ? _rightHandItemInstance : null;
+            var rig = GameItem.IsSpecialCase(RightHandItemInstanceName) ? _rightHandItemInstance : null;
             if (rig == null && GameItem.IsSpecialCase(LeftHandItemInstanceName)) rig = _leftHandItemInstance;
             if (rig == null) return;
             _leftHandItemInstanceTransform = BoneLookup.Find(rig.transform, HumanBodyBones.LeftHand);
@@ -75,6 +75,7 @@ namespace EnhancedValheimVRM
                 var avatarHand = BoneLookup.Get(_vrmGoAnimator, hand);
                 if (weaponBone != null && playerBone != null && avatarBone != null && playerHand != null &&
                     avatarHand != null)
+                {
                     _weaponArmBones.Add(new WeaponArmBone
                     {
                         Weapon = weaponBone,
@@ -83,6 +84,7 @@ namespace EnhancedValheimVRM
                         PlayerHand = playerHand,
                         AvatarHand = avatarHand
                     });
+                }
             }
 
             _vrmLeftMiddleFinger = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftMiddleProximal);
@@ -149,9 +151,7 @@ namespace EnhancedValheimVRM
             _playerRightHandTransform = _playerAnimator.GetBoneTransform(HumanBodyBones.RightHand);
 
             if (_player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
-            {
                 _visEquipment = visEquipment;
-            }
 
             CreatePoseHandlers();
 
@@ -252,15 +252,15 @@ namespace EnhancedValheimVRM
         {
             var chest = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest);
             if (chest == null) return;
-            float torsoBack = Utils.GetTorsoBackDepth(_vrmGo, _vrmGoAnimator, chest);
+            var torsoBack = Utils.GetTorsoBackDepth(_vrmGo, _vrmGoAnimator, chest);
             if (torsoBack <= 0f) return;
             var backward = -_vrmGo.transform.forward;
             backward.y = 0;
             if (backward.sqrMagnitude < 1e-6f) return;
             backward.Normalize();
             var chestRest = chest.position;
-            float ratio = _vrmSettings.PlayerVrmScale;
-            float moved = 0f;
+            var ratio = _vrmSettings.PlayerVrmScale;
+            var moved = 0f;
             foreach (var pair in new[]
                      {
                          (_visEquipment.m_backShield, ShieldClearance),
@@ -271,15 +271,17 @@ namespace EnhancedValheimVRM
             {
                 var socket = pair.Item1;
                 if (socket == null || socket.parent != chest) continue;
-                float current = Vector3.Dot(socket.position - chestRest, backward);
-                float desired = torsoBack + pair.Item2 * ratio;
+                var current = Vector3.Dot(socket.position - chestRest, backward);
+                var desired = torsoBack + pair.Item2 * ratio;
                 socket.position += backward * (desired - current);
                 moved = Mathf.Max(moved, Mathf.Abs(desired - current));
             }
 
             if (Settings.LogLoadTiming)
+            {
                 Logger.Log("Back sockets: torso extends " + torsoBack.ToString("F3") +
                     "m behind the chest; largest socket move " + moved.ToString("F3") + "m");
+            }
         }
 
         public Animator GetPlayerAnimator()
@@ -409,7 +411,7 @@ namespace EnhancedValheimVRM
             Instances.Remove(this);
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
             Instances.Remove(this);
 

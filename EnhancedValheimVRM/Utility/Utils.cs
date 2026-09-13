@@ -15,7 +15,7 @@ namespace EnhancedValheimVRM
             foreach (var renderer in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
                 if (renderer.sharedMesh == null || !renderer.sharedMesh.isReadable) continue;
-                int index = Array.IndexOf(renderer.bones, bone);
+                var index = Array.IndexOf(renderer.bones, bone);
                 var bindposes = renderer.sharedMesh.bindposes;
                 if (index >= 0 && index < bindposes.Length)
                     return renderer.transform.TransformPoint(bindposes[index].inverse.MultiplyPoint3x4(Vector3.zero));
@@ -30,8 +30,11 @@ namespace EnhancedValheimVRM
             var left = BoneLookup.Get(animator, HumanBodyBones.LeftUpperArm);
             var right = BoneLookup.Get(animator, HumanBodyBones.RightUpperArm);
             if (left == null || right == null)
-                throw new System.InvalidOperationException(
+            {
+                throw new InvalidOperationException(
                     "Automatic sizing requires left/right upper-arm bones or a valid humanoid mapping.");
+            }
+
             return Vector3.Distance(RestPosition(model, left), RestPosition(model, right));
         }
 
@@ -62,18 +65,20 @@ namespace EnhancedValheimVRM
                 if (mesh == null || !mesh.isReadable) continue;
                 var bones = renderer.bones;
                 var torsoIndices = new HashSet<int>();
-                for (int i = 0; i < bones.Length; i++)
-                    if (bones[i] != null && torso.Contains(bones[i]))
-                        torsoIndices.Add(i);
+                for (var i = 0; i < bones.Length; i++)
+                {
+                    if (bones[i] != null && torso.Contains(bones[i])) torsoIndices.Add(i);
+                }
+
                 if (torsoIndices.Count == 0) continue;
                 var vertices = mesh.vertices;
                 var weights = mesh.boneWeights;
                 if (weights.Length != vertices.Length) continue;
-                for (int i = 0; i < vertices.Length; i++)
+                for (var i = 0; i < vertices.Length; i++)
                 {
                     var w = weights[i];
-                    int dominant = w.boneIndex0;
-                    float best = w.weight0;
+                    var dominant = w.boneIndex0;
+                    var best = w.weight0;
                     if (w.weight1 > best)
                     {
                         best = w.weight1;
@@ -111,14 +116,17 @@ namespace EnhancedValheimVRM
             var left = BoneLookup.Get(animator, HumanBodyBones.LeftFoot);
             var right = BoneLookup.Get(animator, HumanBodyBones.RightFoot);
             if (head == null || left == null || right == null)
-                throw new System.InvalidOperationException(
+            {
+                throw new InvalidOperationException(
                     "Automatic sizing requires head and both foot bones or a valid humanoid mapping.");
+            }
+
             var up = model.transform.up;
-            float foot = Mathf.Min(Vector3.Dot(RestPosition(model, left), up),
+            var foot = Mathf.Min(Vector3.Dot(RestPosition(model, left), up),
                 Vector3.Dot(RestPosition(model, right), up));
-            float height = Vector3.Dot(RestPosition(model, head), up) - foot;
+            var height = Vector3.Dot(RestPosition(model, head), up) - foot;
             if (height <= 0 || float.IsNaN(height) || float.IsInfinity(height))
-                throw new System.InvalidOperationException("Cannot measure the avatar's head-to-foot height.");
+                throw new InvalidOperationException("Cannot measure the avatar's head-to-foot height.");
             return height;
         }
     }

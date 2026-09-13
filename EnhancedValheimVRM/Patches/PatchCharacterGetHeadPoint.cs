@@ -8,10 +8,7 @@ namespace EnhancedValheimVRM
     {
         private static bool Prefix(Character __instance, ref Vector3 __result)
         {
-            if (!__instance.IsPlayer())
-            {
-                return true;
-            }
+            if (!__instance.IsPlayer()) return true;
 
             var player = __instance as Player;
             // A dead player's own object keeps sliding from the killing blow until respawn;
@@ -21,24 +18,15 @@ namespace EnhancedValheimVRM
             if (vrmInstance != null)
             {
                 var vrmGo = vrmInstance.GetGameObject();
-                if (vrmGo == null)
-                {
-                    return true;
-                }
+                if (vrmGo == null) return true;
 
                 var vrmGoAnimator = vrmGo.GetComponentInChildren<Animator>();
 
-                if (vrmGoAnimator == null || vrmGoAnimator.avatar == null)
-                {
-                    return true;
-                }
+                if (vrmGoAnimator == null || vrmGoAnimator.avatar == null) return true;
 
                 var head = vrmGoAnimator.GetBoneTransform(HumanBodyBones.Head);
 
-                if (head == null)
-                {
-                    return true;
-                }
+                if (head == null) return true;
 
                 __result = head.position;
                 return false;

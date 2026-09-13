@@ -121,11 +121,13 @@ namespace EnhancedValheimVRM
             AvailableSince = new ConcurrentDictionary<long, long>();
 
         // Milliseconds since the server last offered this character's avatar, or -1.
-        internal static double MillisecondsSinceAvailable(long id) =>
-            AvailableSince.TryGetValue(id, out var stamp)
+        internal static double MillisecondsSinceAvailable(long id)
+        {
+            return AvailableSince.TryGetValue(id, out var stamp)
                 ? (System.Diagnostics.Stopwatch.GetTimestamp() - stamp) * 1000.0 /
                 System.Diagnostics.Stopwatch.Frequency
                 : -1;
+        }
 
         private static void Trace(string text)
         {
@@ -160,10 +162,12 @@ namespace EnhancedValheimVRM
             peer.m_rpc.Register<ZPackage>(RpcName, Receive);
         }
 
-        private static bool Live(Peer peer) =>
-            _network != null && _network == ZNet.instance &&
-            Peers.TryGetValue(peer.GamePeer.m_rpc, out var current) &&
-            ReferenceEquals(peer, current) && peer.GamePeer.IsReady();
+        private static bool Live(Peer peer)
+        {
+            return _network != null && _network == ZNet.instance &&
+                Peers.TryGetValue(peer.GamePeer.m_rpc, out var current) &&
+                ReferenceEquals(peer, current) && peer.GamePeer.IsReady();
+        }
 
         internal static void RemovePeer(ZRpc rpc)
         {
@@ -225,16 +229,19 @@ namespace EnhancedValheimVRM
             if (_network == null) return;
             LivePeers.Clear();
             foreach (var gamePeer in _network.GetPeers())
+            {
                 if (gamePeer.IsReady())
                 {
                     LivePeers.Add(gamePeer.m_rpc);
                     RegisterPeer(_network, gamePeer);
                 }
+            }
 
             RemovedPeers.Clear();
             foreach (var rpc in Peers.Keys)
                 if (!LivePeers.Contains(rpc))
                     RemovedPeers.Add(rpc);
+
             foreach (var rpc in RemovedPeers) RemovePeer(rpc);
             if (!ReferenceEquals(_storage, storage))
             {
@@ -273,7 +280,7 @@ namespace EnhancedValheimVRM
                     if (peer.CharacterId != 0) ReceiveServer(peer, request);
                 }
 
-                int port = _storage?.Port ?? 0;
+                var port = _storage?.Port ?? 0;
                 if (_network.IsServer() && peer.PortRequested && (peer.LastPort != port ||
                         peer.LastLimit != (_storage?.BundleLimitBytes ?? SharingWire.DefaultBundleLimitBytes)))
                     AnnouncePort(peer, port);
@@ -311,13 +318,16 @@ namespace EnhancedValheimVRM
                 }
             }
 
-            int count = 0;
+            var count = 0;
             while (count++ < 64 && Dispatch.TryDequeue(out var action)) action();
             Expired.Clear();
             foreach (var pair in PendingCalls)
+            {
                 if (pair.Value.Token.IsCancellationRequested || pair.Value.Expires < DateTime.UtcNow)
                     Expired.Add(pair.Key);
-            foreach (long id in Expired)
+            }
+
+            foreach (var id in Expired)
             {
                 var pending = PendingCalls[id];
                 PendingCalls.Remove(id);
@@ -333,7 +343,8 @@ namespace EnhancedValheimVRM
             foreach (var pair in KeyRequests)
                 if (pair.Value.Expires < DateTime.UtcNow)
                     Expired.Add(pair.Key);
-            foreach (long id in Expired)
+
+            foreach (var id in Expired)
             {
                 var request = KeyRequests[id];
                 KeyRequests.Remove(id);
@@ -392,8 +403,15 @@ namespace EnhancedValheimVRM
             AvailableSince.Clear();
         }
 
-        internal static BundleInfo GetAvailable(long id) => Available.TryGetValue(id, out var value) ? value : null;
-        internal static string GetOutfit(long id) => Outfits.TryGetValue(id, out var value) ? value : null;
+        internal static BundleInfo GetAvailable(long id)
+        {
+            return Available.TryGetValue(id, out var value) ? value : null;
+        }
+
+        internal static string GetOutfit(long id)
+        {
+            return Outfits.TryGetValue(id, out var value) ? value : null;
+        }
 
         internal static void SetOutfit(long id, string name)
         {
@@ -431,9 +449,11 @@ namespace EnhancedValheimVRM
         {
             if (!Overrides.TryGetValue(id, out var values)) return;
             foreach (var m in values.Values)
+            {
                 apply(m.Value,
                     m.Version == "blend",
                     float.Parse(m.Hash, System.Globalization.CultureInfo.InvariantCulture));
+            }
         }
 
         private static bool ValidOverride(Message m)
@@ -492,10 +512,13 @@ namespace EnhancedValheimVRM
                     {
                         peer.PortRequested = m.Version == Protocol.ToString();
                         if (!peer.PortRequested)
+                        {
                             Logger.LogOnce("sharing-client-protocol:" + peer.Session,
                                 "A client is running a different EnhancedValheimVRM version; sharing is disabled for it until both sides match.");
+                        }
+
                         AnnouncePort(peer,
-                            peer.PortRequested && Settings.EnableSharingServer ? (_storage?.Port ?? 0) : 0);
+                            peer.PortRequested && Settings.EnableSharingServer ? _storage?.Port ?? 0 : 0);
                         return;
                     }
 
@@ -523,8 +546,11 @@ namespace EnhancedValheimVRM
                 {
                     if (owner.Available != null) Send(peer.GamePeer.m_rpc, Metadata(owner));
                     if (owner.Outfit != null)
+                    {
                         Send(peer.GamePeer.m_rpc,
                             new Message { Op = Op.Outfit, Id = owner.OutfitId, Value = owner.Outfit });
+                    }
+
                     foreach (var change in owner.Overrides.Values) Send(peer.GamePeer.m_rpc, change);
                 }
 
@@ -562,7 +588,7 @@ namespace EnhancedValheimVRM
             if (m.Op == Op.SetOverride)
             {
                 if (m.Id == 0 || peer.CharacterId != m.Id || !ValidOverride(m)) return;
-                string key = m.Version + ":" + m.Value;
+                var key = m.Version + ":" + m.Value;
                 if (peer.Overrides.Count >= 512 && !peer.Overrides.ContainsKey(key)) return;
                 peer.OutfitId = m.Id;
                 m.Op = Op.Override;
@@ -660,7 +686,7 @@ namespace EnhancedValheimVRM
                     return;
                 }
 
-                long id = Interlocked.Increment(ref _sequence);
+                var id = Interlocked.Increment(ref _sequence);
                 Trace("Avatar request " + id + " for " + m.Id + ": forwarded to the owner");
                 KeyRequests[id] = new KeyRequest
                 {
@@ -711,7 +737,7 @@ namespace EnhancedValheimVRM
                     return;
                 }
 
-                string session = peer.Session;
+                var session = peer.Session;
                 var storage = _storage;
                 Task.Run(() => storage.ReadCurrent(m.Id))
                     .ContinueWith(done => Dispatch.Enqueue(() =>
@@ -747,10 +773,10 @@ namespace EnhancedValheimVRM
             }
             else if (m.Op == Op.Offer && peer.Id == m.Id)
             {
-                string kind = m.Value;
+                var kind = m.Value;
                 SharingWire.ValidateKind(kind);
                 var offered = m.Info;
-                string declared = kind == SharingWire.AvatarKind ? peer.Version : peer.ProfileVersion;
+                var declared = kind == SharingWire.AvatarKind ? peer.Version : peer.ProfileVersion;
                 if (offered.VersionOf(kind) != declared)
                 {
                     Reply(peer, m, value: "publication-state");
@@ -763,7 +789,8 @@ namespace EnhancedValheimVRM
                 Reply(peer, m, value: "publication-state");
         }
 
-        internal static void UploadCompleted(AvatarTcpServer storage, string session, long id, BundleInfo info) =>
+        internal static void UploadCompleted(AvatarTcpServer storage, string session, long id, BundleInfo info)
+        {
             Dispatch.Enqueue(() =>
             {
                 if (!ReferenceEquals(storage, _storage)) return;
@@ -775,9 +802,11 @@ namespace EnhancedValheimVRM
                 peer.Available = info;
                 Broadcast(Metadata(peer));
             });
+        }
 
-        private static Message Metadata(Peer p) =>
-            new Message
+        private static Message Metadata(Peer p)
+        {
+            return new Message
             {
                 Op = Op.Available,
                 Id = p.Id,
@@ -786,6 +815,7 @@ namespace EnhancedValheimVRM
                 ProfileVersion = p.Available.ProfileVersion,
                 ProfileHash = p.Available.ProfileHash
             };
+        }
 
         private static void Broadcast(Message m)
         {
@@ -799,7 +829,8 @@ namespace EnhancedValheimVRM
             BundleInfo info = null,
             string value = "",
             string ticket = "",
-            string profileTicket = "") =>
+            string profileTicket = "")
+        {
             Send(p.GamePeer.m_rpc,
                 new Message
                 {
@@ -814,6 +845,7 @@ namespace EnhancedValheimVRM
                     Ticket = ticket,
                     ProfileTicket = profileTicket
                 });
+        }
 
         private static void ReceiveClient(Message m)
         {
@@ -821,12 +853,15 @@ namespace EnhancedValheimVRM
             {
                 int port;
                 if (m.Version != Protocol.ToString())
+                {
                     Logger.LogOnce("sharing-server-protocol",
                         "The server runs a different EnhancedValheimVRM version; update the server and clients to the same build. VRM sharing is disabled.");
+                }
+
                 if (m.Version != Protocol.ToString() || !int.TryParse(m.Value, out port) || port < 0 ||
                     port > 65535)
                     port = 0;
-                int limit = m.Request >= 1048576 && m.Request <= SharingWire.MaxBundleBytes ? (int)m.Request : 0;
+                var limit = m.Request >= 1048576 && m.Request <= SharingWire.MaxBundleBytes ? (int)m.Request : 0;
                 if (limit == 0) port = 0;
                 if (_portReceived && (_port != port || BundleLimitBytes != limit))
                     FileTransferController.ResetConnection();
@@ -889,7 +924,7 @@ namespace EnhancedValheimVRM
                 if (m.Id == 0 || !ValidOverride(m)) return;
                 if (!Overrides.TryGetValue(m.Id, out var values))
                     Overrides[m.Id] = values = new Dictionary<string, Message>();
-                string key = m.Version + ":" + m.Value;
+                var key = m.Version + ":" + m.Value;
                 if (values.Count >= 512 && !values.ContainsKey(key)) return;
                 values[key] = m;
                 OutfitRpc.SelectionReceived(m.Id);
@@ -898,8 +933,8 @@ namespace EnhancedValheimVRM
             {
                 var player = Player.m_localPlayer;
                 var avatar = VrmController.FindSharingInstance(player);
-                bool denied = !Settings.EnableVrmSharing || avatar?.GetSettings().AllowShare == false;
-                bool allow = !denied && player != null && player.GetPlayerID() == m.Id && m.Id == _localId &&
+                var denied = !Settings.EnableVrmSharing || avatar?.GetSettings().AllowShare == false;
+                var allow = !denied && player != null && player.GetPlayerID() == m.Id && m.Id == _localId &&
                     m.Version == _localVersion && m.ProfileVersion == _localProfileVersion && avatar != null;
                 Trace("Another player asked for your avatar: " + (allow
                     ? "granted"
@@ -924,8 +959,10 @@ namespace EnhancedValheimVRM
             }
         }
 
-        private static Task<Message> Call(Message m, CancellationToken cancellation, long epoch) =>
-            CallTimed(m, cancellation, epoch, 30);
+        private static Task<Message> Call(Message m, CancellationToken cancellation, long epoch)
+        {
+            return CallTimed(m, cancellation, epoch, 30);
+        }
 
         private static Task<Message> CallTimed(Message m,
             CancellationToken cancellation,
@@ -1000,17 +1037,17 @@ namespace EnhancedValheimVRM
             CancellationToken token,
             long epoch)
         {
-            string stage = "checking the stored version";
+            var stage = "checking the stored version";
             byte[] packed = null;
             try
             {
                 token.ThrowIfCancellationRequested();
-                string profileVersion = BundleCrypto.Version(profile, key);
+                var profileVersion = BundleCrypto.Version(profile, key);
                 var existing = await CheckVersionAsync(id, avatarVersion, profileVersion, token, epoch)
                     .ConfigureAwait(false);
-                bool needAvatar = existing == null || !existing.HasAvatar || existing.Version != avatarVersion;
+                var needAvatar = existing == null || !existing.HasAvatar || existing.Version != avatarVersion;
                 // The settings file is named after the model, so a new model needs it again too.
-                bool needProfile = needAvatar || !existing.HasProfile || existing.ProfileVersion != profileVersion;
+                var needProfile = needAvatar || !existing.HasProfile || existing.ProfileVersion != profileVersion;
                 if (!needAvatar && !needProfile) return existing;
                 var info = new BundleInfo
                 {
@@ -1070,11 +1107,14 @@ namespace EnhancedValheimVRM
             long epoch,
             Action<string> stage)
         {
-            string label = kind == SharingWire.AvatarKind ? "model" : "settings";
+            var label = kind == SharingWire.AvatarKind ? "model" : "settings";
             stage("checking the " + label + " size");
             if (plaintext.Length > client.BundleLimitBytes - 64)
+            {
                 throw new InvalidDataException("Bundle exceeds the server limit of " +
                     client.BundleLimitBytes / 1048576 + " MiB.");
+            }
+
             stage("packing the " + label);
             byte[] encrypted;
             try
@@ -1086,7 +1126,7 @@ namespace EnhancedValheimVRM
                 BundleCrypto.ClearBytes(ref plaintext);
             }
 
-            string hash = BundleCrypto.Hash(encrypted);
+            var hash = BundleCrypto.Hash(encrypted);
             var offered = info.Clone();
             if (kind == SharingWire.AvatarKind)
                 offered.Hash = hash;
@@ -1113,8 +1153,10 @@ namespace EnhancedValheimVRM
         }
 
         // Retry numbers 1..20 follow one immediate request. Zero means the budget is exhausted.
-        internal static int KeyRetryDelaySeconds(int retry) =>
-            retry < 1 || retry > 20 ? 0 : retry <= 10 ? 2 : retry <= 15 ? 5 : 10;
+        internal static int KeyRetryDelaySeconds(int retry)
+        {
+            return retry < 1 || retry > 20 ? 0 : retry <= 10 ? 2 : retry <= 15 ? 5 : 10;
+        }
 
         internal sealed class KeyUnavailable : IOException
         {
@@ -1127,14 +1169,14 @@ namespace EnhancedValheimVRM
             long epoch,
             Action<string> timing)
         {
-            for (int attempt = 0; attempt <= 20; attempt++)
+            for (var attempt = 0; attempt <= 20; attempt++)
             {
                 token.ThrowIfCancellationRequested();
-                int waitSeconds = KeyRetryDelaySeconds(Math.Min(attempt + 1, 20));
+                var waitSeconds = KeyRetryDelaySeconds(Math.Min(attempt + 1, 20));
                 var attemptClock = System.Diagnostics.Stopwatch.StartNew();
                 timing?.Invoke("fetching from server (attempt " + (attempt + 1) + ")");
                 Message grant = null;
-                bool timedOut = false;
+                var timedOut = false;
                 try
                 {
                     grant = await CallTimed(new Message
@@ -1163,8 +1205,11 @@ namespace EnhancedValheimVRM
                     if (BundleCrypto.IsValidKey(grant.Value))
                     {
                         if (!grant.Info.SameAs(info) || grant.Ticket == "" || grant.ProfileTicket == "")
+                        {
                             throw new System.Security.Cryptography.CryptographicException(
                                 "The server's response did not match the requested avatar.");
+                        }
+
                         return grant;
                     }
 
@@ -1179,7 +1224,7 @@ namespace EnhancedValheimVRM
                 if (attempt == 20) break;
                 // A definitive answer arrives in a fraction of a second; ask again soon instead of
                 // sleeping out the window. Only silence, or repeated refusals, use the slower cadence.
-                int remaining = !timedOut && attempt < 3
+                var remaining = !timedOut && attempt < 3
                     ? 250
                     : Math.Max(0, waitSeconds * 1000 - (int)attemptClock.ElapsedMilliseconds);
                 if (remaining != 0) await Task.Delay(remaining, token).ConfigureAwait(false);
@@ -1201,14 +1246,14 @@ namespace EnhancedValheimVRM
             Func<string, bool> modelAlreadyImported = null)
         {
             var clock = timing == null ? null : _timingClock;
-            double keySent = clock?.Elapsed.TotalMilliseconds ?? 0;
+            var keySent = clock?.Elapsed.TotalMilliseconds ?? 0;
             AvailabilityStamps.TryGetValue(id, out var availableAt);
             var grant = await RequestKeyAsync(id, info, token, epoch, timing).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
             if (!BundleCrypto.IsValidKey(grant.Value) || !grant.Info.SameAs(info) || grant.Ticket == "" ||
                 grant.ProfileTicket == "")
                 throw new IOException("The avatar owner has not made it available.");
-            double granted = clock?.Elapsed.TotalMilliseconds ?? 0;
+            var granted = clock?.Elapsed.TotalMilliseconds ?? 0;
             timing?.Invoke("server accepted the request in " + (granted - keySent).ToString("F0") + "ms");
             timing?.Invoke(string.Format(System.Globalization.CultureInfo.InvariantCulture,
                 "since connect: ready={0:F0}ms, available={1:F0}ms, requested={2:F0}ms, accepted={3:F0}ms",

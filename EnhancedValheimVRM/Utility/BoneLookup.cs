@@ -22,8 +22,10 @@ namespace EnhancedValheimVRM
         {
             if (root == null) return null;
             foreach (var transform in root.GetComponentsInChildren<Transform>(true))
-                if (BoneNames.Matches(bone.ToString(), transform.name))
-                    return transform;
+            {
+                if (BoneNames.Matches(bone.ToString(), transform.name)) return transform;
+            }
+
             return null;
         }
     }

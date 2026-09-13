@@ -137,10 +137,10 @@ namespace EnhancedValheimVRM
                 "VrmKey",
                 string.Empty,
                 "Automatically generated sharing key used by all your characters. Keep private. Clearing it rotates the key on restart.");
-            if (!Sharing.BundleCrypto.IsValidKey(_vrmKey.Value))
+            if (!BundleCrypto.IsValidKey(_vrmKey.Value))
             {
                 // The old unfinished key+IV format was unusable; replace it once.
-                _vrmKey.Value = Sharing.BundleCrypto.GenerateKey();
+                _vrmKey.Value = BundleCrypto.GenerateKey();
                 config.Save();
             }
         }
@@ -157,11 +157,11 @@ namespace EnhancedValheimVRM
         internal static int TimeWindowMs => _timeWindowMs.Value;
         internal static Logger.LogLevel LogLevel => _logLevel.Value;
         internal static string VrmKey => _vrmKey.Value;
-        internal static int UploadBytesPerSecond => Sharing.SharingDownloadPolicy.ToBytesPerSecond(_uploadMbps.Value);
+        internal static int UploadBytesPerSecond => SharingDownloadPolicy.ToBytesPerSecond(_uploadMbps.Value);
 
         internal static SharingDownloadPolicy GetDownloadPolicy()
         {
-            return new Sharing.SharingDownloadPolicy(_dedicatedDownloadMbps.Value, _dedicatedDownloadSlots.Value);
+            return new SharingDownloadPolicy(_dedicatedDownloadMbps.Value, _dedicatedDownloadSlots.Value);
         }
 
         internal static bool EnableSharingServer => _enableSharingServer.Value;

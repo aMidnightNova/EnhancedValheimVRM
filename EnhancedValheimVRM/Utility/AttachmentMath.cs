@@ -20,10 +20,10 @@ namespace EnhancedValheimVRM
         {
             localPosition = float3.zero;
             if (!math.isfinite(ratio) || ratio <= 0 || !Finite(parentToWorld)) return false;
-            float determinant = math.determinant(parentToWorld);
+            var determinant = math.determinant(parentToWorld);
             if (!math.isfinite(determinant) || math.abs(determinant) < 1e-12f) return false;
-            quaternion socketWorldRotation = math.mul(parentRotation, socketLocalRotation);
-            float3 worldOffset = math.rotate(socketWorldRotation, originalOffset * ratio);
+            var socketWorldRotation = math.mul(parentRotation, socketLocalRotation);
+            var worldOffset = math.rotate(socketWorldRotation, originalOffset * ratio);
             // w=0 transforms a displacement, excluding the parent's translation.
             localPosition = math.mul(math.inverse(parentToWorld), new float4(worldOffset, 0)).xyz;
             return math.all(math.isfinite(localPosition));
@@ -39,8 +39,8 @@ namespace EnhancedValheimVRM
             // Column lengths include ancestor scale and the child's orientation. Simple
             // component-wise division by parent.lossyScale is wrong for rotated children
             // under a nonuniformly scaled parent.
-            float3x3 axes = math.mul(new float3x3(parentToWorld), new float3x3(localRotation));
-            float3 lengths = new float3(math.length(axes.c0), math.length(axes.c1), math.length(axes.c2));
+            var axes = math.mul(new float3x3(parentToWorld), new float3x3(localRotation));
+            var lengths = new float3(math.length(axes.c0), math.length(axes.c1), math.length(axes.c2));
             if (!math.all(math.isfinite(lengths)) || math.any(lengths < 1e-6f)) return false;
             localScale = worldScale / lengths;
             return math.all(math.isfinite(localScale));

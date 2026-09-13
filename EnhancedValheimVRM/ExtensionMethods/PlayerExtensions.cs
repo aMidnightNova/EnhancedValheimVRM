@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace EnhancedValheimVRM
@@ -12,10 +12,7 @@ namespace EnhancedValheimVRM
             var playerName = "";
 
             // see comments in PatchPlayerAwake for the reason this exists.
-            if (player.m_customData.TryGetValue(Constants.Keys.PlayerName, out playerName))
-            {
-                return playerName;
-            }
+            if (player.m_customData.TryGetValue(Constants.Keys.PlayerName, out playerName)) return playerName;
 
             if (Game.instance != null)
             {

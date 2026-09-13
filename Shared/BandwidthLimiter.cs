@@ -25,14 +25,14 @@ namespace EnhancedValheimVRM.Sharing
             lock (_gate)
             {
                 // Idle time and blocked socket writes do not accumulate burst credit.
-                long duration = (long)Math.Ceiling(count * (double)Stopwatch.Frequency / _bytesPerSecond);
+                var duration = (long)Math.Ceiling(count * (double)Stopwatch.Frequency / _bytesPerSecond);
                 due = Math.Max(_clock.ElapsedTicks, _nextWrite) + duration;
                 _nextWrite = due;
             }
 
             while (true)
             {
-                double remaining = (due - _clock.ElapsedTicks) * 1000.0 / Stopwatch.Frequency;
+                var remaining = (due - _clock.ElapsedTicks) * 1000.0 / Stopwatch.Frequency;
                 if (remaining <= 0) break;
                 if (cancellation.WaitHandle.WaitOne((int)Math.Ceiling(remaining)))
                     cancellation.ThrowIfCancellationRequested();

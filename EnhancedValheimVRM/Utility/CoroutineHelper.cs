@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace EnhancedValheimVRM
 {
@@ -10,10 +10,7 @@ namespace EnhancedValheimVRM
         {
             get
             {
-                if (_instance == null)
-                {
-                    _instance = new GameObject("CoroutineHelper").AddComponent<CoroutineHelper>();
-                }
+                if (_instance == null) _instance = new GameObject("CoroutineHelper").AddComponent<CoroutineHelper>();
 
                 return _instance;
             }
@@ -26,10 +23,7 @@ namespace EnhancedValheimVRM
                 _instance = this;
                 DontDestroyOnLoad(gameObject);
             }
-            else if (_instance != this)
-            {
-                Destroy(gameObject);
-            }
+            else if (_instance != this) Destroy(gameObject);
         }
     }
 }

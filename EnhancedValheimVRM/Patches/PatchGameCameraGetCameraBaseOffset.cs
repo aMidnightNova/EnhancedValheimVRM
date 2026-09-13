@@ -1,4 +1,4 @@
-using HarmonyLib;
+﻿using HarmonyLib;
 using UnityEngine;
 
 namespace EnhancedValheimVRM
@@ -23,7 +23,7 @@ namespace EnhancedValheimVRM
 
             // 0.3f is a magic number used in valhiem. it looks like its just there default camera offset number.
             // this number is  getting scaled here to stay scaled with the vrm height. 
-            var scaledDistance = (Vector3.up * 0.3f) * settings.PlayerVrmScale;
+            var scaledDistance = Vector3.up * 0.3f * settings.PlayerVrmScale;
             if (vrmAnimator == null) return true;
             var vrmEye = vrmAnimator.GetBoneTransform(HumanBodyBones.LeftEye)
                 ?? vrmAnimator.GetBoneTransform(HumanBodyBones.Head)

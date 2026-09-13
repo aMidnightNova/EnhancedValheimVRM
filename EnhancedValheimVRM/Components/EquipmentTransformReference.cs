@@ -27,7 +27,10 @@ namespace EnhancedValheimVRM
             return reference;
         }
 
-        public void SetScale(float ratio) => SetScale(ratio, Vector3.one);
+        public void SetScale(float ratio)
+        {
+            SetScale(ratio, Vector3.one);
+        }
 
         public void SetScale(float ratio, Vector3 multiplier)
         {

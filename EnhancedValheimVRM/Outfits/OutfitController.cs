@@ -21,6 +21,7 @@ namespace EnhancedValheimVRM
         {
             _staging = staging;
             foreach (var entry in _originalVisibility)
+            {
                 if (entry.Key != null)
                 {
                     entry.Key.forceRenderingOff = entry.Value;
@@ -29,13 +30,16 @@ namespace EnhancedValheimVRM
                         entry.Key.enabled = true;
                         // Activate the mesh ancestry only within this imported avatar.
                         for (var node = entry.Key.transform; node != null && node != transform; node = node.parent)
+                        {
                             if (!node.gameObject.activeSelf)
                             {
                                 _activatedNodes.Add(node.gameObject);
                                 node.gameObject.SetActive(true);
                             }
+                        }
                     }
                 }
+            }
 
             ApplyValues();
         }
@@ -71,7 +75,7 @@ namespace EnhancedValheimVRM
                 if (renderer is SkinnedMeshRenderer skin && skin.sharedMesh != null)
                 {
                     var weights = new float[skin.sharedMesh.blendShapeCount];
-                    for (int index = 0; index < weights.Length; index++)
+                    for (var index = 0; index < weights.Length; index++)
                         weights[index] = skin.GetBlendShapeWeight(index);
                     _originalWeights[skin] = weights;
                 }
@@ -127,12 +131,12 @@ namespace EnhancedValheimVRM
         private IEnumerator ReloadAsync()
         {
             _reloading = true;
-            string path = _path;
+            var path = _path;
             var read = Task.Run(() =>
             {
                 if (new FileInfo(path).Length > Sharing.SharingWire.MaxSettingsBytes)
                     throw new InvalidDataException("Outfit file exceeds 128 KiB.");
-                string text = File.ReadAllText(path);
+                var text = File.ReadAllText(path);
                 return Tuple.Create(text, OutfitConfig.Parse(text));
             });
             try
@@ -173,12 +177,12 @@ namespace EnhancedValheimVRM
 
             foreach (var entry in outfit.Blendshapes)
             {
-                int separator = entry.Key.IndexOf(':');
+                var separator = entry.Key.IndexOf(':');
                 string meshName = entry.Key.Substring(0, separator), shapeName = entry.Key.Substring(separator + 1);
-                bool found = false;
+                var found = false;
                 foreach (var skin in _originalWeights.Keys.Where(skin => skin != null && skin.name == meshName))
                 {
-                    int index = skin.sharedMesh.GetBlendShapeIndex(shapeName);
+                    var index = skin.sharedMesh.GetBlendShapeIndex(shapeName);
                     if (index < 0) continue;
                     found = true;
                     if (!_weights.TryGetValue(skin, out var values))
@@ -198,6 +202,7 @@ namespace EnhancedValheimVRM
         private void ApplyValues()
         {
             foreach (var entry in _visibility)
+            {
                 if (entry.Key != null)
                 {
                     entry.Key.forceRenderingOff = entry.Value;
@@ -206,40 +211,59 @@ namespace EnhancedValheimVRM
                         entry.Key.enabled = true;
                         // Activate the mesh ancestry only within this imported avatar.
                         for (var node = entry.Key.transform; node != null && node != transform; node = node.parent)
+                        {
                             if (!node.gameObject.activeSelf)
                             {
                                 _activatedNodes.Add(node.gameObject);
                                 node.gameObject.SetActive(true);
                             }
+                        }
                     }
                 }
+            }
 
             foreach (var mesh in _weights)
+            {
                 if (mesh.Key != null)
-                    foreach (var entry in mesh.Value)
-                        mesh.Key.SetBlendShapeWeight(entry.Key, entry.Value);
+                {
+                    foreach (var entry in mesh.Value) mesh.Key.SetBlendShapeWeight(entry.Key, entry.Value);
+                }
+            }
+
             if (_staging)
+            {
                 foreach (var renderer in _originalVisibility.Keys)
-                    if (renderer != null)
-                        renderer.forceRenderingOff = true;
+                {
+                    if (renderer != null) renderer.forceRenderingOff = true;
+                }
+            }
         }
 
         private void Restore()
         {
             foreach (var entry in _visibility)
+            {
                 if (entry.Key != null)
                 {
                     entry.Key.forceRenderingOff = _originalVisibility[entry.Key];
                     entry.Key.enabled = _originalEnabled[entry.Key];
                 }
+            }
 
             foreach (var mesh in _weights)
+            {
                 if (mesh.Key != null)
+                {
                     foreach (var entry in mesh.Value)
                         mesh.Key.SetBlendShapeWeight(entry.Key, _originalWeights[mesh.Key][entry.Key]);
+                }
+            }
+
             foreach (var node in _activatedNodes)
-                if (node != null)
-                    node.SetActive(false);
+            {
+                if (node != null) node.SetActive(false);
+            }
+
             _activatedNodes.Clear();
             _visibility.Clear();
             _weights.Clear();
@@ -282,7 +306,7 @@ namespace EnhancedValheimVRM
         {
             var mesh = _originalVisibility.Keys.FirstOrDefault(r => r != null && r.name == name);
             if (mesh == null) return false;
-            bool hidden = _visibility.TryGetValue(mesh, out var value)
+            var hidden = _visibility.TryGetValue(mesh, out var value)
                 ? value
                 : mesh.forceRenderingOff || !mesh.enabled || !mesh.gameObject.activeInHierarchy;
             return Override(name, false, hidden ? 1 : 0, true);
@@ -291,7 +315,7 @@ namespace EnhancedValheimVRM
         public bool Override(string name, bool blend, float value, bool publish = false)
         {
             if (!Sharing.SharingWire.IsValidOverride(name, blend, value)) return false;
-            bool found = false;
+            var found = false;
             if (!blend)
             {
                 foreach (var mesh in _originalVisibility.Keys.Where(r => r != null && r.name == name))
@@ -301,15 +325,17 @@ namespace EnhancedValheimVRM
                 }
             }
             else
+            {
                 foreach (var skin in _originalWeights.Keys.Where(r => r != null))
                 {
-                    int index = skin.sharedMesh.GetBlendShapeIndex(name);
+                    var index = skin.sharedMesh.GetBlendShapeIndex(name);
                     if (index < 0) continue;
                     if (!_weights.TryGetValue(skin, out var values))
                         _weights[skin] = values = new Dictionary<int, float>();
                     values[index] = value;
                     found = true;
                 }
+            }
 
             if (!found) return false;
             ApplyValues();
@@ -323,11 +349,17 @@ namespace EnhancedValheimVRM
             // Blendshape animation may overwrite these; renderer visibility only changes
             // when selecting/staging an outfit, so it does not need per-frame writes.
             foreach (var mesh in _weights)
+            {
                 if (mesh.Key != null)
-                    foreach (var entry in mesh.Value)
-                        mesh.Key.SetBlendShapeWeight(entry.Key, entry.Value);
+                {
+                    foreach (var entry in mesh.Value) mesh.Key.SetBlendShapeWeight(entry.Key, entry.Value);
+                }
+            }
         }
 
-        private void OnDestroy() => Restore();
+        private void OnDestroy()
+        {
+            Restore();
+        }
     }
 }

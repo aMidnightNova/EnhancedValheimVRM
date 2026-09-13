@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reflection;
 using HarmonyLib;
 
@@ -30,7 +30,7 @@ namespace EnhancedValheimVRM
                     $"Failed to access field '{fieldName}': {ex.Message}");
             }
 
-            result = default(Tout);
+            result = default;
             return false;
         }
 

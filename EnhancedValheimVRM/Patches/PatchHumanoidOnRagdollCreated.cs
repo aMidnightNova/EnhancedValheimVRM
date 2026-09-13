@@ -17,6 +17,9 @@ namespace EnhancedValheimVRM
     [HarmonyPatch(typeof(Ragdoll), "Awake")]
     internal static class PatchRagdollAwake
     {
-        private static void Postfix(Ragdoll __instance) => VrmController.OnRagdollAppeared(__instance);
+        private static void Postfix(Ragdoll __instance)
+        {
+            VrmController.OnRagdollAppeared(__instance);
+        }
     }
 }

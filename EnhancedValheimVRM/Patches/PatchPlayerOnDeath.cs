@@ -1,4 +1,4 @@
-using HarmonyLib;
+﻿using HarmonyLib;
 using UnityEngine;
 
 namespace EnhancedValheimVRM
@@ -12,10 +12,7 @@ namespace EnhancedValheimVRM
             if (vrmInstance == null) return;
             var settings = vrmInstance.GetSettings();
 
-            if (settings.FixCameraHeight)
-            {
-                Object.Destroy(__instance.GetComponent<VrmEyeAnimator>());
-            }
+            if (settings.FixCameraHeight) Object.Destroy(__instance.GetComponent<VrmEyeAnimator>());
         }
     }
 }

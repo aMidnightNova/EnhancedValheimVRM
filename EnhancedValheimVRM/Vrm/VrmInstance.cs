@@ -51,7 +51,7 @@ namespace EnhancedValheimVRM
             if (_vrmGo != null) _vrmGo.GetComponent<OutfitController>()?.SetStaging(false);
             if (_loadClock == null) return;
             _loadClock.Stop();
-            string path = IsShared ? "shared" : _synchronousMenuLoad ? "menu" : "world";
+            var path = IsShared ? "shared" : _synchronousMenuLoad ? "menu" : "world";
             Logger.Log(string.Format(System.Globalization.CultureInfo.InvariantCulture,
                 "Avatar ready: {0} ({1}, cache {2}); total={3:F0}ms, source={4:F0}ms, import/wait={5:F0}ms, clone={6:F0}ms, material copies={7:F0}ms, outfits/sizing={8:F0}ms, game setup={9:F0}ms{10}",
                 _playerName,
@@ -91,7 +91,11 @@ namespace EnhancedValheimVRM
         private string _coldImportTiming;
         private double _beforeImportMilliseconds;
         private string _receiveTiming, _setupTiming;
-        internal void SetSetupTiming(string text) => _setupTiming = text;
+
+        internal void SetSetupTiming(string text)
+        {
+            _setupTiming = text;
+        }
 
         internal void SetReceiveTiming(string text, double milliseconds)
         {
@@ -102,8 +106,10 @@ namespace EnhancedValheimVRM
         private void TraceLoad(string stage)
         {
             if (_loadClock != null && IsShared)
+            {
                 Logger.Log("Avatar load " + _player.GetPlayerID() + " import+" + _loadClock.ElapsedMilliseconds +
                     "ms: " + stage);
+            }
         }
 
         private double LoadMilliseconds => _loadClock?.Elapsed.TotalMilliseconds ?? 0;
@@ -114,9 +120,9 @@ namespace EnhancedValheimVRM
         {
             get
             {
-                double sinceSpawn = FileTransferController.MillisecondsSinceLocalSpawn;
+                var sinceSpawn = FileTransferController.MillisecondsSinceLocalSpawn;
                 if (sinceSpawn < 0) return 0;
-                double sinceAvailable =
+                var sinceAvailable =
                     _player != null ? SharingRpc.MillisecondsSinceAvailable(_player.GetPlayerID()) : -1;
                 return sinceAvailable < 0 ? sinceSpawn : Math.Min(sinceSpawn, sinceAvailable);
             }
@@ -131,8 +137,8 @@ namespace EnhancedValheimVRM
             IsShared = bundle != null;
             TraceLoad("source preparation scheduled");
             // Snapshot Unity/config state before leaving the main thread.
-            string name = _playerName;
-            bool useDefault = Settings.UseDefaultVrm;
+            var name = _playerName;
+            var useDefault = Settings.UseDefaultVrm;
             _synchronousMenuLoad = bundle == null && player.IsInStartMenu();
             _source = _synchronousMenuLoad
                 ? Task.FromResult(VrmAssetCache.ReadSource(name, useDefault, null))
@@ -192,7 +198,7 @@ namespace EnhancedValheimVRM
         {
             if (_disposed) return;
             _state = State.Disposed;
-            bool corpseOwnsResources = _vrmGo != null && _vrmGo.GetComponentInParent<Ragdoll>() != null;
+            var corpseOwnsResources = _vrmGo != null && _vrmGo.GetComponentInParent<Ragdoll>() != null;
             if (!corpseOwnsResources)
             {
                 if (_vrmGo != null)
@@ -218,10 +224,7 @@ namespace EnhancedValheimVRM
 
         public Animator GetVrmGoAnimator()
         {
-            if (_vrmGo == null)
-            {
-                return null;
-            }
+            if (_vrmGo == null) return null;
 
             return _vrmGo.GetComponentInChildren<Animator>();
         }
@@ -256,7 +259,7 @@ namespace EnhancedValheimVRM
             TraceLoad("import ready (cache " + (_cacheHit ? "hit" : "miss") + "); " + entry.ImportTiming +
                 "; clone started");
             VrmAssetCache.Retain(entry);
-            bool leaseTransferred = false;
+            var leaseTransferred = false;
             try
             {
                 var animator = _player.GetField<Player, Animator>("m_animator");
@@ -292,7 +295,7 @@ namespace EnhancedValheimVRM
                 {
                     if (_disposed || _player == null) yield break;
                     var materials = renderer.sharedMaterials;
-                    for (int i = 0; i < materials.Length; i++)
+                    for (var i = 0; i < materials.Length; i++)
                     {
                         var original = materials[i];
                         if (original == null) continue;
@@ -398,10 +401,10 @@ namespace EnhancedValheimVRM
         {
             if (_player.TryGetField<Player, GameObject>("m_visual", out var playerVisual))
             {
-                float playerHeight = Utils.GetModelHeight(_player.GetField<Player, Animator>("m_animator").gameObject);
+                var playerHeight = Utils.GetModelHeight(_player.GetField<Player, Animator>("m_animator").gameObject);
 
-                float vrmHeight = Utils.GetModelHeight(_vrmGo);
-                float vrmWidth = Utils.GetModelWidth(_vrmGo);
+                var vrmHeight = Utils.GetModelHeight(_vrmGo);
+                var vrmWidth = Utils.GetModelWidth(_vrmGo);
 
 
                 if (vrmWidth <= 0 || float.IsNaN(vrmWidth))
@@ -424,24 +427,22 @@ namespace EnhancedValheimVRM
             foreach (var smr in root.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
                 foreach (var mat in smr.sharedMaterials)
-                {
-                    if (!materials.Contains(mat)) materials.Add(mat);
-                }
+                    if (!materials.Contains(mat))
+                        materials.Add(mat);
             }
 
             foreach (var mr in root.GetComponentsInChildren<MeshRenderer>(true))
             {
                 foreach (var mat in mr.sharedMaterials)
-                {
-                    if (!materials.Contains(mat)) materials.Add(mat);
-                }
+                    if (!materials.Contains(mat))
+                        materials.Add(mat);
             }
 
             // Custom/Creature is the game's lit skinned shader with an emission input; it renders
             // in the deferred path like the player shader, so SSAO gets real normals. The player
             // shader stays as the fallback (no glow) if the creature shader is not loaded yet.
-            Shader creatureShader = settings.UsesCreatureShader ? Shader.Find("Custom/Creature") : null;
-            Shader foundShader = creatureShader != null ? creatureShader : Shader.Find("Custom/Player");
+            var creatureShader = settings.UsesCreatureShader ? Shader.Find("Custom/Creature") : null;
+            var foundShader = creatureShader != null ? creatureShader : Shader.Find("Custom/Player");
 
             foreach (var mat in materials)
             {
@@ -462,7 +463,7 @@ namespace EnhancedValheimVRM
                         var color = mat.HasProperty("_Color") ? mat.GetColor("_Color") : Color.white;
 
                         var mainTex = mat.HasProperty("_MainTex") ? mat.GetTexture("_MainTex") as Texture2D : null;
-                        Texture2D tex = mainTex;
+                        var tex = mainTex;
 
                         if (mainTex != null)
                         {
@@ -471,10 +472,10 @@ namespace EnhancedValheimVRM
                             // Bound native copies, but only yield when the frame's work
                             // budget expires; one frame per strip adds seconds per texture.
                             int width = mainTex.width, height = mainTex.height;
-                            int rows = Math.Max(1, 65536 / width);
+                            var rows = Math.Max(1, 65536 / width);
                             var stripes = new List<Color[]>();
                             var slice = System.Diagnostics.Stopwatch.StartNew();
-                            for (int y = 0; y < height; y += rows)
+                            for (var y = 0; y < height; y += rows)
                             {
                                 stripes.Add(mainTex.GetPixels(0, y, width, Math.Min(rows, height - y)));
                                 if (slice.Elapsed.TotalMilliseconds >= 1)
@@ -487,20 +488,19 @@ namespace EnhancedValheimVRM
                             var pixelsTask = Task.Run(() =>
                             {
                                 foreach (var pixels in stripes)
-                                    for (int i = 0; i < pixels.Length; i++)
+                                {
+                                    for (var i = 0; i < pixels.Length; i++)
                                     {
                                         var col = pixels[i] * color;
-                                        Color.RGBToHSV(col, out float h, out float s, out float v);
+                                        Color.RGBToHSV(col, out var h, out var s, out var v);
                                         v *= settings.ModelBrightness;
                                         pixels[i] = Color.HSVToRGB(h, s, v, true);
                                         pixels[i].a = col.a;
                                     }
+                                }
                             });
 
-                            while (!pixelsTask.IsCompleted)
-                            {
-                                yield return new WaitUntil(() => pixelsTask.IsCompleted);
-                            }
+                            while (!pixelsTask.IsCompleted) yield return new WaitUntil(() => pixelsTask.IsCompleted);
 
                             pixelsTask.GetAwaiter().GetResult(); // Already completed above.
 

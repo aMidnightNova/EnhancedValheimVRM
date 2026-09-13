@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,7 +6,7 @@ namespace EnhancedValheimVRM
 {
     public class VrmMToonFix : MonoBehaviour
     {
-        class MatColor
+        private class MatColor
         {
             public Material mat;
             public Color color;
@@ -23,7 +23,7 @@ namespace EnhancedValheimVRM
 
         private List<MatColor> _matColors = new List<MatColor>();
 
-        void Awake()
+        private void Awake()
         {
             //_SunFogColor = Shader.PropertyToID("_SunFogColor");
             _sunColor = Shader.PropertyToID("_SunColor");
@@ -39,15 +39,16 @@ namespace EnhancedValheimVRM
                 {
                     if (mat != null && !_matColors.Exists(m => m.mat == mat))
                     {
-                        _matColors.Add(new MatColor()
+                        _matColors.Add(new MatColor
                         {
                             mat = mat,
                             color = mat.HasProperty("_Color") ? mat.GetColor("_Color") : Color.white,
                             shadeColor = mat.HasProperty("_ShadeColor") ? mat.GetColor("_ShadeColor") : Color.white,
-                            emission = mat.HasProperty("_EmissionColor") ? mat.GetColor("_EmissionColor") : Color.black,
+                            emission =
+                                mat.HasProperty("_EmissionColor") ? mat.GetColor("_EmissionColor") : Color.black,
                             hasColor = mat.HasProperty("_Color"),
                             hasShadeColor = mat.HasProperty("_ShadeColor"),
-                            hasEmission = mat.HasProperty("_EmissionColor"),
+                            hasEmission = mat.HasProperty("_EmissionColor")
                         });
                     }
                 }
@@ -66,7 +67,7 @@ namespace EnhancedValheimVRM
             baseline.emission = baseline.hasEmission ? material.GetColor("_EmissionColor") : Color.black;
         }
 
-        void Update()
+        private void Update()
         {
             //var fog = Shader.GetGlobalColor(_SunFogColor);
             var sun = Shader.GetGlobalColor(_sunColor);
