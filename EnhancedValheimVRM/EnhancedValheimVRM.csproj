@@ -303,10 +303,17 @@
     <Message Importance="high" Text="Deployed to $(R2ModFolder)"/>
   </Target>
 
+  <!-- debug/release deploy into the game dir only while bepinex is actually installed there. on r2modman the
+       game dir is vanilla, so this stays out of it and the R2ModMan config is the one that deploys -->
+  <Target Name="SkipDeployWithoutGameBepInEx" AfterTargets="Build"
+          Condition="'$(DeployToGame)' != 'false' and '$(Configuration)' != 'R2ModMan' and !Exists('$(VALHEIM_INSTALL)/BepInEx/core/BepInEx.dll')">
+    <Message Importance="high" Text="No BepInEx in $(VALHEIM_INSTALL), not deploying. Use the R2ModMan configuration for profile testing."/>
+  </Target>
+
   <Target Name="DeployLinuxBuild" AfterTargets="Build"
-          Condition="'$(OS)' != 'Windows_NT' and '$(DeployToGame)' != 'false' and '$(Configuration)' != 'R2ModMan'">
+          Condition="'$(OS)' != 'Windows_NT' and '$(DeployToGame)' != 'false' and '$(Configuration)' != 'R2ModMan' and Exists('$(VALHEIM_INSTALL)/BepInEx/core/BepInEx.dll')">
     <PropertyGroup>
-      <BepInExPluginPath Condition="'$(BepInExPluginPath)' == ''">$(BEPINEX_DIR)/plugins</BepInExPluginPath>
+      <BepInExPluginPath Condition="'$(BepInExPluginPath)' == ''">$(VALHEIM_INSTALL)/BepInEx/plugins</BepInExPluginPath>
       <EnhancedVrmDataPath Condition="'$(EnhancedVrmDataPath)' == ''">$(VALHEIM_INSTALL)/EnhancedValheimVRM</EnhancedVrmDataPath>
     </PropertyGroup>
     <MakeDir Directories="$(BepInExPluginPath);$(EnhancedVrmDataPath)/shaders"/>
@@ -376,11 +383,12 @@
     <RemoveDir Directories="$(ThunderstorePackageRoot)"/>
     <MakeDir Directories="$(ThunderstorePackageRoot)"/>
     <ItemGroup>
-      <ThunderstoreRuntimeFile Include="$(ThunderstoreReleasePath)**/*"/>
+      <!-- the github readme stays out of the thunderstore zip -->
+      <ThunderstoreRuntimeFile Include="$(ThunderstoreReleasePath)**/*" Exclude="$(ThunderstoreReleasePath)EnhancedValheimVRM/README.md"/>
     </ItemGroup>
     <Copy SourceFiles="@(ThunderstoreRuntimeFile)"
           DestinationFiles="@(ThunderstoreRuntimeFile->'$(ThunderstorePackageRoot)/%(RecursiveDir)%(Filename)%(Extension)')"/>
-    <Copy SourceFiles="$(EnhancedProjectRoot)/README.md" DestinationFolder="$(ThunderstorePackageRoot)"/>
+    <Copy SourceFiles="$(EnhancedProjectRoot)/thunderstore/README.md" DestinationFolder="$(ThunderstorePackageRoot)"/>
     <Copy SourceFiles="$(EnhancedProjectRoot)/icon.png" DestinationFolder="$(ThunderstorePackageRoot)"/>
     <WriteLinesToFile File="$(ThunderstorePackageRoot)/manifest.json"
                       Lines="$(ThunderstoreManifest)" Overwrite="true" Encoding="ASCII"/>
@@ -391,10 +399,10 @@
   </Target>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent"
-          Condition="'$(OS)' == 'Windows_NT' and '$(DeployToGame)' != 'false' and '$(Configuration)' != 'R2ModMan'">
+          Condition="'$(OS)' == 'Windows_NT' and '$(DeployToGame)' != 'false' and '$(Configuration)' != 'R2ModMan' and Exists('$(VALHEIM_INSTALL)/BepInEx/core/BepInEx.dll')">
     <!-- Set Paths -->
     <PropertyGroup>
-      <BepInExPluginPath>$(BEPINEX_DIR)\plugins\</BepInExPluginPath>
+      <BepInExPluginPath>$(VALHEIM_INSTALL)\BepInEx\plugins\</BepInExPluginPath>
       <ManagedPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\</ManagedPath>
       <ValheimInstallPath>$(VALHEIM_INSTALL)\</ValheimInstallPath>
       <UniVrmLibsPathManaged>$(UNIVRM_UNITY_LIBS)\Managed</UniVrmLibsPathManaged>
