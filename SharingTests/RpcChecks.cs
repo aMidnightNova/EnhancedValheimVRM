@@ -76,6 +76,26 @@ internal static class RpcChecks
             profileHash: info.ProfileHash);
     }
 
+    internal static void UploadLimitChecks(Action<bool, string> check)
+    {
+        var net = new ZNet { Server = false };
+        ZNet.instance = net;
+        var server = new ZNetPeer { m_uid = 1 };
+        net.Peers.Add(server);
+        SharingRpc.Reset(net);
+        SharingRpc.RegisterPeer(net, server);
+        check(SharingRpc.ServerUploadMbps == 0, "Upload limit known before the server announced it");
+        server.m_rpc.Deliver(Packet(13, SharingWire.DefaultBundleLimitBytes, 40, "1", value: "6067"));
+        check(SharingRpc.ServerUploadMbps == 40, "Announced per-upload limit was not applied");
+        server.m_rpc.Deliver(Packet(13, SharingWire.DefaultBundleLimitBytes, 5000, "1", value: "6067"));
+        check(SharingRpc.ServerUploadMbps == SharingUploadPolicy.HardLimitMbps,
+            "Announced limit above the hard limit was not capped at 100");
+        // A server built before the limit existed sends 0: the client falls back to its own cap.
+        server.m_rpc.Deliver(Packet(13, SharingWire.DefaultBundleLimitBytes, version: "1", value: "6067"));
+        check(SharingRpc.ServerUploadMbps == 0, "Missing server limit was not treated as unknown");
+        SharingRpc.Reset(null);
+    }
+
     private static Message Last(ZNetPeer peer, int op)
     {
         return peer.m_rpc.Sent.Select(Read).Last(m => m.Op == op);
@@ -123,6 +143,17 @@ internal static class RpcChecks
             owner.m_rpc.Deliver(Packet(12, version: "1"));
             check(Last(owner, 13).Request == 384L * 1048576,
                 "Server did not announce its default compressed bundle limit");
+            check(Last(owner, 13).Id == SharingUploadPolicy.DefaultServerMbps,
+                "Server did not announce its default per-upload limit");
+            storage.UploadMbps = 40;
+            SharingRpc.Tick(storage);
+            check(Last(owner, 13).Id == 40, "Changed per-upload limit was not re-announced");
+            storage.UploadMbps = 500;
+            SharingRpc.Tick(storage);
+            check(storage.UploadMbps == SharingUploadPolicy.HardLimitMbps && Last(owner, 13).Id == 100,
+                "Server per-upload limit was not clamped to the 100 Mbps hard limit");
+            storage.UploadMbps = SharingUploadPolicy.DefaultServerMbps;
+            SharingRpc.Tick(storage);
             var recipient = Add(net, 3002);
             var key = BundleCrypto.GenerateKey();
             var packed = BundleCrypto.PackAvatar(new byte[64]);

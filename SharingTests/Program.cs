@@ -64,6 +64,29 @@ internal static class Program
                 "Dedicated download defaults");
             var customDownloads = new SharingDownloadPolicy(2, 3);
             Check(customDownloads.BytesPerSecond == 250000 && customDownloads.Slots == 3, "Custom download settings");
+            Check(SharingUploadPolicy.Resolve(6, 0) == 6 && SharingUploadPolicy.Resolve(60, 0) == 60,
+                "Client upload rate without a server limit");
+            Check(SharingUploadPolicy.Resolve(500, 0) == 100 && SharingUploadPolicy.Resolve(0, 0) == 1,
+                "Client upload rate not clamped to 1..100");
+            Check(SharingUploadPolicy.Resolve(60, 25) == 25 && SharingUploadPolicy.Resolve(10, 25) == 10,
+                "Server per-upload limit not applied on the client");
+            Check(SharingUploadPolicy.Resolve(100, 1000) == 100 && SharingUploadPolicy.ClampServer(1000) == 100 &&
+                SharingUploadPolicy.ClampServer(0) == 1,
+                "100 Mbps hard limit not enforced");
+            Check(SharingUploadPolicy.ToBytesPerSecond(60) == 7500000, "Upload Mbps conversion");
+            var aboveHardLimit = false;
+            try
+            {
+                SharingUploadPolicy.ToBytesPerSecond(101);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                aboveHardLimit = true;
+            }
+
+            Check(aboveHardLimit, "Upload rate above the hard limit accepted");
+            RpcChecks.UploadLimitChecks(Check);
+            await UploadPolicyChecks.Run(root, Check);
             await DownloadPolicyChecks.Run(root, dedicatedDownloads, Check);
             await DownloadPolicyChecks.Run(root, customDownloads, Check);
             Check(SharingEndpoint.ShouldHost(true, true, true),

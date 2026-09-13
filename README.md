@@ -117,12 +117,14 @@ Other players get your avatar automatically, but ONLY on a dedicated server runn
 - the server needs a TCP port open. set it in the servers config under [Sharing] ServerPort (default 6067) and open that port on the box / in your hosting panel. \
   clients get the port from the server automatically, the ServerPort in a clients config is ignored.
 - if your server is only reachable through steam relay, set ServerHost in the clients config to the servers real address.
-- the first time somebody joins with a big avatar it takes a while. 6 Mbps upload default, change UploadMbps in the config if your connection can do more.
+- the first time somebody joins with a big avatar it takes a while. 6 Mbps upload default, change UploadMbps in the config if your connection can do more (max 100). \
+  the server has its own per upload limit, DedicatedUploadMbps (default 60, hard max 100), and tells clients about it. you upload at whichever of the two is lower.
 
 Config keys that matter (BepInEx/config/com.rawrtastic.plugins.enhancedvalheimvrm.cfg)
 ```
 [General]  EnableVrmSharing = true      turn sharing off entirely on this machine
-[Sharing]  UploadMbps = 6               your upload rate
+[Sharing]  UploadMbps = 6               your upload rate, 1 to 100
+[Sharing]  DedicatedUploadMbps = 60     server only, per upload, 1 to 100. clients use the lower of this and their UploadMbps
 [Sharing]  ServerPort = 6067            server only
 [Sharing]  EnableServer = true          server only
 [Sharing]  DedicatedDownloadMbps = 25   server only, per download
