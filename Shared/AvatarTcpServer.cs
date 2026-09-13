@@ -39,6 +39,12 @@ namespace EnhancedValheimVRM.Sharing
 
         public int BundleLimitBytes { get; set; } = SharingWire.DefaultBundleLimitBytes;
 
+        private int _uploadMbps = SharingUploadPolicy.DefaultServerMbps;
+
+        // Upload rate. Announced to clients over RPC and enforced here by pacing the
+        // reads, so a modified client cannot upload faster.
+        public int UploadMbps { get => _uploadMbps; set => _uploadMbps = SharingUploadPolicy.ClampServer(value); }
+
         public int Port => ((IPEndPoint)_listener.LocalEndpoint).Port;
 
         public AvatarTcpServer(string directory, IPAddress address, int port, SharingDownloadPolicy downloadPolicy)
@@ -338,14 +344,17 @@ namespace EnhancedValheimVRM.Sharing
                 {
                     using (var output = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                     {
-                        var buffer = new byte[65536];
+                        var buffer = new byte[16384];
                         var remaining = length;
+                        // Uploads are limited;
+                        var limiter = new BandwidthLimiter(SharingUploadPolicy.ToBytesPerSecond(UploadMbps));
                         while (remaining > 0)
                         {
                             cancellation.ThrowIfCancellationRequested();
                             if (transfer.Revoked) throw new OperationCanceledException();
                             var count = reader.Read(buffer, 0, Math.Min(buffer.Length, remaining));
                             if (count == 0) throw new EndOfStreamException();
+                            limiter.WaitForBytes(count, cancellation);
                             hash.TransformBlock(buffer, 0, count, null, 0);
                             output.Write(buffer, 0, count);
                             remaining -= count;

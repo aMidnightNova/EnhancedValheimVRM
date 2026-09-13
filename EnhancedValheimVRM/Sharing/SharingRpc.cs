@@ -62,7 +62,7 @@ namespace EnhancedValheimVRM
             internal string Session = Guid.NewGuid().ToString("N");
             internal long Id, CharacterId, OutfitId;
             internal bool Subscribed, PortRequested;
-            internal int LastPort = -1, LastLimit = -1;
+            internal int LastPort = -1, LastLimit = -1, LastUpload = -1;
             internal string Version, ProfileVersion, Outfit;
             internal BundleInfo Available;
             internal Message AwaitingCharacter, PendingOutfit;
@@ -110,6 +110,9 @@ namespace EnhancedValheimVRM
 
         internal static int BundleLimitBytes { get; private set; } = SharingWire.DefaultBundleLimitBytes;
 
+        // Server's per upload Mbps limit; 0 until the server announces it (or when it predates the limit).
+        internal static int ServerUploadMbps { get; private set; }
+
         private static DateTime _nextPortRequest;
         private static System.Diagnostics.Stopwatch _timingClock;
         private static double _portStamp, _subscribeStamp;
@@ -146,6 +149,7 @@ namespace EnhancedValheimVRM
             _network = network;
             _port = 0;
             BundleLimitBytes = SharingWire.DefaultBundleLimitBytes;
+            ServerUploadMbps = 0;
             _portReceived = false;
             _portAttempts = 0;
             _nextPortRequest = default;
@@ -239,8 +243,9 @@ namespace EnhancedValheimVRM
 
             RemovedPeers.Clear();
             foreach (var rpc in Peers.Keys)
-                if (!LivePeers.Contains(rpc))
-                    RemovedPeers.Add(rpc);
+            {
+                if (!LivePeers.Contains(rpc)) RemovedPeers.Add(rpc);
+            }
 
             foreach (var rpc in RemovedPeers) RemovePeer(rpc);
             if (!ReferenceEquals(_storage, storage))
@@ -282,7 +287,8 @@ namespace EnhancedValheimVRM
 
                 var port = _storage?.Port ?? 0;
                 if (_network.IsServer() && peer.PortRequested && (peer.LastPort != port ||
-                        peer.LastLimit != (_storage?.BundleLimitBytes ?? SharingWire.DefaultBundleLimitBytes)))
+                        peer.LastLimit != (_storage?.BundleLimitBytes ?? SharingWire.DefaultBundleLimitBytes) ||
+                        peer.LastUpload != (_storage?.UploadMbps ?? 0)))
                     AnnouncePort(peer, port);
             }
 
@@ -341,8 +347,9 @@ namespace EnhancedValheimVRM
 
             Expired.Clear();
             foreach (var pair in KeyRequests)
-                if (pair.Value.Expires < DateTime.UtcNow)
-                    Expired.Add(pair.Key);
+            {
+                if (pair.Value.Expires < DateTime.UtcNow) Expired.Add(pair.Key);
+            }
 
             foreach (var id in Expired)
             {
@@ -363,6 +370,7 @@ namespace EnhancedValheimVRM
         {
             peer.LastPort = port;
             peer.LastLimit = _storage?.BundleLimitBytes ?? SharingWire.DefaultBundleLimitBytes;
+            peer.LastUpload = _storage?.UploadMbps ?? 0;
             Send(peer.GamePeer.m_rpc,
                 new Message
                 {
@@ -370,7 +378,8 @@ namespace EnhancedValheimVRM
                     Version = Protocol.ToString(),
                     Hash = ModVersion,
                     Value = port.ToString(),
-                    Request = _storage?.BundleLimitBytes ?? SharingWire.DefaultBundleLimitBytes
+                    Request = _storage?.BundleLimitBytes ?? SharingWire.DefaultBundleLimitBytes,
+                    Id = peer.LastUpload
                 });
         }
 
@@ -820,8 +829,9 @@ namespace EnhancedValheimVRM
         private static void Broadcast(Message m)
         {
             foreach (var p in Peers.Values)
-                if (p.Subscribed)
-                    Send(p.GamePeer.m_rpc, m);
+            {
+                if (p.Subscribed) Send(p.GamePeer.m_rpc, m);
+            }
         }
 
         private static void Reply(Peer p,
@@ -863,9 +873,12 @@ namespace EnhancedValheimVRM
                     port = 0;
                 var limit = m.Request >= 1048576 && m.Request <= SharingWire.MaxBundleBytes ? (int)m.Request : 0;
                 if (limit == 0) port = 0;
-                if (_portReceived && (_port != port || BundleLimitBytes != limit))
+                // Servers older than the upload limit send 0; anything above the hard limit is capped.
+                var upload = m.Id <= 0 ? 0 : (int)Math.Min(m.Id, SharingUploadPolicy.HardLimitMbps);
+                if (_portReceived && (_port != port || BundleLimitBytes != limit || ServerUploadMbps != upload))
                     FileTransferController.ResetConnection();
                 BundleLimitBytes = limit;
+                ServerUploadMbps = upload;
                 _port = port;
                 _portReceived = true;
                 _portStamp = _timingClock?.Elapsed.TotalMilliseconds ?? 0;

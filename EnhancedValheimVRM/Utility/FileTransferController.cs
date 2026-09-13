@@ -165,15 +165,18 @@ namespace EnhancedValheimVRM
                 return;
             }
 
+            // Own config, then the server's announced per-upload limit; both capped at the 100 Mbps hard limit.
+            var uploadBytesPerSecond = SharingUploadPolicy.ToBytesPerSecond(
+                SharingUploadPolicy.Resolve(Settings.UploadMbps, SharingRpc.ServerUploadMbps));
             if (_session == null || _key != Settings.VrmKey ||
-                _host != serverHost || _port != serverPort || _uploadBytesPerSecond != Settings.UploadBytesPerSecond)
+                _host != serverHost || _port != serverPort || _uploadBytesPerSecond != uploadBytesPerSecond)
             {
                 StopSession();
                 _key = Settings.VrmKey;
                 _host = serverHost;
                 _port = serverPort;
                 _session = new CancellationTokenSource();
-                _uploadBytesPerSecond = Settings.UploadBytesPerSecond;
+                _uploadBytesPerSecond = uploadBytesPerSecond;
                 _client = new AvatarTcpClient(_host, _port, _uploadBytesPerSecond)
                 {
                     BundleLimitBytes = SharingRpc.BundleLimitBytes

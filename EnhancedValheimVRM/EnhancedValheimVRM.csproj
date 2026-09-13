@@ -79,6 +79,9 @@
     <Compile Include="..\Shared\SharingDownloadPolicy.cs">
       <Link>Sharing\SharingDownloadPolicy.cs</Link>
     </Compile>
+    <Compile Include="..\Shared\SharingUploadPolicy.cs">
+      <Link>Sharing\SharingUploadPolicy.cs</Link>
+    </Compile>
     <Compile Include="..\Shared\BundleCrypto.cs">
       <Link>Sharing\BundleCrypto.cs</Link>
     </Compile>

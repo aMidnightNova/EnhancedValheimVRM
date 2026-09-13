@@ -28,6 +28,7 @@ namespace EnhancedValheimVRM
         private static ConfigEntry<string> _sharingBindAddress;
         private static ConfigEntry<int> _uploadMbps;
         private static ConfigEntry<int> _dedicatedDownloadMbps;
+        private static ConfigEntry<int> _dedicatedUploadMbps;
         private static ConfigEntry<int> _dedicatedDownloadSlots;
 
 
@@ -119,9 +120,16 @@ namespace EnhancedValheimVRM
                     new AcceptableValueRange<int>(1, 1024)));
             _uploadMbps = config.Bind("Sharing",
                 "UploadMbps",
-                6,
-                new ConfigDescription("Maximum Mbps when uploading your avatar. Mbps means megabits per second.",
-                    new AcceptableValueRange<int>(1, 10000)));
+                SharingUploadPolicy.DefaultClientMbps,
+                new ConfigDescription(
+                    "Maximum Mbps when uploading your avatar. Mbps means megabits per second. Capped at 100; the server announces its own per-upload limit (default 60) and the lower of the two is used.",
+                    new AcceptableValueRange<int>(1, SharingUploadPolicy.HardLimitMbps)));
+            _dedicatedUploadMbps = config.Bind("Sharing",
+                "DedicatedUploadMbps",
+                SharingUploadPolicy.DefaultServerMbps,
+                new ConfigDescription(
+                    "Server-only maximum Mbps for EACH avatar upload it receives. Announced to clients over RPC and enforced by the server. Hard limit 100.",
+                    new AcceptableValueRange<int>(1, SharingUploadPolicy.HardLimitMbps)));
 
             _dedicatedDownloadMbps = config.Bind("Sharing",
                 "DedicatedDownloadMbps",
@@ -157,7 +165,8 @@ namespace EnhancedValheimVRM
         internal static int TimeWindowMs => _timeWindowMs.Value;
         internal static Logger.LogLevel LogLevel => _logLevel.Value;
         internal static string VrmKey => _vrmKey.Value;
-        internal static int UploadBytesPerSecond => SharingDownloadPolicy.ToBytesPerSecond(_uploadMbps.Value);
+        internal static int UploadMbps => _uploadMbps.Value;
+        internal static int DedicatedUploadMbps => SharingUploadPolicy.ClampServer(_dedicatedUploadMbps.Value);
 
         internal static SharingDownloadPolicy GetDownloadPolicy()
         {

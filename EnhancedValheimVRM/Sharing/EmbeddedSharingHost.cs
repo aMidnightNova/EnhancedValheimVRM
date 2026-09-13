@@ -28,7 +28,7 @@ namespace EnhancedValheimVRM
 
         private Task _stopping = Task.CompletedTask;
         private float _nextCheck;
-        private int _port, _bytesPerSecond, _slots, _bundleLimit;
+        private int _port, _bytesPerSecond, _slots, _bundleLimit, _uploadMbps;
         private string _bindAddress;
         private bool _dedicated;
 
@@ -55,6 +55,7 @@ namespace EnhancedValheimVRM
             var policy = Settings.GetDownloadPolicy();
             if (_serving != null && !_serving.IsCompleted && _bytesPerSecond == policy.BytesPerSecond &&
                 _bundleLimit == Settings.BundleLimitBytes && _slots == policy.Slots && _network == network &&
+                _uploadMbps == Settings.DedicatedUploadMbps &&
                 _port == Settings.SharingPort &&
                 _bindAddress == Settings.SharingBindAddress && _dedicated == network.IsDedicated())
                 return;
@@ -75,10 +76,11 @@ namespace EnhancedValheimVRM
             _bytesPerSecond = policy.BytesPerSecond;
             _slots = policy.Slots;
             _bundleLimit = Settings.BundleLimitBytes;
+            _uploadMbps = Settings.DedicatedUploadMbps;
             _stop = new CancellationTokenSource();
             var cancellation = _stop.Token;
             string bindAddress = _bindAddress, path = Path.Combine(Constants.Vrm.Dir, "Server");
-            int port = _port, bundleLimit = _bundleLimit;
+            int port = _port, bundleLimit = _bundleLimit, uploadMbps = _uploadMbps;
             var stopped = _stopping;
             var listening = new TaskCompletionSource<int>();
             _listening = listening.Task;
@@ -88,7 +90,10 @@ namespace EnhancedValheimVRM
                 cancellation.ThrowIfCancellationRequested();
                 if (!IPAddress.TryParse(bindAddress, out var address))
                     throw new ArgumentException("Invalid sharing bind address.");
-                using (var server = new AvatarTcpServer(path, address, port, policy) { BundleLimitBytes = bundleLimit })
+                using (var server = new AvatarTcpServer(path, address, port, policy)
+                       {
+                           BundleLimitBytes = bundleLimit, UploadMbps = uploadMbps
+                       })
                 {
                     server.Uploaded += (session, id, info) => SharingRpc.UploadCompleted(server, session, id, info);
                     _storage = server;
