@@ -21,7 +21,12 @@ namespace EnhancedValheimVRM
 
         private State _state;
         public bool IsLoading => _state == State.Loading;
-        public bool IsShared { get; private set; }
+
+        public bool IsShared
+        {
+            get;
+            private set;
+        }
 
         // Set by the animator when the game marks this player dead; viewers lose the ZDO before
         // the player object is destroyed, so IsDead() alone is not reliable at that moment.
@@ -37,7 +42,13 @@ namespace EnhancedValheimVRM
         }
 
         private bool _disposed => _state == State.Disposed;
-        internal Vector3 LodReferencePoint { get; private set; }
+
+        internal Vector3 LodReferencePoint
+        {
+            get;
+            private set;
+        }
+
         public bool IsReady => _state == State.Staged || _state == State.Displayed || _state == State.Corpse;
         internal bool IsDisplayed => _state == State.Displayed || _state == State.Corpse;
 
@@ -49,19 +60,27 @@ namespace EnhancedValheimVRM
             if (_loadClock == null) return;
             _loadClock.Stop();
             string path = IsShared ? "shared" : _synchronousMenuLoad ? "menu" : "world";
-            Logger.Log(
-                string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                    "Avatar ready: {0} ({1}, cache {2}); total={3:F0}ms, source={4:F0}ms, import/wait={5:F0}ms, clone={6:F0}ms, material copies={7:F0}ms, outfits/sizing={8:F0}ms, game setup={9:F0}ms{10}",
-                    _playerName, path, _cacheHit ? "hit" : "miss", LoadMilliseconds,
-                    _sourceReadyMs, _importReadyMs - _sourceReadyMs, _cloneReadyMs - _importReadyMs,
-                    _materialsReadyMs - _cloneReadyMs, _modelReadyMs - _materialsReadyMs,
-                    LoadMilliseconds - _modelReadyMs,
-                    (_cacheHit ? "" : "; " + _coldImportTiming) + (_setupTiming == null ? "" : "; " + _setupTiming) +
-                    (IsShared
-                        ? string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                            "; player-to-avatar={0:F0}ms, visible wait={3:F0}ms, before importer={1:F0}ms; {2}",
-                            _beforeImportMilliseconds + LoadMilliseconds, _beforeImportMilliseconds, _receiveTiming, VisibleWaitMilliseconds)
-                        : "")));
+            Logger.Log(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                "Avatar ready: {0} ({1}, cache {2}); total={3:F0}ms, source={4:F0}ms, import/wait={5:F0}ms, clone={6:F0}ms, material copies={7:F0}ms, outfits/sizing={8:F0}ms, game setup={9:F0}ms{10}",
+                _playerName,
+                path,
+                _cacheHit ? "hit" : "miss",
+                LoadMilliseconds,
+                _sourceReadyMs,
+                _importReadyMs - _sourceReadyMs,
+                _cloneReadyMs - _importReadyMs,
+                _materialsReadyMs - _cloneReadyMs,
+                _modelReadyMs - _materialsReadyMs,
+                LoadMilliseconds - _modelReadyMs,
+                (_cacheHit ? "" : "; " + _coldImportTiming) + (_setupTiming == null ? "" : "; " + _setupTiming) +
+                (IsShared
+                    ? string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                        "; player-to-avatar={0:F0}ms, visible wait={3:F0}ms, before importer={1:F0}ms; {2}",
+                        _beforeImportMilliseconds + LoadMilliseconds,
+                        _beforeImportMilliseconds,
+                        _receiveTiming,
+                        VisibleWaitMilliseconds)
+                    : "")));
         }
 
         private GameObject _vrmGo;
@@ -90,7 +109,9 @@ namespace EnhancedValheimVRM
 
         private void TraceLoad(string stage)
         {
-            if (_loadClock != null && IsShared) Logger.Log("Avatar load " + _player.GetPlayerID() + " import+" + _loadClock.ElapsedMilliseconds + "ms: " + stage);
+            if (_loadClock != null && IsShared)
+                Logger.Log("Avatar load " + _player.GetPlayerID() + " import+" + _loadClock.ElapsedMilliseconds +
+                    "ms: " + stage);
         }
 
         private double LoadMilliseconds => _loadClock?.Elapsed.TotalMilliseconds ?? 0;
@@ -103,14 +124,13 @@ namespace EnhancedValheimVRM
             {
                 double sinceSpawn = FileTransferController.MillisecondsSinceLocalSpawn;
                 if (sinceSpawn < 0) return 0;
-                double sinceAvailable = _player != null ? SharingRpc.MillisecondsSinceAvailable(_player.GetPlayerID()) : -1;
+                double sinceAvailable =
+                    _player != null ? SharingRpc.MillisecondsSinceAvailable(_player.GetPlayerID()) : -1;
                 return sinceAvailable < 0 ? sinceSpawn : Math.Min(sinceSpawn, sinceAvailable);
             }
         }
 
-        public VrmInstance(Player player) : this(player, null)
-        {
-        }
+        public VrmInstance(Player player) : this(player, null) { }
 
         public VrmInstance(Player player, Sharing.AvatarBundle bundle)
         {
@@ -140,7 +160,8 @@ namespace EnhancedValheimVRM
                     (loading as IDisposable)?.Dispose();
                 }
             }
-            else CoroutineHelper.Instance.StartCoroutine(LoadTracked());
+            else
+                CoroutineHelper.Instance.StartCoroutine(LoadTracked());
         }
 
         private IEnumerator LoadTracked()
@@ -240,7 +261,8 @@ namespace EnhancedValheimVRM
             if (_disposed || _player == null) yield break;
             _importReadyMs = LoadMilliseconds;
             _coldImportTiming = entry.ImportTiming;
-            TraceLoad("import ready (cache " + (_cacheHit ? "hit" : "miss") + "); " + entry.ImportTiming + "; clone started");
+            TraceLoad("import ready (cache " + (_cacheHit ? "hit" : "miss") + "); " + entry.ImportTiming +
+                "; clone started");
             VrmAssetCache.Retain(entry);
             bool leaseTransferred = false;
             try
@@ -335,7 +357,8 @@ namespace EnhancedValheimVRM
 
                 if (material == null && template != null) template.MaterialReady -= apply;
             };
-            if (entry.Completed) apply(null);
+            if (entry.Completed)
+                apply(null);
             else
             {
                 foreach (var material in template.ConvertedMaterials) apply(material);
@@ -360,8 +383,10 @@ namespace EnhancedValheimVRM
                 lodGroup.SetLODs(new LOD[]
                 {
                     new LOD(0.1f,
-                        _vrmGo.GetComponentsInChildren<Renderer>(true).Where(renderer =>
-                            renderer is SkinnedMeshRenderer || renderer is MeshRenderer).ToArray())
+                        _vrmGo.GetComponentsInChildren<Renderer>(true)
+                            .Where(renderer =>
+                                renderer is SkinnedMeshRenderer || renderer is MeshRenderer)
+                            .ToArray())
                 });
             }
 

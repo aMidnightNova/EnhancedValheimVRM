@@ -4,8 +4,15 @@ namespace EnhancedValheimVRM.Sharing
 {
     public sealed class SharingDownloadPolicy
     {
-        public int BytesPerSecond { get; }
-        public int Slots { get; }
+        public int BytesPerSecond
+        {
+            get;
+        }
+
+        public int Slots
+        {
+            get;
+        }
 
 
         public SharingDownloadPolicy(int megabitsPerSecond, int slots)

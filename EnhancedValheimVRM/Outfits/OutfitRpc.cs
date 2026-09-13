@@ -11,7 +11,8 @@ namespace EnhancedValheimVRM
             var avatar = player != null ? player.GetVrmInstance() : null;
             var outfits = avatar?.GetGameObject()?.GetComponent<OutfitController>();
             if (avatar == null || !avatar.IsDisplayed || avatar.IsCorpse || outfits == null ||
-                string.IsNullOrEmpty(outfits.CurrentName)) return;
+                string.IsNullOrEmpty(outfits.CurrentName))
+                return;
             SharingRpc.SetOutfit(player.GetPlayerID(), outfits.CurrentName);
         }
 
@@ -24,8 +25,10 @@ namespace EnhancedValheimVRM
 
         internal static void AvatarReady(Player player)
         {
-            if (player == Player.m_localPlayer) ClientReady();
-            else ApplyPending(player);
+            if (player == Player.m_localPlayer)
+                ClientReady();
+            else
+                ApplyPending(player);
         }
 
         internal static void SelectionReceived(long id)
@@ -44,7 +47,8 @@ namespace EnhancedValheimVRM
             var outfits = avatar.GetGameObject()?.GetComponent<OutfitController>();
             if (outfits == null) return;
             outfits.Apply(name ?? outfits.CurrentName);
-            SharingRpc.ApplyOverrides(player.GetPlayerID(), (part, blend, value) => outfits.Override(part, blend, value));
+            SharingRpc.ApplyOverrides(player.GetPlayerID(),
+                (part, blend, value) => outfits.Override(part, blend, value));
         }
     }
 }

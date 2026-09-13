@@ -9,7 +9,10 @@ namespace EnhancedValheimVRM
 {
     public class VrmAnimator : MonoBehaviour, IMonoUpdater
     {
-        public static List<IMonoUpdater> Instances { get; } = new List<IMonoUpdater>();
+        public static List<IMonoUpdater> Instances
+        {
+            get;
+        } = new List<IMonoUpdater>();
 
         private Transform _vrmLeftMiddleFinger;
         private Transform _vrmRightMiddleFinger;
@@ -44,6 +47,7 @@ namespace EnhancedValheimVRM
         {
             internal Transform Weapon, Player, Avatar, PlayerHand, AvatarHand;
         }
+
         private readonly List<WeaponArmBone> _weaponArmBones = new List<WeaponArmBone>();
 
         private void SetupHands()
@@ -72,9 +76,16 @@ namespace EnhancedValheimVRM
                 var avatarBone = BoneLookup.Get(_vrmGoAnimator, bone);
                 var playerHand = BoneLookup.Get(_playerAnimator, hand);
                 var avatarHand = BoneLookup.Get(_vrmGoAnimator, hand);
-                if (weaponBone != null && playerBone != null && avatarBone != null && playerHand != null && avatarHand != null)
+                if (weaponBone != null && playerBone != null && avatarBone != null && playerHand != null &&
+                    avatarHand != null)
                     _weaponArmBones.Add(new WeaponArmBone
-                        { Weapon = weaponBone, Player = playerBone, Avatar = avatarBone, PlayerHand = playerHand, AvatarHand = avatarHand });
+                    {
+                        Weapon = weaponBone,
+                        Player = playerBone,
+                        Avatar = avatarBone,
+                        PlayerHand = playerHand,
+                        AvatarHand = avatarHand
+                    });
             }
 
             _vrmLeftMiddleFinger = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftMiddleProximal);
@@ -82,8 +93,17 @@ namespace EnhancedValheimVRM
         }
 
         // State variables for item names
-        public string LeftHandItemInstanceName { get; set; }
-        public string RightHandItemInstanceName { get; set; }
+        public string LeftHandItemInstanceName
+        {
+            get;
+            set;
+        }
+
+        public string RightHandItemInstanceName
+        {
+            get;
+            set;
+        }
 
         private Transform _vrmLeftHandTransform;
         private Transform _vrmRightHandTransform;
@@ -92,7 +112,13 @@ namespace EnhancedValheimVRM
 
         private Player _player;
         private VrmInstance _vrmInstance;
-        internal RigOffsets Offsets { get; private set; }
+
+        internal RigOffsets Offsets
+        {
+            get;
+            private set;
+        }
+
         private Animator _playerAnimator;
         private Animator _vrmGoAnimator;
         private GameObject _vrmGo;
@@ -186,23 +212,41 @@ namespace EnhancedValheimVRM
         {
             // Keep the existing socket orientation calibration. Position and import
             // scale now come from each socket's original transform, including back slots.
-            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand), _visEquipment.m_leftHand,
-                null, new Vector3(0, 0, -180));
-            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand), _visEquipment.m_rightHand,
-                null, new Vector3(0, 0, 0));
-            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Head), _visEquipment.m_helmet, null,
+            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftHand),
+                _visEquipment.m_leftHand,
+                null,
+                new Vector3(0, 0, -180));
+            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightHand),
+                _visEquipment.m_rightHand,
+                null,
+                new Vector3(0, 0, 0));
+            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Head),
+                _visEquipment.m_helmet,
+                null,
                 new Vector3(-22.286f, -90, 0));
-            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest), _visEquipment.m_backShield, null,
+            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest),
+                _visEquipment.m_backShield,
+                null,
                 new Vector3(260.842f, -110.573f, -95.08301f));
-            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest), _visEquipment.m_backMelee, null,
+            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest),
+                _visEquipment.m_backMelee,
+                null,
                 new Vector3(123.57f, 82.526f, 86.67f));
             ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest),
-                _visEquipment.m_backTwohandedMelee, null, new Vector3(126.719f, 84.227f, 89.261f));
-            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest), _visEquipment.m_backBow, null,
+                _visEquipment.m_backTwohandedMelee,
+                null,
+                new Vector3(126.719f, 84.227f, 89.261f));
+            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest),
+                _visEquipment.m_backBow,
+                null,
                 new Vector3(-111.234f, -56.51501f, 148.21f));
-            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest), _visEquipment.m_backAtgeir, null,
+            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Chest),
+                _visEquipment.m_backAtgeir,
+                null,
                 new Vector3(-74.321f, 30.416f, -213.174f));
-            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Hips), _visEquipment.m_backTool, null,
+            ReParentAttachPoint(_vrmGoAnimator.GetBoneTransform(HumanBodyBones.Hips),
+                _visEquipment.m_backTool,
+                null,
                 new Vector3(101.664f, -90.17902f, -179.256f));
             PlaceBackSockets();
         }
@@ -213,8 +257,11 @@ namespace EnhancedValheimVRM
         // clearance only for avatars proportioned like the vanilla body. A deep-chested avatar
         // ends up with the socket inside its back, so the socket is placed relative to the
         // avatar's own back surface instead, with the same clearance scaled by height.
-        private const float ShieldClearance = 0.151f, OneHandedClearance = 0.112f, TwoHandedClearance = 0.087f,
-            BowClearance = 0.028f, AtgeirClearance = 0.089f;
+        private const float ShieldClearance = 0.151f,
+            OneHandedClearance = 0.112f,
+            TwoHandedClearance = 0.087f,
+            BowClearance = 0.028f,
+            AtgeirClearance = 0.089f;
 
         private void PlaceBackSockets()
         {
@@ -231,9 +278,10 @@ namespace EnhancedValheimVRM
             float moved = 0f;
             foreach (var pair in new[]
                      {
-                         (_visEquipment.m_backShield, ShieldClearance), (_visEquipment.m_backMelee, OneHandedClearance),
-                         (_visEquipment.m_backTwohandedMelee, TwoHandedClearance), (_visEquipment.m_backBow, BowClearance),
-                         (_visEquipment.m_backAtgeir, AtgeirClearance)
+                         (_visEquipment.m_backShield, ShieldClearance),
+                         (_visEquipment.m_backMelee, OneHandedClearance),
+                         (_visEquipment.m_backTwohandedMelee, TwoHandedClearance),
+                         (_visEquipment.m_backBow, BowClearance), (_visEquipment.m_backAtgeir, AtgeirClearance)
                      })
             {
                 var socket = pair.Item1;
@@ -245,7 +293,8 @@ namespace EnhancedValheimVRM
             }
 
             if (Settings.LogLoadTiming)
-                Logger.Log("Back sockets: torso extends " + torsoBack.ToString("F3") + "m behind the chest; largest socket move " + moved.ToString("F3") + "m");
+                Logger.Log("Back sockets: torso extends " + torsoBack.ToString("F3") +
+                    "m behind the chest; largest socket move " + moved.ToString("F3") + "m");
         }
 
         public Animator GetPlayerAnimator()
@@ -260,19 +309,16 @@ namespace EnhancedValheimVRM
             _vrmPoseHandler = new HumanPoseHandler(_vrmGoAnimator.avatar, _vrmGoAnimator.transform);
         }
 
-        public void CustomFixedUpdate(float deltaTime)
-        {
-        }
+        public void CustomFixedUpdate(float deltaTime) { }
 
-        public void CustomUpdate(float deltaTime, float time)
-        {
-        }
+        public void CustomUpdate(float deltaTime, float time) { }
 
         public void CustomLateUpdate(float deltaTime)
         {
             if (!isActiveAndEnabled) return;
             if (_playerPoseHandler == null || _vrmPoseHandler == null || _playerAnimator == null ||
-                _vrmGoAnimator == null) return;
+                _vrmGoAnimator == null)
+                return;
             _playerPoseHandler.GetHumanPose(ref _humanPose);
             UpdateVisualRotation();
             _vrmPoseHandler.SetHumanPose(ref _humanPose);
@@ -290,7 +336,7 @@ namespace EnhancedValheimVRM
             // rig animated while the newly imported VRM is still in its rest pose.
             // Keep the special weapon rig aligned with the same rendered turn.
             var visualTurnCorrection = _vrmGo.transform.rotation *
-                                       Quaternion.Inverse(_playerAnimator.transform.rotation * _visualRotationOffset);
+                Quaternion.Inverse(_playerAnimator.transform.rotation * _visualRotationOffset);
             // Move forearms before their child hands; then apply the existing hand/palm grip math.
             // The rig bone keeps the vanilla bone's axis convention, but its elbow-to-wrist
             // direction has to follow the avatar's forearm. Copying only the vanilla rotation
@@ -298,7 +344,8 @@ namespace EnhancedValheimVRM
             foreach (var bone in _weaponArmBones)
             {
                 if (bone.Weapon == null || bone.Player == null || bone.Avatar == null ||
-                    bone.PlayerHand == null || bone.AvatarHand == null) continue;
+                    bone.PlayerHand == null || bone.AvatarHand == null)
+                    continue;
                 var rotation = visualTurnCorrection * bone.Player.rotation;
                 var vanillaForearm = visualTurnCorrection * (bone.PlayerHand.position - bone.Player.position);
                 var avatarForearm = bone.AvatarHand.position - bone.Avatar.position;
@@ -306,6 +353,7 @@ namespace EnhancedValheimVRM
                     rotation = Quaternion.FromToRotation(vanillaForearm, avatarForearm) * rotation;
                 bone.Weapon.SetPositionAndRotation(bone.Avatar.position, rotation);
             }
+
             var adjustment = new Vector3(0, -0.06f, 0.04f) * (1f - _vrmSettings.PlayerVrmScale);
             if (_leftHandItemInstanceTransform != null && _playerLeftHandTransform != null &&
                 _vrmLeftHandTransform != null)
@@ -319,9 +367,11 @@ namespace EnhancedValheimVRM
                     : _vrmLeftHandTransform.position;
                 var delta = (leftPalmCenter - _vrmLeftHandTransform.position) / 10f;
                 var offset = AttachmentMath.ToBoneOffset(AttachmentTransforms.Rotation(rotation),
-                    AttachmentTransforms.Vector(delta), AttachmentTransforms.Vector(adjustment));
+                    AttachmentTransforms.Vector(delta),
+                    AttachmentTransforms.Vector(adjustment));
                 var position = AttachmentMath.PlaceBone(AttachmentTransforms.Vector(_vrmLeftHandTransform.position),
-                    AttachmentTransforms.Rotation(rotation), offset);
+                    AttachmentTransforms.Rotation(rotation),
+                    offset);
                 _leftHandItemInstanceTransform.SetPositionAndRotation(AttachmentTransforms.Vector(position), rotation);
             }
 
@@ -335,9 +385,11 @@ namespace EnhancedValheimVRM
                 // Preserve the opposite sign used for the right-hand weapon rig.
                 var delta = -(rightPalmCenter - _vrmRightHandTransform.position) / 10f;
                 var offset = AttachmentMath.ToBoneOffset(AttachmentTransforms.Rotation(rotation),
-                    AttachmentTransforms.Vector(delta), AttachmentTransforms.Vector(adjustment));
+                    AttachmentTransforms.Vector(delta),
+                    AttachmentTransforms.Vector(adjustment));
                 var position = AttachmentMath.PlaceBone(AttachmentTransforms.Vector(_vrmRightHandTransform.position),
-                    AttachmentTransforms.Rotation(rotation), offset);
+                    AttachmentTransforms.Rotation(rotation),
+                    offset);
                 _rightHandItemInstanceTransform.SetPositionAndRotation(AttachmentTransforms.Vector(position), rotation);
             }
         }
@@ -354,7 +406,9 @@ namespace EnhancedValheimVRM
             }
 
             var rotation = _turnSmoothing.Sample(AttachmentTransforms.Rotation(target),
-                AttachmentTransforms.Vector(_player.transform.position), Time.fixedTime, Time.time,
+                AttachmentTransforms.Vector(_player.transform.position),
+                Time.fixedTime,
+                Time.time,
                 Time.fixedDeltaTime);
             _vrmGo.transform.rotation =
                 new Quaternion(rotation.value.x, rotation.value.y, rotation.value.z, rotation.value.w);

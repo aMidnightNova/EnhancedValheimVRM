@@ -47,11 +47,15 @@ namespace EnhancedValheimVRM
         // Which game shader the texture fix converts to: "player" (the vanilla character shader)
         // or "creature" (the animal/monster shader, the only one with an emission input).
         public string ShaderForTextureFix = "player";
+
         public bool AttemptTextureFix = false;
+
         // With AttemptTextureFix, how much of the avatar's own colour glows on its own (0 = none,
         // 1 = fully self-lit). Keeps a toon avatar from going black in shadow.
         public float TextureFixEmission = 0.15f;
-        public bool UsesCreatureShader => string.Equals(ShaderForTextureFix, "creature", StringComparison.OrdinalIgnoreCase);
+
+        public bool UsesCreatureShader =>
+            string.Equals(ShaderForTextureFix, "creature", StringComparison.OrdinalIgnoreCase);
         // END - Writable Settings Properties
 
 
@@ -66,10 +70,23 @@ namespace EnhancedValheimVRM
         //Internal computed properties
         // a property {get set}
         // this is the scale of the VRM to the Player Model, typically its a smaller number but can be larger. E.G. 0.68f
-        public float PlayerVrmScale { get; set; } = 1f;
+        public float PlayerVrmScale
+        {
+            get;
+            set;
+        } = 1f;
 
-        public float VrmHeight { get; set; } = 1f;
-        public float VrmRadius { get; set; } = 0.5f;
+        public float VrmHeight
+        {
+            get;
+            set;
+        } = 1f;
+
+        public float VrmRadius
+        {
+            get;
+            set;
+        } = 0.5f;
 
 
         //Internal computed properties
@@ -87,12 +104,33 @@ namespace EnhancedValheimVRM
         // Classes: Bow Crossbow Sword Knife Club Axe Spear Polearm Staff Shield Tool Pickaxe Torch Fist
         // (Mace = Club, Atgeir = Polearm, Hammer = Tool). A named line replaces its class line.
         public static readonly string[] ItemClasses =
-            { "Bow", "Crossbow", "Sword", "Knife", "Club", "Axe", "Spear", "Polearm", "Staff", "Shield", "Tool", "Pickaxe", "Torch", "Fist" };
-        private static readonly Dictionary<string, string> ClassAliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            { { "Mace", "Club" }, { "Atgeir", "Polearm" }, { "Hammer", "Tool" }, { "Dagger", "Knife" }, { "Greatsword", "Sword" } };
-        private sealed class ItemAdjustment { public string Class; public Vector3 Pos, Rot; public bool HasPos, HasRot; }
-        private readonly Dictionary<string, ItemAdjustment> _items = new Dictionary<string, ItemAdjustment>(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, float> _weaponScales = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+        {
+            "Bow", "Crossbow", "Sword", "Knife", "Club", "Axe", "Spear", "Polearm", "Staff", "Shield", "Tool",
+            "Pickaxe", "Torch", "Fist"
+        };
+
+        private static readonly Dictionary<string, string> ClassAliases =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Mace", "Club" },
+                { "Atgeir", "Polearm" },
+                { "Hammer", "Tool" },
+                { "Dagger", "Knife" },
+                { "Greatsword", "Sword" }
+            };
+
+        private sealed class ItemAdjustment
+        {
+            public string Class;
+            public Vector3 Pos, Rot;
+            public bool HasPos, HasRot;
+        }
+
+        private readonly Dictionary<string, ItemAdjustment> _items =
+            new Dictionary<string, ItemAdjustment>(StringComparer.OrdinalIgnoreCase);
+
+        private readonly Dictionary<string, float> _weaponScales =
+            new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
 
         private static string ItemKey(string scope, bool hand) => scope + (hand ? "|hand" : "|back");
 
@@ -117,15 +155,22 @@ namespace EnhancedValheimVRM
         }
 
         // Returns true and the adjustment for a weapon: its own name first, then its class.
-        public bool TryGetItemAdjustment(string prefabName, string itemClass, bool hand, out Vector3 pos, out Vector3 rot)
+        public bool TryGetItemAdjustment(string prefabName,
+            string itemClass,
+            bool hand,
+            out Vector3 pos,
+            out Vector3 rot)
         {
-            pos = Vector3.zero; rot = Vector3.zero;
+            pos = Vector3.zero;
+            rot = Vector3.zero;
             ItemAdjustment named = null, classed = null;
             if (!string.IsNullOrEmpty(prefabName)) _items.TryGetValue(ItemKey(prefabName, hand), out named);
             if (!string.IsNullOrEmpty(itemClass)) _items.TryGetValue(ItemKey(itemClass, hand), out classed);
             if (named == null && classed == null) return false;
-            pos = named != null && named.HasPos ? named.Pos : classed != null && classed.HasPos ? classed.Pos : Vector3.zero;
-            rot = named != null && named.HasRot ? named.Rot : classed != null && classed.HasRot ? classed.Rot : Vector3.zero;
+            pos = named != null && named.HasPos ? named.Pos :
+                classed != null && classed.HasPos ? classed.Pos : Vector3.zero;
+            rot = named != null && named.HasRot ? named.Rot :
+                classed != null && classed.HasRot ? classed.Rot : Vector3.zero;
             return true;
         }
 
@@ -134,11 +179,19 @@ namespace EnhancedValheimVRM
         {
             bool hand = false;
             string suffix;
-            if (key.EndsWith("Pos", StringComparison.OrdinalIgnoreCase)) suffix = "Pos";
-            else if (key.EndsWith("Rot", StringComparison.OrdinalIgnoreCase)) suffix = "Rot";
-            else return false;
+            if (key.EndsWith("Pos", StringComparison.OrdinalIgnoreCase))
+                suffix = "Pos";
+            else if (key.EndsWith("Rot", StringComparison.OrdinalIgnoreCase))
+                suffix = "Rot";
+            else
+                return false;
             string cls = key.Substring(0, key.Length - 3);
-            if (cls.EndsWith("Hand", StringComparison.OrdinalIgnoreCase)) { hand = true; cls = cls.Substring(0, cls.Length - 4); }
+            if (cls.EndsWith("Hand", StringComparison.OrdinalIgnoreCase))
+            {
+                hand = true;
+                cls = cls.Substring(0, cls.Length - 4);
+            }
+
             if (ClassAliases.TryGetValue(cls, out var alias)) cls = alias;
             string canonical = Array.Find(ItemClasses, c => c.Equals(cls, StringComparison.OrdinalIgnoreCase));
             if (canonical == null) return false;
@@ -155,9 +208,19 @@ namespace EnhancedValheimVRM
             var vector = ParseVector3(vectorText);
             if (vector == null) throw new InvalidDataException("Cannot parse setting " + key + ": " + value);
             string itemKey = ItemKey(scope, hand);
-            if (!_items.TryGetValue(itemKey, out var adjustment)) _items[itemKey] = adjustment = new ItemAdjustment { Class = canonical };
-            if (suffix == "Pos") { adjustment.Pos = vector.Value; adjustment.HasPos = true; }
-            else { adjustment.Rot = vector.Value; adjustment.HasRot = true; }
+            if (!_items.TryGetValue(itemKey, out var adjustment))
+                _items[itemKey] = adjustment = new ItemAdjustment { Class = canonical };
+            if (suffix == "Pos")
+            {
+                adjustment.Pos = vector.Value;
+                adjustment.HasPos = true;
+            }
+            else
+            {
+                adjustment.Rot = vector.Value;
+                adjustment.HasRot = true;
+            }
+
             return true;
         }
 
@@ -200,10 +263,15 @@ namespace EnhancedValheimVRM
                 object value = field.GetValue(this);
                 string text;
                 if (value is Vector3 vector)
-                    text = string.Format(CultureInfo.InvariantCulture, "({0:R},{1:R},{2:R})", vector.x, vector.y,
+                    text = string.Format(CultureInfo.InvariantCulture,
+                        "({0:R},{1:R},{2:R})",
+                        vector.x,
+                        vector.y,
                         vector.z);
-                else if (value is float number) text = number.ToString("R", CultureInfo.InvariantCulture);
-                else text = Convert.ToString(value, CultureInfo.InvariantCulture);
+                else if (value is float number)
+                    text = number.ToString("R", CultureInfo.InvariantCulture);
+                else
+                    text = Convert.ToString(value, CultureInfo.InvariantCulture);
                 lines.Add(field.Name + "=" + text);
             }
 
@@ -217,10 +285,19 @@ namespace EnhancedValheimVRM
                 string prefix = pair.Value.Class + (hand ? "Hand" : "");
                 string name = isClass ? "" : scope + ",";
                 if (pair.Value.HasPos)
-                    lines.Add(prefix + "Pos=" + name + string.Format(CultureInfo.InvariantCulture, "({0:R},{1:R},{2:R})", pair.Value.Pos.x, pair.Value.Pos.y, pair.Value.Pos.z));
+                    lines.Add(prefix + "Pos=" + name + string.Format(CultureInfo.InvariantCulture,
+                        "({0:R},{1:R},{2:R})",
+                        pair.Value.Pos.x,
+                        pair.Value.Pos.y,
+                        pair.Value.Pos.z));
                 if (pair.Value.HasRot)
-                    lines.Add(prefix + "Rot=" + name + string.Format(CultureInfo.InvariantCulture, "({0:R},{1:R},{2:R})", pair.Value.Rot.x, pair.Value.Rot.y, pair.Value.Rot.z));
+                    lines.Add(prefix + "Rot=" + name + string.Format(CultureInfo.InvariantCulture,
+                        "({0:R},{1:R},{2:R})",
+                        pair.Value.Rot.x,
+                        pair.Value.Rot.y,
+                        pair.Value.Rot.z));
             }
+
             foreach (var pair in _weaponScales)
                 lines.Add("WeaponScale=" + pair.Key + "," + pair.Value.ToString("R", CultureInfo.InvariantCulture));
 
@@ -280,9 +357,10 @@ namespace EnhancedValheimVRM
         private void Validate()
         {
             foreach (var pair in _items)
-                foreach (var v in new[] { pair.Value.Pos, pair.Value.Rot })
-                    if (float.IsNaN(v.x) || float.IsInfinity(v.x) || float.IsNaN(v.y) || float.IsInfinity(v.y) || float.IsNaN(v.z) || float.IsInfinity(v.z))
-                        throw new InvalidDataException("Non-finite weapon adjustment: " + pair.Key);
+            foreach (var v in new[] { pair.Value.Pos, pair.Value.Rot })
+                if (float.IsNaN(v.x) || float.IsInfinity(v.x) || float.IsNaN(v.y) || float.IsInfinity(v.y) ||
+                    float.IsNaN(v.z) || float.IsInfinity(v.z))
+                    throw new InvalidDataException("Non-finite weapon adjustment: " + pair.Key);
             foreach (var pair in _weaponScales)
                 if (pair.Value <= 0 || float.IsNaN(pair.Value) || float.IsInfinity(pair.Value))
                     throw new InvalidDataException("WeaponScale override must be positive and finite: " + pair.Key);
@@ -292,12 +370,13 @@ namespace EnhancedValheimVRM
                 if (value is float number && (float.IsNaN(number) || float.IsInfinity(number)))
                     throw new InvalidDataException("Non-finite setting: " + field.Name);
                 if (value is Vector3 vector && (float.IsNaN(vector.x) || float.IsInfinity(vector.x) ||
-                                                float.IsNaN(vector.y) || float.IsInfinity(vector.y) ||
-                                                float.IsNaN(vector.z) || float.IsInfinity(vector.z)))
+                        float.IsNaN(vector.y) || float.IsInfinity(vector.y) ||
+                        float.IsNaN(vector.z) || float.IsInfinity(vector.z)))
                     throw new InvalidDataException("Non-finite offset: " + field.Name);
             }
 
-            if (!UsesCreatureShader && !string.Equals(ShaderForTextureFix, "player", StringComparison.OrdinalIgnoreCase))
+            if (!UsesCreatureShader &&
+                !string.Equals(ShaderForTextureFix, "player", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("ShaderForTextureFix must be player or creature.");
             if (TextureFixEmission < 0 || TextureFixEmission > 1)
                 throw new InvalidDataException("TextureFixEmission must be between 0 and 1.");

@@ -25,6 +25,7 @@ namespace EnhancedValheimVRM
                 {
                     return true;
                 }
+
                 var vrmGoAnimator = vrmGo.GetComponentInChildren<Animator>();
 
                 if (vrmGoAnimator == null || vrmGoAnimator.avatar == null)

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace EnhancedValheimVRM
 {
@@ -12,7 +12,7 @@ namespace EnhancedValheimVRM
         public void Setup(Player player, Animator playerAnimator, VrmInstance vrmInstance)
         {
             _playerAnimator = vrmInstance.GetVrmGoAnimator();
-            
+
             _vrmEyes = BoneLookup.Get(_playerAnimator, HumanBodyBones.LeftEye);
 
             if (_vrmEyes == null)

@@ -18,12 +18,13 @@ namespace EnhancedValheimVRM
         private volatile AvatarTcpServer _storage;
         internal AvatarTcpServer Storage => ListeningPort != 0 ? _storage : null;
 
-        internal int ListeningPort => _network != null && _network == ZNet.instance &&
-                                      _network.IsServer() && _network.IsDedicated() && Settings.EnableSharingServer &&
-                                      _serving != null && !_serving.IsCompleted &&
-                                      _listening?.Status == TaskStatus.RanToCompletion
-            ? _listening.Result
-            : 0;
+        internal int ListeningPort =>
+            _network != null && _network == ZNet.instance &&
+            _network.IsServer() && _network.IsDedicated() && Settings.EnableSharingServer &&
+            _serving != null && !_serving.IsCompleted &&
+            _listening?.Status == TaskStatus.RanToCompletion
+                ? _listening.Result
+                : 0;
 
         private Task _stopping = Task.CompletedTask;
         private float _nextCheck;
@@ -40,7 +41,8 @@ namespace EnhancedValheimVRM
                 Settings.EnableSharingServer)
                 Logger.LogOnce("sharing-player-host",
                     "Player-hosted VRM sharing is disabled: no verified TCP hole-punch path is implemented. Dedicated-server sharing remains available.");
-            if (network == null || !SharingEndpoint.ShouldHost(network.IsServer(), network.IsDedicated(),
+            if (network == null || !SharingEndpoint.ShouldHost(network.IsServer(),
+                    network.IsDedicated(),
                     Settings.EnableSharingServer))
             {
                 StopHost();
@@ -49,8 +51,10 @@ namespace EnhancedValheimVRM
 
             var policy = Settings.GetDownloadPolicy();
             if (_serving != null && !_serving.IsCompleted && _bytesPerSecond == policy.BytesPerSecond &&
-                _bundleLimit == Settings.BundleLimitBytes && _slots == policy.Slots && _network == network && _port == Settings.SharingPort &&
-                _bindAddress == Settings.SharingBindAddress && _dedicated == network.IsDedicated()) return;
+                _bundleLimit == Settings.BundleLimitBytes && _slots == policy.Slots && _network == network &&
+                _port == Settings.SharingPort &&
+                _bindAddress == Settings.SharingBindAddress && _dedicated == network.IsDedicated())
+                return;
             bool failed = _serving?.IsFaulted ?? false;
             StopHost();
             if (failed)

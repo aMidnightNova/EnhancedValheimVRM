@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using UnityEngine;
 
 namespace EnhancedValheimVRM
@@ -19,9 +19,10 @@ namespace EnhancedValheimVRM
             Override = -1
         }
 
-        private static bool Enabled(LogLevel level) => level == LogLevel.Override ||
-                                                       (Settings.LogLevel != LogLevel.None &&
-                                                        Settings.LogLevel >= level);
+        private static bool Enabled(LogLevel level) =>
+            level == LogLevel.Override ||
+            (Settings.LogLevel != LogLevel.None &&
+                Settings.LogLevel >= level);
 
         public static void Log(object message, LogLevel level = LogLevel.Override)
         {
@@ -50,9 +51,7 @@ namespace EnhancedValheimVRM
         internal static void ResetOnce()
         {
             Reported.Clear();
-            while (Order.TryDequeue(out _))
-            {
-            }
+            while (Order.TryDequeue(out _)) { }
         }
     }
 }

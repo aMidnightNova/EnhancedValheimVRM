@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using UnityEngine;
 
 namespace EnhancedValheimVRM
@@ -26,8 +26,8 @@ namespace EnhancedValheimVRM
             var scaledDistance = (Vector3.up * 0.3f) * settings.PlayerVrmScale;
             if (vrmAnimator == null) return true;
             var vrmEye = vrmAnimator.GetBoneTransform(HumanBodyBones.LeftEye)
-                         ?? vrmAnimator.GetBoneTransform(HumanBodyBones.Head)
-                         ?? vrmAnimator.GetBoneTransform(HumanBodyBones.Neck);
+                ?? vrmAnimator.GetBoneTransform(HumanBodyBones.Head)
+                ?? vrmAnimator.GetBoneTransform(HumanBodyBones.Neck);
             if (vrmEye == null) return true;
 
             __result = player.IsAttached() || player.IsSitting()

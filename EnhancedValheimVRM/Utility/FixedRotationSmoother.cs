@@ -13,7 +13,11 @@ namespace EnhancedValheimVRM
 
         public void Reset() => _ready = false;
 
-        public quaternion Sample(quaternion rotation, float3 position, float fixedTime, float renderTime, float fixedDelta)
+        public quaternion Sample(quaternion rotation,
+            float3 position,
+            float fixedTime,
+            float renderTime,
+            float fixedDelta)
         {
             bool discontinuity = !_ready || fixedDelta <= 0 || !math.isfinite(fixedDelta) ||
                 fixedTime < _sampleTime || fixedTime - _sampleTime > fixedDelta * 2.5f ||
@@ -28,6 +32,7 @@ namespace EnhancedValheimVRM
                 _ready = true;
                 return rotation;
             }
+
             if (fixedTime > _sampleTime)
             {
                 _previous = _current;
@@ -35,6 +40,7 @@ namespace EnhancedValheimVRM
                 _sampleTime = fixedTime;
                 _samplePosition = position;
             }
+
             float alpha = math.saturate((renderTime - fixedTime) / fixedDelta);
             return math.slerp(_previous, _current, alpha);
         }

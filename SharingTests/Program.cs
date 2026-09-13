@@ -99,8 +99,10 @@ internal static class Program
             Check(BundleCrypto.IsValidKey(key), "Generated key invalid");
             Check(!BundleCrypto.IsValidKey("invalid"), "Invalid key accepted");
             Check(!encrypted.SequenceEqual(TestBundle.Encrypt(packed, key, id)), "IV was reused");
-            Check(packed.SequenceEqual(BundleCrypto.Decrypt(encrypted, key, version, id)), "Encryption roundtrip failed");
-            Reject(() => BundleCrypto.Decrypt(encrypted, BundleCrypto.GenerateKey(), version, id), "Wrong key accepted");
+            Check(packed.SequenceEqual(BundleCrypto.Decrypt(encrypted, key, version, id)),
+                "Encryption roundtrip failed");
+            Reject(() => BundleCrypto.Decrypt(encrypted, BundleCrypto.GenerateKey(), version, id),
+                "Wrong key accepted");
             Reject(() => BundleCrypto.Decrypt(encrypted, key, version, id + 1), "Wrong character accepted");
             Reject(() => BundleCrypto.Decrypt(encrypted, key, profileVersion, id), "Wrong version accepted");
             foreach (int offset in new[] { 0, 32, encrypted.Length - 1 })
@@ -117,7 +119,9 @@ internal static class Program
                 Reject(() => SharingWire.ReadBytes(reader, SharingWire.MaxBundleBytes), "Oversized frame accepted");
 
             using (var stop = new CancellationTokenSource())
-            using (var server = new AvatarTcpServer(Path.Combine(root, "server"), IPAddress.Loopback, 0,
+            using (var server = new AvatarTcpServer(Path.Combine(root, "server"),
+                       IPAddress.Loopback,
+                       0,
                        new SharingDownloadPolicy(25, 4)))
             {
                 var commits = new System.Collections.Concurrent.ConcurrentQueue<BundleInfo>();
@@ -127,8 +131,10 @@ internal static class Program
                 Check(server.ReadCurrent(id) == null, "Unpublished avatar advertised");
                 var info = new BundleInfo
                 {
-                    Version = version, Hash = BundleCrypto.Hash(encrypted),
-                    ProfileVersion = profileVersion, ProfileHash = BundleCrypto.Hash(encryptedProfile)
+                    Version = version,
+                    Hash = BundleCrypto.Hash(encrypted),
+                    ProfileVersion = profileVersion,
+                    ProfileHash = BundleCrypto.Hash(encryptedProfile)
                 };
                 string uploadTicket = server.AuthorizeTransfer("owner", id, SharingWire.AvatarKind, info, true);
                 var timer = Stopwatch.StartNew();
@@ -141,11 +147,15 @@ internal static class Program
                 Check(stored.Version == version && !stored.HasProfile, "Model-only manifest lost or invented data");
                 string profileTicket = server.AuthorizeTransfer("owner", id, SharingWire.ProfileKind, info, true);
                 client.UploadBlob(id, profileTicket, encryptedProfile, default);
-                Check(commits.TryDequeue(out committed) && committed.SameAs(info), "Server did not merge the settings upload");
+                Check(commits.TryDequeue(out committed) && committed.SameAs(info),
+                    "Server did not merge the settings upload");
                 Check(server.ReadCurrent(id).SameAs(info), "Version lookup lost unchanged content");
                 string serverDirectory = Path.Combine(root, "server", id.ToString());
-                Check(Directory.GetFiles(serverDirectory).Select(Path.GetFileName).OrderBy(n => n).SequenceEqual(
-                        new[] { "current", info.Hash + ".settings.bundle", info.Hash + ".vrm.bundle" }.OrderBy(n => n)),
+                Check(Directory.GetFiles(serverDirectory)
+                        .Select(Path.GetFileName)
+                        .OrderBy(n => n)
+                        .SequenceEqual(new[] { "current", info.Hash + ".settings.bundle", info.Hash + ".vrm.bundle" }
+                            .OrderBy(n => n)),
                     "Server blob names must be <modelhash>.vrm.bundle and <modelhash>.settings.bundle");
                 byte[] storedBytes = File.ReadAllBytes(Path.Combine(serverDirectory, info.Hash + ".vrm.bundle"));
                 Check(BundleCrypto.Hash(storedBytes) == info.Hash && !storedBytes.SequenceEqual(packed),
@@ -157,17 +167,31 @@ internal static class Program
                 var info2 = info.Clone();
                 info2.ProfileVersion = BundleCrypto.Version(profile2, key);
                 info2.ProfileHash = BundleCrypto.Hash(encryptedProfile2);
-                client.UploadBlob(id, server.AuthorizeTransfer("owner", id, SharingWire.ProfileKind, info2, true), encryptedProfile2, default);
+                client.UploadBlob(id,
+                    server.AuthorizeTransfer("owner", id, SharingWire.ProfileKind, info2, true),
+                    encryptedProfile2,
+                    default);
                 Check(server.ReadCurrent(id).SameAs(info2) && Directory.GetFiles(serverDirectory).Length == 3,
                     "Settings update did not replace the settings blob in place");
-                Reject(() => server.AuthorizeTransfer("owner", id, SharingWire.ProfileKind,
-                        new BundleInfo { Version = version, Hash = "", ProfileVersion = info2.ProfileVersion, ProfileHash = info2.ProfileHash }, true),
+                Reject(() => server.AuthorizeTransfer("owner",
+                        id,
+                        SharingWire.ProfileKind,
+                        new BundleInfo
+                        {
+                            Version = version,
+                            Hash = "",
+                            ProfileVersion = info2.ProfileVersion,
+                            ProfileHash = info2.ProfileHash
+                        },
+                        true),
                     "Settings blob authorized without a model hash to name it");
 
                 string cache = Path.Combine(root, "cache");
                 string downloadTicket = server.AuthorizeTransfer("recipient", id, SharingWire.AvatarKind, info2, false);
-                string downloadProfile = server.AuthorizeTransfer("recipient", id, SharingWire.ProfileKind, info2, false);
-                AvatarBundle received = client.Receive(id, info2, key, cache, default, downloadTicket, downloadProfile, null);
+                string downloadProfile =
+                    server.AuthorizeTransfer("recipient", id, SharingWire.ProfileKind, info2, false);
+                AvatarBundle received =
+                    client.Receive(id, info2, key, cache, default, downloadTicket, downloadProfile, null);
                 Check(received.Vrm.SequenceEqual(vrm) && received.Settings == "ModelScale=1.5\nAllowShare=True",
                     "Downloaded avatar/settings differ");
                 string cachePath = Path.Combine(cache, id.ToString(), info.Hash + ".vrm.bundle");
@@ -191,11 +215,16 @@ internal static class Program
                 byte[] encryptedProfile3 = TestBundle.Encrypt(profile3, key, id);
                 info3.ProfileVersion = BundleCrypto.Version(profile3, key);
                 info3.ProfileHash = BundleCrypto.Hash(encryptedProfile3);
-                client.UploadBlob(id, server.AuthorizeTransfer("owner", id, SharingWire.ProfileKind, info3, true), encryptedProfile3, default);
+                client.UploadBlob(id,
+                    server.AuthorizeTransfer("owner", id, SharingWire.ProfileKind, info3, true),
+                    encryptedProfile3,
+                    default);
                 downloadProfile = server.AuthorizeTransfer("recipient", id, SharingWire.ProfileKind, info3, false);
-                Check(client.Receive(id, info3, key, cache, default, "", downloadProfile, null).Settings == "ModelScale=2\nAllowShare=True",
+                Check(client.Receive(id, info3, key, cache, default, "", downloadProfile, null).Settings ==
+                    "ModelScale=2\nAllowShare=True",
                     "Stale cached settings were not replaced after a settings change");
-                Check(Directory.GetFiles(Path.Combine(cache, id.ToString())).Length == 2, "Settings change grew the cache");
+                Check(Directory.GetFiles(Path.Combine(cache, id.ToString())).Length == 2,
+                    "Settings change grew the cache");
 
                 // A revoked game session cannot use a previously issued transfer ticket.
                 string revoked = server.AuthorizeTransfer("leaving", id, SharingWire.AvatarKind, info3, true);
@@ -250,18 +279,18 @@ internal static class Program
                 {
                     await serving;
                 }
-                catch (OperationCanceledException)
-                {
-                }
+                catch (OperationCanceledException) { }
 
-                using (var restarted = new AvatarTcpServer(Path.Combine(root, "server"), IPAddress.Loopback, 0,
+                using (var restarted = new AvatarTcpServer(Path.Combine(root, "server"),
+                           IPAddress.Loopback,
+                           0,
                            new SharingDownloadPolicy(25, 4)))
                     Check(restarted.ReadCurrent(id).SameAs(info3), "Server restart lost durable blob");
             }
 
             await RpcChecks.Run(root, Check);
             Console.WriteLine("PASS: " + _assertions +
-                              " sharing checks (RPC control, blob-only TCP, disconnect cleanup, encryption, cache, throttle).");
+                " sharing checks (RPC control, blob-only TCP, disconnect cleanup, encryption, cache, throttle).");
         }
         finally
         {

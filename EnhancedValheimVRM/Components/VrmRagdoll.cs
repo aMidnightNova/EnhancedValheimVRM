@@ -10,7 +10,9 @@ namespace EnhancedValheimVRM
     // avatar regardless of the pose either one is in when the corpse is created.
     internal sealed class RigOffsets
     {
-        internal readonly Dictionary<HumanBodyBones, Quaternion> Rotations = new Dictionary<HumanBodyBones, Quaternion>();
+        internal readonly Dictionary<HumanBodyBones, Quaternion> Rotations =
+            new Dictionary<HumanBodyBones, Quaternion>();
+
         internal Vector3 HipOffset;
         internal bool HasHips;
 
@@ -75,7 +77,8 @@ namespace EnhancedValheimVRM
             _bones = bones.OrderBy(bone => Depth(bone.Target)).ToList();
             avatar.enabled = false;
             // Bones move far from the model root while the corpse settles; keep the mesh rendered.
-            foreach (var renderer in GetComponentsInChildren<SkinnedMeshRenderer>(true)) renderer.updateWhenOffscreen = true;
+            foreach (var renderer in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                renderer.updateWhenOffscreen = true;
             return true;
         }
 
