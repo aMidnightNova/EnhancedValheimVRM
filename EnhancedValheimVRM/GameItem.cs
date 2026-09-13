@@ -313,7 +313,7 @@ namespace EnhancedValheimVRM
             var left = BoneLookup.Find(attachment, HumanBodyBones.LeftHand);
             var right = BoneLookup.Find(attachment, HumanBodyBones.RightHand);
             if (left == null && right == null) return false;
-            // Two-handed item type alone is insufficient: bows and ordinary greatswords
+            // Two-handed item type alone is not enough: bows and ordinary greatswords
             // follow one socket. Only a mesh skinned to its OWN hand rig needs retargeting.
             return (left != null && left.GetComponentInChildren<MeshRenderer>(true) != null) ||
                 (right != null && right.GetComponentInChildren<MeshRenderer>(true) != null) ||

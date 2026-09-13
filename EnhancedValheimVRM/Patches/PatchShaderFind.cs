@@ -59,7 +59,7 @@ namespace EnhancedValheimVRM
 
                 if (_bundle == null)
                 {
-                    Logger.LogWarning("VRM shader bundle could not be loaded.");
+                    Logger.LogError("VRM shader bundle could not be loaded.");
                     return;
                 }
 
@@ -89,7 +89,7 @@ namespace EnhancedValheimVRM
                 _bundle = _bundleRequest.assetBundle;
                 if (_bundle == null)
                 {
-                    Logger.LogWarning("VRM shader bundle could not be loaded.");
+                    Logger.LogError("VRM shader bundle could not be loaded.");
                     yield break;
                 }
 

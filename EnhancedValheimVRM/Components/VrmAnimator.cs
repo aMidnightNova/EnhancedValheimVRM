@@ -100,6 +100,12 @@ namespace EnhancedValheimVRM
         private Transform _vrmRightHandTransform;
         private Transform _playerLeftHandTransform;
         private Transform _playerRightHandTransform;
+        private Transform _playerHips;
+        private Transform _vrmHips;
+        private Transform _playerLeftKnee;
+        private Transform _playerRightKnee;
+        private Transform _vrmLeftKnee;
+        private Transform _vrmRightKnee;
 
         private Player _player;
         private VrmInstance _vrmInstance;
@@ -113,6 +119,7 @@ namespace EnhancedValheimVRM
 
         private HumanPose _humanPose = new HumanPose();
         private HumanPoseHandler _playerPoseHandler, _vrmPoseHandler;
+        private static readonly int SittingTag = ZSyncAnimation.GetHash("sitting");
 
         private VisEquipment _visEquipment;
         private readonly FixedRotationSmoother _turnSmoothing = new FixedRotationSmoother();
@@ -149,6 +156,12 @@ namespace EnhancedValheimVRM
 
             _playerLeftHandTransform = _playerAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
             _playerRightHandTransform = _playerAnimator.GetBoneTransform(HumanBodyBones.RightHand);
+            _playerHips = BoneLookup.Get(_playerAnimator, HumanBodyBones.Hips);
+            _vrmHips = BoneLookup.Get(_vrmGoAnimator, HumanBodyBones.Hips);
+            _playerLeftKnee = BoneLookup.Get(_playerAnimator, HumanBodyBones.LeftLowerLeg);
+            _playerRightKnee = BoneLookup.Get(_playerAnimator, HumanBodyBones.RightLowerLeg);
+            _vrmLeftKnee = BoneLookup.Get(_vrmGoAnimator, HumanBodyBones.LeftLowerLeg);
+            _vrmRightKnee = BoneLookup.Get(_vrmGoAnimator, HumanBodyBones.RightLowerLeg);
 
             if (_player.TryGetField<Player, VisEquipment>("m_visEquipment", out var visEquipment))
                 _visEquipment = visEquipment;
@@ -311,6 +324,7 @@ namespace EnhancedValheimVRM
             _vrmPoseHandler.SetHumanPose(ref _humanPose);
             // Both rigs now show the same pose: record the per-bone offsets the corpse will need.
             if (Offsets == null) Offsets = RigOffsets.Capture(_playerAnimator, _vrmGoAnimator);
+            UpdateSeatedPosition();
             if (_vrmInstance != null && !_vrmInstance.DeathSeen && _player != null && _player.IsDead())
             {
                 _vrmInstance.DeathSeen = true;
@@ -379,6 +393,47 @@ namespace EnhancedValheimVRM
                     offset);
                 _rightHandItemInstanceTransform.SetPositionAndRotation(AttachmentTransforms.Vector(position), rotation);
             }
+        }
+
+        private void UpdateSeatedPosition()
+        {
+            // ground sit is an emote, skip it
+            if (_player == null || _vrmInstance == null || _playerHips == null || _vrmHips == null ||
+                _player.InEmote() || _player.InBed() || _player.IsDead())
+                return;
+
+            // IsSitting is false during the blend in, catch that too
+            if (!_player.IsSitting() && !(_playerAnimator.IsInTransition(0) &&
+                    _playerAnimator.GetNextAnimatorStateInfo(0).tagHash == SittingTag))
+                return;
+
+            // works in the seats axes so ships and turned chairs are fine. SetHumanPose resets the
+            // hips every frame before this so it cant stack
+            var vanillaHips = AttachmentTransforms.Vector(_playerHips.position);
+            var avatarHips = AttachmentTransforms.Vector(_vrmHips.position);
+            // no knees, fall back to hips
+            var vanillaKnees = vanillaHips;
+            var avatarKnees = avatarHips;
+            if (_playerLeftKnee != null && _playerRightKnee != null && _vrmLeftKnee != null && _vrmRightKnee != null)
+            {
+                vanillaKnees = (AttachmentTransforms.Vector(_playerLeftKnee.position) +
+                    AttachmentTransforms.Vector(_playerRightKnee.position)) * 0.5f;
+                avatarKnees = (AttachmentTransforms.Vector(_vrmLeftKnee.position) +
+                    AttachmentTransforms.Vector(_vrmRightKnee.position)) * 0.5f;
+            }
+
+            var correction = AttachmentMath.SeatedProportionCorrection(vanillaHips,
+                avatarHips,
+                vanillaKnees,
+                avatarKnees,
+                AttachmentTransforms.Vector(_player.transform.position),
+                AttachmentTransforms.Rotation(_player.transform.rotation),
+                AttachmentTransforms.Vector(_vrmInstance.SeatProportions),
+                _vrmSettings.PlayerVrmScale > 1);
+            _vrmHips.position = AttachmentTransforms.Vector(AttachmentMath.PlaceBone(
+                AttachmentTransforms.Vector(_vrmHips.position) + correction,
+                AttachmentTransforms.Rotation(_player.transform.rotation),
+                AttachmentTransforms.Vector(_vrmSettings.SittingOnChairOffset) * _vrmSettings.PlayerVrmScale));
         }
 
         private void UpdateVisualRotation()

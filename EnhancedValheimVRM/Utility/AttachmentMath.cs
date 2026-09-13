@@ -72,6 +72,51 @@ namespace EnhancedValheimVRM
             return handPosition + math.rotate(boneRotation, offset);
         }
 
+        public static float3 SeatedHipCorrection(float3 vanillaHips, float3 avatarHips, quaternion seatRotation)
+        {
+            var delta = math.rotate(math.inverse(seatRotation), vanillaHips - avatarHips);
+            delta.x = 0; // dont touch side to side
+            return math.rotate(seatRotation, delta);
+        }
+
+        // in: x ground to hip, y hip bone to bottom of thigh mesh, z shin bone to back of calf mesh
+        // out: x 1 = measured (0 = hips only), y thigh depth diff, z calf thickness diff
+        // dont use leg length for height, unity already scales the hips by it when retargeting
+        public static float3 GetSeatProportions(float3 vanilla, float3 avatar)
+        {
+            if (!math.all(math.isfinite(vanilla)) || !math.all(math.isfinite(avatar)) ||
+                math.any(vanilla <= 0) || math.any(avatar <= 0))
+                return float3.zero;
+            return new float3(1, avatar.y - vanilla.y, avatar.z - vanilla.z);
+        }
+
+        public static float3 SeatedProportionCorrection(float3 vanillaHips,
+            float3 avatarHips,
+            float3 vanillaKnees,
+            float3 avatarKnees,
+            float3 seatOrigin,
+            quaternion seatRotation,
+            float3 proportions,
+            bool forwardOnly)
+        {
+            if (proportions.x <= 0) return SeatedHipCorrection(vanillaHips, avatarHips, seatRotation);
+            var inverse = math.inverse(seatRotation);
+            var vanillaSeated = math.rotate(inverse, vanillaHips - seatOrigin);
+            var avatarSeated = math.rotate(inverse, avatarHips - seatOrigin);
+            var vanillaKneeSeated = math.rotate(inverse, vanillaKnees - seatOrigin);
+            var avatarKneeSeated = math.rotate(inverse, avatarKnees - seatOrigin);
+            var delta = vanillaSeated - avatarSeated;
+            // bottom of the vrm thigh goes where the game models thigh bottom is
+            delta.y += proportions.y;
+            // knees line up so the back of the calf lands on the seat edge, thicker calf moves forward
+            delta.z = vanillaKneeSeated.z - avatarKneeSeated.z + proportions.z;
+            // taller avatars do not move back
+            if (forwardOnly) delta.z = math.max(0, delta.z);
+            delta.x = 0;
+            return math.rotate(seatRotation, delta);
+        }
+
+
         private static bool Finite(float4x4 matrix)
         {
             return math.all(math.isfinite(matrix.c0)) && math.all(math.isfinite(matrix.c1)) &&

@@ -44,6 +44,9 @@ namespace EnhancedValheimVRM
         public bool IsReady => _state == State.Staged || _state == State.Displayed || _state == State.Corpse;
         internal bool IsDisplayed => _state == State.Displayed || _state == State.Corpse;
 
+        // measured once on load. x 1 = measured (0 = hips only), y thigh depth diff, z calf thickness diff
+        internal Vector3 SeatProportions { get; private set; }
+
         internal void ShowModel()
         {
             _state = State.Displayed;
@@ -414,6 +417,25 @@ namespace EnhancedValheimVRM
                 _settings.VrmRadius = vrmWidth * 0.55f; // Half shoulder width plus 10% clearance.
 
                 _settings.PlayerVrmScale = vrmHeight / playerHeight;
+
+                // ModelScale is already in these
+                SeatProportions = Vector3.zero;
+                var vanillaModel = _player.GetField<Player, Animator>("m_animator").gameObject;
+                var hasVanillaSupport = Utils.TryGetSeatSupport(vanillaModel, out var vanillaSupport);
+                var hasAvatarSupport = Utils.TryGetSeatSupport(_vrmGo, out var avatarSupport);
+                if (hasVanillaSupport && hasAvatarSupport)
+                {
+                    SeatProportions = AttachmentTransforms.Vector(AttachmentMath.GetSeatProportions(
+                        AttachmentTransforms.Vector(vanillaSupport),
+                        AttachmentTransforms.Vector(avatarSupport)));
+                }
+
+                if (Settings.LogLoadTiming)
+                {
+                    Logger.Log("Seat measurements (ground-to-hip, hip-to-thigh underside, lower leg thickness): game=" +
+                        (hasVanillaSupport ? vanillaSupport.ToString("F3") : "unavailable") + "; VRM=" +
+                        (hasAvatarSupport ? avatarSupport.ToString("F3") : "unavailable"));
+                }
             }
 
             _state = State.Staged;

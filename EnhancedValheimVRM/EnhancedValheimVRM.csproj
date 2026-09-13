@@ -7,7 +7,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{56266ABF-B3F1-44F5-8790-D269FE536067}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>EnhancedValheimVRM</RootNamespace>
     <AssemblyName>EnhancedValheimVRM</AssemblyName>
@@ -19,8 +19,14 @@
   <!-- Match the neighboring ValheimVRM development installation; explicit overrides take precedence. -->
   <PropertyGroup>
     <VALHEIM_INSTALL Condition="'$(VALHEIM_INSTALL)' == '' and '$(OS)' != 'Windows_NT'">$(HOME)/.local/share/Steam/steamapps/common/Valheim</VALHEIM_INSTALL>
+    <UNIVRM_UNITY_LIBS Condition="'$(UNIVRM_UNITY_LIBS)' == '' and Exists('$(MSBuildProjectDirectory)/../../ValheimLibs/valheim_Data/Managed/VRM.dll')">$(MSBuildProjectDirectory)/../../ValheimLibs/valheim_Data</UNIVRM_UNITY_LIBS>
     <UNIVRM_UNITY_LIBS Condition="'$(UNIVRM_UNITY_LIBS)' == ''">$(VALHEIM_INSTALL)/valheim_Data</UNIVRM_UNITY_LIBS>
+    <!-- BepInEx: the r2modman profile first, then the game dir -->
+    <R2_PROFILE Condition="'$(R2_PROFILE)' == ''">meow</R2_PROFILE>
+    <BEPINEX_DIR Condition="'$(BEPINEX_DIR)' == '' and Exists('$(HOME)/.config/r2modmanPlus-local/Valheim/profiles/$(R2_PROFILE)/BepInEx/core/BepInEx.dll')">$(HOME)/.config/r2modmanPlus-local/Valheim/profiles/$(R2_PROFILE)/BepInEx</BEPINEX_DIR>
+    <BEPINEX_DIR Condition="'$(BEPINEX_DIR)' == ''">$(VALHEIM_INSTALL)/BepInEx</BEPINEX_DIR>
     <EnhancedProjectRoot>$(MSBuildProjectDirectory)/..</EnhancedProjectRoot>
+    <ThunderstoreNamespace>Rawrtastic</ThunderstoreNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -38,6 +44,17 @@
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <!-- r2modman testing: debug build that drops straight into the profiles mod folder -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'R2ModMan|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\R2ModMan\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -66,6 +83,7 @@
     <Compile Include="Components\AttachmentReference.cs"/>
     <Compile Include="Components\EquipmentTransformReference.cs"/>
     <Compile Include="Utility\AttachmentMath.cs"/>
+    <Compile Include="Utility\SeatSupportMeasurement.cs"/>
     <Compile Include="Utility\FixedRotationSmoother.cs"/>
     <Compile Include="ExtensionMethods\VisEquipmentExtensions.cs"/>
     <Compile Include="Constants.cs"/>
@@ -146,7 +164,7 @@
 
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>$(VALHEIM_INSTALL)\BepInEx\core\0Harmony.dll</HintPath>
+      <HintPath>$(BEPINEX_DIR)\core\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="assembly_utils">
       <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\assembly_utils.dll</HintPath>
@@ -163,7 +181,7 @@
 
 
     <Reference Include="BepInEx">
-      <HintPath>$(VALHEIM_INSTALL)\BepInEx\core\BepInEx.dll</HintPath>
+      <HintPath>$(BEPINEX_DIR)\core\BepInEx.dll</HintPath>
     </Reference>
 
 
@@ -261,17 +279,34 @@
   <Target Name="ValidateGamePaths" BeforeTargets="ResolveReferences">
     <Error Condition="!Exists('$(VALHEIM_INSTALL)/valheim_Data/Managed/assembly_valheim.dll')"
            Text="VALHEIM_INSTALL must point to the Valheim installation used for this build."/>
-    <Error Condition="!Exists('$(VALHEIM_INSTALL)/BepInEx/core/BepInEx.dll')"
-           Text="BepInEx was not found under VALHEIM_INSTALL/BepInEx/core."/>
+    <Error Condition="!Exists('$(BEPINEX_DIR)/core/BepInEx.dll')"
+           Text="BepInEx was not found under BEPINEX_DIR/core (default VALHEIM_INSTALL/BepInEx)."/>
     <Error Condition="!Exists('$(UNIVRM_UNITY_LIBS)/Managed/VRM.dll')"
            Text="UNIVRM_UNITY_LIBS must point to the data directory containing Managed/VRM.dll."/>
   </Target>
 
-  <!-- Linux uses dependencies already installed in valheim_Data/Managed. -->
-  <Target Name="DeployLinuxBuild" AfterTargets="Build"
-          Condition="'$(OS)' != 'Windows_NT' and '$(DeployToGame)' != 'false'">
+
+  <!-- R2ModMan config: overwrite the files inside the profiles mod folder.
+       import the thunderstore zip once so r2modman knows the mod,
+       after that this keeps the dll and shaders current. -->
+  <Target Name="DeployR2ModMan" AfterTargets="Build" Condition="'$(Configuration)' == 'R2ModMan'">
     <PropertyGroup>
-      <BepInExPluginPath Condition="'$(BepInExPluginPath)' == ''">$(VALHEIM_INSTALL)/BepInEx/plugins</BepInExPluginPath>
+      <R2ModFolder>$(BEPINEX_DIR)/plugins/$(ThunderstoreNamespace)-EnhancedValheimVRM</R2ModFolder>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(R2ModFolder)')"
+           Text="$(R2ModFolder) does not exist. import the thunderstore zip into the $(R2_PROFILE) profile first."/>
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(R2ModFolder)"/>
+    <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(R2ModFolder)"
+          Condition="Exists('$(TargetDir)$(TargetName).pdb')"/>
+    <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/UniVRM.shaders" DestinationFiles="$(R2ModFolder)/UniVrm.shaders"/>
+    <Copy SourceFiles="$(EnhancedProjectRoot)/shaders/OldUniVrm.shaders" DestinationFolder="$(R2ModFolder)"/>
+    <Message Importance="high" Text="Deployed to $(R2ModFolder)"/>
+  </Target>
+
+  <Target Name="DeployLinuxBuild" AfterTargets="Build"
+          Condition="'$(OS)' != 'Windows_NT' and '$(DeployToGame)' != 'false' and '$(Configuration)' != 'R2ModMan'">
+    <PropertyGroup>
+      <BepInExPluginPath Condition="'$(BepInExPluginPath)' == ''">$(BEPINEX_DIR)/plugins</BepInExPluginPath>
       <EnhancedVrmDataPath Condition="'$(EnhancedVrmDataPath)' == ''">$(VALHEIM_INSTALL)/EnhancedValheimVRM</EnhancedVrmDataPath>
     </PropertyGroup>
     <MakeDir Directories="$(BepInExPluginPath);$(EnhancedVrmDataPath)/shaders"/>
@@ -322,10 +357,10 @@
   <Target Name="PackageThunderstoreRelease" Condition="'$(Configuration)' == 'Release'">
     <PropertyGroup>
       <ThunderstorePackageRoot Condition="'$(OS)' != 'Windows_NT'">$(EnhancedProjectRoot)/artifacts/thunderstore-package</ThunderstorePackageRoot>
-      <ThunderstoreArchive Condition="'$(OS)' != 'Windows_NT'">$(EnhancedProjectRoot)/artifacts/EnhancedValheimVRM-$(Version)-Thunderstore.zip</ThunderstoreArchive>
+      <ThunderstoreArchive Condition="'$(OS)' != 'Windows_NT'">$(EnhancedProjectRoot)/artifacts/$(ThunderstoreNamespace)-EnhancedValheimVRM-$(Version).zip</ThunderstoreArchive>
       <ThunderstoreReleasePath Condition="'$(OS)' != 'Windows_NT'">$(EnhancedProjectRoot)/artifacts/release-package/release/</ThunderstoreReleasePath>
       <ThunderstorePackageRoot Condition="'$(OS)' == 'Windows_NT'">$(SolutionDir)packaged\thunderstore-package</ThunderstorePackageRoot>
-      <ThunderstoreArchive Condition="'$(OS)' == 'Windows_NT'">$(SolutionDir)packaged\EnhancedValheimVRM-$(Version)-Thunderstore.zip</ThunderstoreArchive>
+      <ThunderstoreArchive Condition="'$(OS)' == 'Windows_NT'">$(SolutionDir)packaged\$(ThunderstoreNamespace)-EnhancedValheimVRM-$(Version).zip</ThunderstoreArchive>
       <ThunderstoreReleasePath Condition="'$(OS)' == 'Windows_NT'">$(SolutionDir)release\</ThunderstoreReleasePath>
       <ThunderstoreManifest>{
         &quot;name&quot;: &quot;EnhancedValheimVRM&quot;,
@@ -356,10 +391,10 @@
   </Target>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent"
-          Condition="'$(OS)' == 'Windows_NT' and '$(DeployToGame)' != 'false'">
+          Condition="'$(OS)' == 'Windows_NT' and '$(DeployToGame)' != 'false' and '$(Configuration)' != 'R2ModMan'">
     <!-- Set Paths -->
     <PropertyGroup>
-      <BepInExPluginPath>$(VALHEIM_INSTALL)\BepInEx\plugins\</BepInExPluginPath>
+      <BepInExPluginPath>$(BEPINEX_DIR)\plugins\</BepInExPluginPath>
       <ManagedPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\</ManagedPath>
       <ValheimInstallPath>$(VALHEIM_INSTALL)\</ValheimInstallPath>
       <UniVrmLibsPathManaged>$(UNIVRM_UNITY_LIBS)\Managed</UniVrmLibsPathManaged>

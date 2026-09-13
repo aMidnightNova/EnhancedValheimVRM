@@ -1,8 +1,14 @@
+# positions are meters and scale with your avatar, rotations are degrees.
+# xyz isnt the same direction everywhere, check the note above each one.
+
 # VRM model scale
 ModelScale=1.0
 
-# Generic equipment adjustments in socket-local metres / Euler degrees.
-# Positions scale with avatar height; original prefab grip rotations are preserved.
+# chair sitting offset. x = right, y = up, z = forward
+SittingOnChairOffset=<0, 0, 0>
+
+# weapon and tool nudges. Pos goes along that slots own axes, not right/up/forward,
+# so try small numbers to see which way it moves. Rot spins the item.
 RightHandItemPos=<0, 0, 0>
 RightHandItemRot=<0, 0, 0>
 LeftHandItemPos=<0, 0, 0>
