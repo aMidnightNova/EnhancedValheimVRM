@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using UnityEngine;
 
 namespace EnhancedValheimVRM
@@ -6,7 +6,6 @@ namespace EnhancedValheimVRM
     [HarmonyPatch(typeof(Player), "OnDeath")]
     internal static class PatchPlayerOnDeath
     {
- 
         private static void Postfix(Player __instance)
         {
             var vrmInstance = __instance.GetVrmInstance();
@@ -15,11 +14,8 @@ namespace EnhancedValheimVRM
 
             if (settings.FixCameraHeight)
             {
-                
                 Object.Destroy(__instance.GetComponent<VrmEyeAnimator>());
             }
-            
-            
         }
     }
 }

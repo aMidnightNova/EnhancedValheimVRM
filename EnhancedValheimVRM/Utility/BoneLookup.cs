@@ -6,7 +6,6 @@ namespace EnhancedValheimVRM
 {
     internal static class BoneLookup
     {
-
         public static Transform Get(Animator animator, HumanBodyBones bone)
         {
             if (animator == null) return null;
@@ -15,6 +14,7 @@ namespace EnhancedValheimVRM
                 var mapped = animator.GetBoneTransform(bone);
                 if (mapped != null) return mapped;
             }
+
             return Find(animator.transform, bone);
         }
 
@@ -22,7 +22,8 @@ namespace EnhancedValheimVRM
         {
             if (root == null) return null;
             foreach (var transform in root.GetComponentsInChildren<Transform>(true))
-                if (BoneNames.Matches(bone.ToString(), transform.name)) return transform;
+                if (BoneNames.Matches(bone.ToString(), transform.name))
+                    return transform;
             return null;
         }
     }

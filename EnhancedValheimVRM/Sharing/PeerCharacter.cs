@@ -7,10 +7,12 @@ namespace EnhancedValheimVRM
         // reads it. ZNetPeer.m_playerID is not populated by the current game client.
         internal static long GetId(ZNetPeer peer)
         {
-            if (peer == null || !peer.IsReady() || peer.m_characterID == ZDOID.None || ZDOMan.instance == null) return 0;
+            if (peer == null || !peer.IsReady() || peer.m_characterID == ZDOID.None || ZDOMan.instance == null)
+                return 0;
             var character = ZDOMan.instance.GetZDO(peer.m_characterID);
             return character != null && character.GetOwner() == peer.m_uid
-                ? character.GetLong(ZDOVars.s_playerID, 0L) : 0;
+                ? character.GetLong(ZDOVars.s_playerID, 0L)
+                : 0;
         }
     }
 }

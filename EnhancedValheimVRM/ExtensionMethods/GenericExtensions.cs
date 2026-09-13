@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 using HarmonyLib;
 
@@ -36,11 +36,11 @@ namespace EnhancedValheimVRM
 
         public static object InvokePrivateMethod(this object instance, string methodName, params object[] parameters)
         {
-            if (instance == null)
-                throw new ArgumentNullException(nameof(instance));
+            if (instance == null) throw new ArgumentNullException(nameof(instance));
 
-            var method = instance.GetType().GetMethod(methodName,
-                BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            var method = instance.GetType()
+                .GetMethod(methodName,
+                    BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
             if (method == null)
                 throw new ArgumentException($"Method '{methodName}' not found in type '{instance.GetType().FullName}'");
 

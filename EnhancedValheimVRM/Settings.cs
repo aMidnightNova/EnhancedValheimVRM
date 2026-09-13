@@ -39,11 +39,17 @@ namespace EnhancedValheimVRM
 
         public static void Init(ConfigFile config)
         {
-            _showSocketGizmos = config.Bind("Diagnostics", "ShowSocketGizmos", false,
+            _showSocketGizmos = config.Bind("Diagnostics",
+                "ShowSocketGizmos",
+                false,
                 "Show labeled attachment sockets for testing.");
-            _logLoadTiming = config.Bind("Diagnostics", "LogLoadTiming", false,
+            _logLoadTiming = config.Bind("Diagnostics",
+                "LogLoadTiming",
+                false,
                 "Log each avatar loading stage and its duration, without keys or transfer tickets.");
-            _smoothAvatarTurning = config.Bind("Animation", "SmoothAvatarTurning", true,
+            _smoothAvatarTurning = config.Bind("Animation",
+                "SmoothAvatarTurning",
+                true,
                 "Interpolate VRM visual rotation between physics ticks. Adds up to one physics tick of visual delay; does not change player movement or combat.");
 
 
@@ -87,30 +93,49 @@ namespace EnhancedValheimVRM
                 Logger.LogLevel.Info,
                 "Level of log output.");
 
-            _sharingHost = config.Bind("Sharing", "ServerHost", string.Empty,
+            _sharingHost = config.Bind("Sharing",
+                "ServerHost",
+                string.Empty,
                 "Optional TCP hostname override. Empty uses the connected Valheim server address. Relay-only connections require a reachable hostname.");
-            _enableSharingServer = config.Bind("Sharing", "EnableServer", true,
+            _enableSharingServer = config.Bind("Sharing",
+                "EnableServer",
+                true,
                 "Automatically host the embedded TCP service on dedicated servers. Player-hosted sharing is disabled until a direct NAT traversal path can be verified.");
-            _sharingBindAddress = config.Bind("Sharing", "BindAddress", "0.0.0.0",
+            _sharingBindAddress = config.Bind("Sharing",
+                "BindAddress",
+                "0.0.0.0",
                 "IP address on which the embedded server listens. 0.0.0.0 listens on all IPv4 interfaces.");
-            _sharingPort = config.Bind("Sharing", "ServerPort", 6067,
+            _sharingPort = config.Bind("Sharing",
+                "ServerPort",
+                6067,
                 new ConfigDescription(
                     "Server-only TCP listen port. Clients ignore this local setting and receive the port from the game server over RPC.",
                     new AcceptableValueRange<int>(1, 65535)));
-            _bundleLimitMiB = config.Bind("Sharing", "MaxBundleMiB", 384,
-                new ConfigDescription("Server-only maximum encrypted ZIP size in MiB (1048576 bytes). Announced to clients over RPC. Expanded VRM has a separate 1023 MiB bound.",
+            _bundleLimitMiB = config.Bind("Sharing",
+                "MaxBundleMiB",
+                384,
+                new ConfigDescription(
+                    "Server-only maximum encrypted ZIP size in MiB (1048576 bytes). Announced to clients over RPC. Expanded VRM has a separate 1023 MiB bound.",
                     new AcceptableValueRange<int>(1, 1024)));
-            _uploadMbps = config.Bind("Sharing", "UploadMbps", 6,
+            _uploadMbps = config.Bind("Sharing",
+                "UploadMbps",
+                6,
                 new ConfigDescription("Maximum Mbps when uploading your avatar. Mbps means megabits per second.",
                     new AcceptableValueRange<int>(1, 10000)));
 
-            _dedicatedDownloadMbps = config.Bind("Sharing", "DedicatedDownloadMbps", 25,
+            _dedicatedDownloadMbps = config.Bind("Sharing",
+                "DedicatedDownloadMbps",
+                25,
                 new ConfigDescription("Maximum Mbps for EACH download served by a dedicated server.",
                     new AcceptableValueRange<int>(1, 10000)));
-            _dedicatedDownloadSlots = config.Bind("Sharing", "DedicatedDownloadSlots", 4,
+            _dedicatedDownloadSlots = config.Bind("Sharing",
+                "DedicatedDownloadSlots",
+                4,
                 new ConfigDescription("Simultaneous downloads served by a dedicated server.",
                     new AcceptableValueRange<int>(1, 32)));
-            _vrmKey = config.Bind("Security", "VrmKey", string.Empty,
+            _vrmKey = config.Bind("Security",
+                "VrmKey",
+                string.Empty,
                 "Automatically generated sharing key used by all your characters. Keep private. Clearing it rotates the key on restart.");
             if (!Sharing.BundleCrypto.IsValidKey(_vrmKey.Value))
             {

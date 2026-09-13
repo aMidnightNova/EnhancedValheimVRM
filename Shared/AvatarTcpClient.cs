@@ -8,7 +8,12 @@ namespace EnhancedValheimVRM.Sharing
 {
     public sealed class AvatarTcpClient
     {
-        public int BundleLimitBytes { get; set; } = SharingWire.DefaultBundleLimitBytes;
+        public int BundleLimitBytes
+        {
+            get;
+            set;
+        } = SharingWire.DefaultBundleLimitBytes;
+
         private readonly string _host;
         private readonly int _port;
         private readonly int _uploadBytesPerSecond;
@@ -27,7 +32,8 @@ namespace EnhancedValheimVRM.Sharing
             try
             {
                 var connecting = client.ConnectAsync(_host, _port);
-                if (!connecting.Wait(10000, cancellation)) throw new TimeoutException("TCP server connection timed out.");
+                if (!connecting.Wait(10000, cancellation))
+                    throw new TimeoutException("TCP server connection timed out.");
                 connecting.GetAwaiter().GetResult();
                 return client;
             }
@@ -51,7 +57,9 @@ namespace EnhancedValheimVRM.Sharing
         // TCP contains only transfer framing and encrypted blob bytes.
         public void UploadBlob(long id, string ticket, byte[] encrypted, CancellationToken cancellation)
         {
-            if (encrypted.Length > BundleLimitBytes) throw new InvalidDataException("Encrypted ZIP exceeds the server bundle limit (" + BundleLimitBytes / 1048576 + " MiB).");
+            if (encrypted.Length > BundleLimitBytes)
+                throw new InvalidDataException("Encrypted ZIP exceeds the server bundle limit (" +
+                    BundleLimitBytes / 1048576 + " MiB).");
             using (var client = Connect(cancellation))
             using (cancellation.Register(() => Task.Run(() => client.Close())))
             using (var stream = client.GetStream())
@@ -89,8 +97,14 @@ namespace EnhancedValheimVRM.Sharing
         }
 
         // Loads one encrypted blob from the local cache or the server and returns its plaintext ZIP.
-        private byte[] LoadBlob(long id, string kind, BundleInfo info, string key, string directory,
-            string ticket, CancellationToken cancellation, Action<string> timing)
+        private byte[] LoadBlob(long id,
+            string kind,
+            BundleInfo info,
+            string key,
+            string directory,
+            string ticket,
+            CancellationToken cancellation,
+            Action<string> timing)
         {
             string hash = info.HashOf(kind), version = info.VersionOf(kind);
             string path = Path.Combine(directory, SharingWire.BlobFileName(kind, info.Hash));
@@ -100,7 +114,8 @@ namespace EnhancedValheimVRM.Sharing
             timing?.Invoke(label + ": " + (fromCache ? "loading from local cache" : "downloading from server"));
             byte[] encrypted = fromCache ? File.ReadAllBytes(path) : Download(id, hash, ticket, cancellation);
             double readMs = clock?.Elapsed.TotalMilliseconds ?? 0;
-            timing?.Invoke(label + ": received " + (encrypted.Length / 1048576.0).ToString("F1") + " MB in " + readMs.ToString("F0") + "ms");
+            timing?.Invoke(label + ": received " + (encrypted.Length / 1048576.0).ToString("F1") + " MB in " +
+                readMs.ToString("F0") + "ms");
             cancellation.ThrowIfCancellationRequested();
             byte[] plaintext;
             try
@@ -109,7 +124,7 @@ namespace EnhancedValheimVRM.Sharing
             }
             catch (Exception error) when (fromCache &&
                                           (error is System.Security.Cryptography.CryptographicException ||
-                                           error is InvalidDataException))
+                                              error is InvalidDataException))
             {
                 // Authentication checks cache integrity, its announced version and its character.
                 timing?.Invoke(label + ": local copy was invalid; downloading again");
@@ -123,7 +138,8 @@ namespace EnhancedValheimVRM.Sharing
                 double cacheStart = clock?.Elapsed.TotalMilliseconds ?? 0;
                 Directory.CreateDirectory(directory);
                 AtomicWrite(path, encrypted);
-                timing?.Invoke(label + ": saved to local cache in " + (clock.Elapsed.TotalMilliseconds - cacheStart).ToString("F0") + "ms");
+                timing?.Invoke(label + ": saved to local cache in " +
+                    (clock.Elapsed.TotalMilliseconds - cacheStart).ToString("F0") + "ms");
             }
 
             return plaintext;
@@ -133,19 +149,35 @@ namespace EnhancedValheimVRM.Sharing
         // import cache when its version is unchanged, so a settings edit costs only the small blob.
         // modelAlreadyImported receives the settings text and may answer true when the viewer already
         // has this model version imported; the model blob is then skipped and Vrm stays null.
-        public AvatarBundle Receive(long id, BundleInfo info, string key, string cacheDirectory,
-            CancellationToken cancellation, string avatarTicket, string profileTicket, Action<string> timing,
+        public AvatarBundle Receive(long id,
+            BundleInfo info,
+            string key,
+            string cacheDirectory,
+            CancellationToken cancellation,
+            string avatarTicket,
+            string profileTicket,
+            Action<string> timing,
             Func<string, bool> modelAlreadyImported = null)
         {
             info.Validate();
             string directory = Path.Combine(cacheDirectory,
                 id.ToString(System.Globalization.CultureInfo.InvariantCulture));
             var clock = timing == null ? null : System.Diagnostics.Stopwatch.StartNew();
-            var bundle = new AvatarBundle { CharacterId = id, VerifiedVersion = info.Version, ProfileVersion = info.ProfileVersion };
+            var bundle = new AvatarBundle
+            {
+                CharacterId = id, VerifiedVersion = info.Version, ProfileVersion = info.ProfileVersion
+            };
             byte[] plaintext = null;
             try
             {
-                plaintext = LoadBlob(id, SharingWire.ProfileKind, info, key, directory, profileTicket, cancellation, timing);
+                plaintext = LoadBlob(id,
+                    SharingWire.ProfileKind,
+                    info,
+                    key,
+                    directory,
+                    profileTicket,
+                    cancellation,
+                    timing);
                 BundleCrypto.UnpackProfile(plaintext, out bundle.Settings, out bundle.Outfits);
                 BundleCrypto.ClearBytes(ref plaintext);
                 double profileMs = clock?.Elapsed.TotalMilliseconds ?? 0;
@@ -156,11 +188,20 @@ namespace EnhancedValheimVRM.Sharing
                     return bundle;
                 }
 
-                plaintext = LoadBlob(id, SharingWire.AvatarKind, info, key, directory, avatarTicket, cancellation, timing);
+                plaintext = LoadBlob(id,
+                    SharingWire.AvatarKind,
+                    info,
+                    key,
+                    directory,
+                    avatarTicket,
+                    cancellation,
+                    timing);
                 bundle.Vrm = BundleCrypto.UnpackAvatar(plaintext);
                 BundleCrypto.ClearBytes(ref plaintext);
                 timing?.Invoke(string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                    "load: settings={0:F0}ms, model={1:F0}ms", profileMs, (clock?.Elapsed.TotalMilliseconds ?? 0) - profileMs));
+                    "load: settings={0:F0}ms, model={1:F0}ms",
+                    profileMs,
+                    (clock?.Elapsed.TotalMilliseconds ?? 0) - profileMs));
                 return bundle;
             }
             catch
@@ -180,8 +221,10 @@ namespace EnhancedValheimVRM.Sharing
             try
             {
                 File.WriteAllBytes(temporary, bytes);
-                if (File.Exists(path)) File.Replace(temporary, path, null);
-                else File.Move(temporary, path);
+                if (File.Exists(path))
+                    File.Replace(temporary, path, null);
+                else
+                    File.Move(temporary, path);
             }
             finally
             {

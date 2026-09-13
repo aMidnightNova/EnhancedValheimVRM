@@ -39,7 +39,9 @@ namespace EnhancedValheimVRM
         }
 
         private static readonly Dictionary<string, Entry> Entries = new Dictionary<string, Entry>();
+
         private static readonly Dictionary<string, string> Latest = new Dictionary<string, string>();
+
         // Thread-safe view of imported keys, so a receive worker can skip fetching a model that
         // is already imported and only the small settings blob has changed.
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> ImportedKeys =
@@ -54,8 +56,10 @@ namespace EnhancedValheimVRM
         // and spring changes reapply to fresh clones of the existing import.
         private static string BakedSuffix(VrmSettings settings) =>
             ":" + settings.ModelBrightness.ToString("R", CultureInfo.InvariantCulture) + ":" +
-            settings.UseMToonShader + ":" + settings.AttemptTextureFix + ":" + (settings.UsesCreatureShader ? "creature" : "player") + ":" +
+            settings.UseMToonShader + ":" + settings.AttemptTextureFix + ":" +
+            (settings.UsesCreatureShader ? "creature" : "player") + ":" +
             settings.TextureFixEmission.ToString("R", CultureInfo.InvariantCulture);
+
         internal static void Retain(Entry entry) => entry.LiveClones++;
 
         internal static void Release(Entry entry)
@@ -67,7 +71,8 @@ namespace EnhancedValheimVRM
         private static void RetireSuperseded(string path)
         {
             if (!Latest.TryGetValue(path, out var latest) || !Entries.TryGetValue(latest, out var replacement) ||
-                !replacement.Imported) return;
+                !replacement.Imported)
+                return;
             var retired = new List<string>();
             foreach (var pair in Entries)
                 if (pair.Key != latest && pair.Value.Path == path && pair.Value.Completed && pair.Value.LiveClones == 0)
@@ -115,7 +120,7 @@ namespace EnhancedValheimVRM
                     else
                         using (var hash = SHA256.Create())
                             source.Key = "shared:" + bundle.CharacterId + ":" +
-                                         Convert.ToBase64String(hash.ComputeHash(source.Bytes)) + BakedSuffix(source.Settings);
+                                Convert.ToBase64String(hash.ComputeHash(source.Bytes)) + BakedSuffix(source.Settings);
                     source.OutfitText = bundle.Outfits;
                 }
                 else
@@ -201,7 +206,9 @@ namespace EnhancedValheimVRM
                 if (timer != null)
                     entry.ImportTiming = string.Format(CultureInfo.InvariantCulture,
                         "cold shaders={0:F0}ms, read={1:F0}ms, parse/context={2:F0}ms, native={3:F0}ms",
-                        shadersMs, readMs - shadersMs, parseMs - readMs,
+                        shadersMs,
+                        readMs - shadersMs,
+                        parseMs - readMs,
                         (timer?.Elapsed.TotalMilliseconds ?? 0) - parseMs);
                 Finish(entry, loaded);
                 Entries[source.Key] = entry;
@@ -291,7 +298,8 @@ namespace EnhancedValheimVRM
             var parsing = Task.Run<object>(() =>
             {
                 if (source.Bytes == null && !File.Exists(source.Path))
-                    throw new InvalidOperationException("The shared model is no longer imported; it will be fetched again.");
+                    throw new InvalidOperationException(
+                        "The shared model is no longer imported; it will be fetched again.");
                 var bytes = source.Bytes ?? File.ReadAllBytes(source.Path);
                 var data = new GlbBinaryParser(bytes, source.Path).Parse();
                 try
@@ -306,7 +314,9 @@ namespace EnhancedValheimVRM
             while (!parsing.IsCompleted) yield return null;
             var parsed = parsing.GetAwaiter().GetResult();
             double parseMs = (timer?.Elapsed.TotalMilliseconds ?? 0);
-            if (timer != null) Logger.Log("Avatar import for " + source.Name + ": read/parse completed in " + parseMs.ToString("F0") + "ms; shader preparation started");
+            if (timer != null)
+                Logger.Log("Avatar import for " + source.Name + ": read/parse completed in " + parseMs.ToString("F0") +
+                    "ms; shader preparation started");
             double queueMs = (timer?.Elapsed.TotalMilliseconds ?? 0);
             ImporterContext importer = null;
             try
@@ -329,7 +339,9 @@ namespace EnhancedValheimVRM
                 if (timer != null)
                     entry.ImportTiming = string.Format(CultureInfo.InvariantCulture,
                         "cold read/parse={0:F0}ms, queue={1:F0}ms, shaders={2:F0}ms, native/frames={3:F0}ms",
-                        parseMs, queueMs - parseMs, shadersMs - queueMs,
+                        parseMs,
+                        queueMs - parseMs,
+                        shadersMs - queueMs,
                         (timer?.Elapsed.TotalMilliseconds ?? 0) - shadersMs);
                 if (timer != null) Logger.Log("Avatar import for " + source.Name + ": " + entry.ImportTiming);
                 Finish(entry, loaded);

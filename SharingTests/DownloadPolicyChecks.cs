@@ -37,7 +37,8 @@ internal static class DownloadPolicyChecks
             {
                 for (int i = 0; i < policy.Slots; i++)
                 {
-                    var download = new Download(server.Port, server.AuthorizeTransfer("recipient", 777, SharingWire.AvatarKind, info, false));
+                    var download = new Download(server.Port,
+                        server.AuthorizeTransfer("recipient", 777, SharingWire.AvatarKind, info, false));
                     readers.Add(download);
                     check(download.Accepted, "Configured download slot " + i + " was not available");
                 }
@@ -45,7 +46,9 @@ internal static class DownloadPolicyChecks
                 // Metadata access is worker-side RPC storage, independent of download slots.
                 check(server.ReadCurrent(777)?.Hash == hash, "Full download slots blocked metadata");
                 var client = new AvatarTcpClient("127.0.0.1", server.Port, 750000);
-                byte[] upload = TestBundle.Encrypt(BundleCrypto.PackAvatar(new byte[32]), BundleCrypto.GenerateKey(), 778);
+                byte[] upload = TestBundle.Encrypt(BundleCrypto.PackAvatar(new byte[32]),
+                    BundleCrypto.GenerateKey(),
+                    778);
                 var uploadInfo = new BundleInfo { Hash = BundleCrypto.Hash(upload), Version = new string('a', 64) };
                 string ticket = server.AuthorizeTransfer("uploader", 778, SharingWire.AvatarKind, uploadInfo, true);
                 client.UploadBlob(778, ticket, upload, default);
@@ -65,12 +68,13 @@ internal static class DownloadPolicyChecks
                 // Completed transfers must release their slots.
                 foreach (var reader in readers) reader.Dispose();
                 readers.Clear();
-                using (var next = new Download(server.Port, server.AuthorizeTransfer("recipient", 777, SharingWire.AvatarKind, info, false)))
+                using (var next = new Download(server.Port,
+                           server.AuthorizeTransfer("recipient", 777, SharingWire.AvatarKind, info, false)))
                     check(next.Accepted, "Completed download did not release its slot");
                 Console.WriteLine("Download policy: " + policy.Slots + " slots at " +
-                                  policy.BytesPerSecond * 8 / 1000000 +
-                                  " Mbps each; concurrent transfers completed in " + elapsed.Max().ToString("F2") +
-                                  "s.");
+                    policy.BytesPerSecond * 8 / 1000000 +
+                    " Mbps each; concurrent transfers completed in " + elapsed.Max().ToString("F2") +
+                    "s.");
             }
             finally
             {
@@ -80,9 +84,7 @@ internal static class DownloadPolicyChecks
                 {
                     await serving;
                 }
-                catch (OperationCanceledException)
-                {
-                }
+                catch (OperationCanceledException) { }
             }
         }
     }
@@ -93,7 +95,11 @@ internal static class DownloadPolicyChecks
         private readonly BinaryReader _reader;
         private readonly Stopwatch _timer = Stopwatch.StartNew();
         private readonly int _length;
-        public bool Accepted { get; }
+
+        public bool Accepted
+        {
+            get;
+        }
 
         public Download(int port, string hash)
         {

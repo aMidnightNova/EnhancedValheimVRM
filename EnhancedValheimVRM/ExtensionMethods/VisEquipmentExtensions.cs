@@ -16,12 +16,14 @@ namespace EnhancedValheimVRM
                 field = AccessTools.Field(typeof(VisEquipment), name);
                 Fields[name] = field;
             }
+
             return field?.GetValue(equipment);
         }
 
         public static string GetEquippedItemName(this VisEquipment equipment, string fieldName)
         {
-            if (equipment == null || string.IsNullOrEmpty(fieldName) || !fieldName.StartsWith("m_", StringComparison.Ordinal) || fieldName.Length < 3)
+            if (equipment == null || string.IsNullOrEmpty(fieldName) ||
+                !fieldName.StartsWith("m_", StringComparison.Ordinal) || fieldName.Length < 3)
                 return null;
             string currentField = "m_current" + char.ToUpperInvariant(fieldName[2]) + fieldName.Substring(3) + "Hash";
             if (!(ReadField(equipment, currentField) is int hash) || hash == 0) return null;

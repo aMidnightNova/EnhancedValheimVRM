@@ -29,6 +29,7 @@ namespace EnhancedValheimVRM.Sharing
                 due = Math.Max(_clock.ElapsedTicks, _nextWrite) + duration;
                 _nextWrite = due;
             }
+
             while (true)
             {
                 double remaining = (due - _clock.ElapsedTicks) * 1000.0 / Stopwatch.Frequency;
@@ -36,6 +37,7 @@ namespace EnhancedValheimVRM.Sharing
                 if (cancellation.WaitHandle.WaitOne((int)Math.Ceiling(remaining)))
                     cancellation.ThrowIfCancellationRequested();
             }
+
             cancellation.ThrowIfCancellationRequested();
         }
     }

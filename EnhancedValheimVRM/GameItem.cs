@@ -34,19 +34,32 @@ namespace EnhancedValheimVRM
             {
                 string type = item.m_itemData.m_shared.m_itemType.ToString();
                 string skill = item.m_itemData.m_shared.m_skillType.ToString();
-                if (type == "Shield") result = "Shield";
-                else if (type == "Torch") result = "Torch";
-                else if (skill == "Crossbows") result = "Crossbow";
-                else if (skill == "Bows" || type == "Bow") result = "Bow";
-                else if (skill == "Swords") result = "Sword";
-                else if (skill == "Knives") result = "Knife";
-                else if (skill == "Clubs") result = "Club";
-                else if (skill == "Axes") result = "Axe";
-                else if (skill == "Spears") result = "Spear";
-                else if (skill == "Polearms") result = "Polearm";
-                else if (skill == "Pickaxes") result = "Pickaxe";
-                else if (skill == "Unarmed") result = "Fist";
-                else if (skill == "BloodMagic" || skill == "ElementalMagic") result = "Staff";
+                if (type == "Shield")
+                    result = "Shield";
+                else if (type == "Torch")
+                    result = "Torch";
+                else if (skill == "Crossbows")
+                    result = "Crossbow";
+                else if (skill == "Bows" || type == "Bow")
+                    result = "Bow";
+                else if (skill == "Swords")
+                    result = "Sword";
+                else if (skill == "Knives")
+                    result = "Knife";
+                else if (skill == "Clubs")
+                    result = "Club";
+                else if (skill == "Axes")
+                    result = "Axe";
+                else if (skill == "Spears")
+                    result = "Spear";
+                else if (skill == "Polearms")
+                    result = "Polearm";
+                else if (skill == "Pickaxes")
+                    result = "Pickaxe";
+                else if (skill == "Unarmed")
+                    result = "Fist";
+                else if (skill == "BloodMagic" || skill == "ElementalMagic")
+                    result = "Staff";
                 else if (type == "Tool") result = "Tool";
             }
 
@@ -69,8 +82,8 @@ namespace EnhancedValheimVRM
             var item = prefab.GetComponent<ItemDrop>();
             string type = item != null ? item.m_itemData.m_shared.m_itemType.ToString() : "";
             special = (type == "OneHandedWeapon" || type == "TwoHandedWeapon" || type == "TwoHandedWeaponLeft" ||
-                       type == "Bow" || type == "Tool" || type == "Torch" || type == "Shield") &&
-                      HasOwnHandRig(prefab.transform.Find("attach_skin"));
+                    type == "Bow" || type == "Tool" || type == "Torch" || type == "Shield") &&
+                HasOwnHandRig(prefab.transform.Find("attach_skin"));
             SpecialRigs[itemName] = special;
             return special;
         }
@@ -80,38 +93,48 @@ namespace EnhancedValheimVRM
         private static int _spawnGeneration;
         private const string TestWeaponTag = "EnhancedValheimVRM.DevWeapon";
 
-        private static string TestOwner(Player player) => player.GetPlayerID().ToString(System.Globalization.CultureInfo.InvariantCulture) + ":";
+        private static string TestOwner(Player player) =>
+            player.GetPlayerID().ToString(System.Globalization.CultureInfo.InvariantCulture) + ":";
 
         private static ItemDrop[] TestDrops(Player player)
         {
             string owner = TestOwner(player);
             return UnityEngine.Object.FindObjectsByType<ItemDrop>(FindObjectsInactive.Include, FindObjectsSortMode.None)
                 .Where(drop => drop != null && drop.m_itemData?.m_customData != null &&
-                    drop.m_itemData.m_customData.TryGetValue(TestWeaponTag, out var tag) && tag.StartsWith(owner, StringComparison.Ordinal))
+                    drop.m_itemData.m_customData.TryGetValue(TestWeaponTag, out var tag) &&
+                    tag.StartsWith(owner, StringComparison.Ordinal))
                 .ToArray();
         }
 
         internal static string SpawnWeapons(bool twoHandedOnly)
         {
             var player = Player.m_localPlayer;
-            if (player == null || player.GetPlayerID() == 0 || ObjectDB.instance == null || ItemSets.instance == null) return "Enter a world first.";
-            if (Console.instance == null || !Console.instance.IsCheatsEnabled()) return "Enable devcommands in the console first.";
-            if (_spawningWeapons || TestDrops(player).Length != 0) return "Use /vrm dev clearweapons before spawning another set.";
+            if (player == null || player.GetPlayerID() == 0 || ObjectDB.instance == null || ItemSets.instance == null)
+                return "Enter a world first.";
+            if (Console.instance == null || !Console.instance.IsCheatsEnabled())
+                return "Enable devcommands in the console first.";
+            if (_spawningWeapons || TestDrops(player).Length != 0)
+                return "Use /vrm dev clearweapons before spawning another set.";
             _spawningWeapons = true;
             _spawnGeneration++;
             CoroutineHelper.Instance.StartCoroutine(SpawnWeaponsAsync(player, twoHandedOnly));
-            return twoHandedOnly ? "Spawning regional two-handed weapon piles (including bows, crossbows and staves)." : "Spawning regional weapon/shield piles in front of you; one pile per region.";
+            return twoHandedOnly
+                ? "Spawning regional two-handed weapon piles (including bows, crossbows and staves)."
+                : "Spawning regional weapon/shield piles in front of you; one pile per region.";
         }
 
         private static readonly string[] TestRegions =
-            { "Meadows", "BlackForest", "Swamp", "Mountain", "Plains", "Mistlands", "Ashlands", "DeepNorth", "Ocean" };
+        {
+            "Meadows", "BlackForest", "Swamp", "Mountain", "Plains", "Mistlands", "Ashlands", "DeepNorth", "Ocean"
+        };
 
         private static int TestRegion(string setName)
         {
             string name = (setName ?? "").Replace(" ", "").Replace("_", "");
             // Includes the game's Swamps/Mountains names and regional variants such as PlainsBoss.
             for (int index = 0; index < TestRegions.Length; index++)
-                if (name.StartsWith(TestRegions[index], StringComparison.OrdinalIgnoreCase)) return index;
+                if (name.StartsWith(TestRegions[index], StringComparison.OrdinalIgnoreCase))
+                    return index;
             return -1; // Generic/debug presets are not regional loadouts.
         }
 
@@ -121,7 +144,7 @@ namespace EnhancedValheimVRM
             var data = drop.m_itemData.m_shared;
             // Preset membership identifies player equipment; no NPC-name/icon guessing.
             return (drop.m_itemData.IsWeapon() || data.m_itemType == ItemDrop.ItemData.ItemType.Shield) &&
-                   data.m_skillType != Skills.SkillType.Pickaxes && data.m_skillType != Skills.SkillType.Fishing;
+                data.m_skillType != Skills.SkillType.Pickaxes && data.m_skillType != Skills.SkillType.Fishing;
         }
 
         private static IEnumerator SpawnWeaponsAsync(Player player, bool twoHandedOnly)
@@ -130,31 +153,45 @@ namespace EnhancedValheimVRM
             var sets = ItemSets.instance;
             int generation = _spawnGeneration;
             string tag = TestOwner(player) + Guid.NewGuid().ToString("N");
-            Vector3 forward = player.transform.forward; forward.y = 0; forward.Normalize();
+            Vector3 forward = player.transform.forward;
+            forward.y = 0;
+            forward.Normalize();
             Vector3 right = Vector3.Cross(Vector3.up, forward), origin = player.transform.position + forward * 5;
             int count = 0, pile = 0;
             try
             {
                 // Read the same definitions as itemset; never invoke it (it also changes skills/inventory).
                 var regions = sets.m_sets.Where(set => TestRegion(set.m_name) >= 0)
-                    .GroupBy(set => TestRegion(set.m_name)).OrderBy(group => group.Key);
+                    .GroupBy(set => TestRegion(set.m_name))
+                    .OrderBy(group => group.Key);
                 foreach (var region in regions)
                 {
-                    var weapons = region.SelectMany(set => set.m_items).Select(entry => entry.m_item)
-                        .Where(drop => IsTestWeapon(drop) && (!twoHandedOnly || drop.m_itemData.IsTwoHanded())).GroupBy(drop => drop.gameObject.name, StringComparer.Ordinal)
-                        .Select(group => group.First()).OrderBy(drop => drop.gameObject.name, StringComparer.Ordinal).ToArray();
+                    var weapons = region.SelectMany(set => set.m_items)
+                        .Select(entry => entry.m_item)
+                        .Where(drop => IsTestWeapon(drop) && (!twoHandedOnly || drop.m_itemData.IsTwoHanded()))
+                        .GroupBy(drop => drop.gameObject.name, StringComparer.Ordinal)
+                        .Select(group => group.First())
+                        .OrderBy(drop => drop.gameObject.name, StringComparer.Ordinal)
+                        .ToArray();
                     if (weapons.Length == 0) continue;
                     Vector3 center = origin + right * ((pile % 3) - 1) * 8 + forward * (pile / 3) * 8;
                     for (int index = 0; index < weapons.Length; index++)
                     {
-                        if (generation != _spawnGeneration || !_spawningWeapons || player == null || player != Player.m_localPlayer ||
-                            database != ObjectDB.instance || sets != ItemSets.instance) yield break;
+                        if (generation != _spawnGeneration || !_spawningWeapons || player == null ||
+                            player != Player.m_localPlayer ||
+                            database != ObjectDB.instance || sets != ItemSets.instance)
+                            yield break;
                         // All of a region's equipment stays in a small pile; only regional piles are spaced out.
                         float angle = index * 2.399963f;
                         float radius = 0.8f * Mathf.Sqrt((index + 0.5f) / weapons.Length);
-                        Vector3 position = center + right * (Mathf.Cos(angle) * radius) + forward * (Mathf.Sin(angle) * radius);
-                        if (Physics.Raycast(position + Vector3.up * 20, Vector3.down, out var hit, 60,
-                            LayerMask.GetMask("terrain", "Default", "static_solid"))) position.y = hit.point.y;
+                        Vector3 position = center + right * (Mathf.Cos(angle) * radius) +
+                            forward * (Mathf.Sin(angle) * radius);
+                        if (Physics.Raycast(position + Vector3.up * 20,
+                                Vector3.down,
+                                out var hit,
+                                60,
+                                LayerMask.GetMask("terrain", "Default", "static_solid")))
+                            position.y = hit.point.y;
                         position.y += 0.5f;
                         var item = weapons[index].m_itemData.Clone();
                         item.m_dropPrefab = weapons[index].gameObject;
@@ -166,14 +203,20 @@ namespace EnhancedValheimVRM
                         count++;
                         yield return null;
                     }
+
                     pile++;
-                    Logger.Log("Weapon pile " + pile + ": " + TestRegions[region.Key] + ", " + weapons.Length + " weapons/shields.");
+                    Logger.Log("Weapon pile " + pile + ": " + TestRegions[region.Key] + ", " + weapons.Length +
+                        " weapons/shields.");
                 }
+
                 Logger.Log("Spawned " + count + " preset weapons/shields in " + pile +
-                           " regional piles. /vrm dev clearweapons removes uncollected drops.");
+                    " regional piles. /vrm dev clearweapons removes uncollected drops.");
                 if (pile == 0) Logger.LogWarning("No regional weapon itemsets were present in the loaded game.");
             }
-            finally { if (generation == _spawnGeneration) _spawningWeapons = false; }
+            finally
+            {
+                if (generation == _spawnGeneration) _spawningWeapons = false;
+            }
         }
 
         internal static string ClearTestWeapons()
@@ -192,9 +235,12 @@ namespace EnhancedValheimVRM
                     view.ClaimOwnership();
                     ZNetScene.instance.Destroy(item);
                 }
-                else UnityEngine.Object.Destroy(item);
+                else
+                    UnityEngine.Object.Destroy(item);
             }
-            return "Removed " + drops.Length + " tagged test weapon drops, including re-dropped items. Inventory items are kept.";
+
+            return "Removed " + drops.Length +
+                " tagged test weapon drops, including re-dropped items. Inventory items are kept.";
         }
 
         internal static void AuditWeapons()
@@ -207,7 +253,15 @@ namespace EnhancedValheimVRM
         private static IEnumerator AuditWeaponsAsync(ObjectDB database)
         {
             var types = new HashSet<string>
-                { "OneHandedWeapon", "TwoHandedWeapon", "TwoHandedWeaponLeft", "Bow", "Tool", "Torch", "Shield" };
+            {
+                "OneHandedWeapon",
+                "TwoHandedWeapon",
+                "TwoHandedWeaponLeft",
+                "Bow",
+                "Tool",
+                "Torch",
+                "Shield"
+            };
             var rows = new StringBuilder("Prefab,ItemType,AttachOverride,Skill,OwnHandRig,AttachmentVariants\n");
             // Index the live collection rather than retaining an enumerator across frames.
             for (int index = 0; database != null && index < database.m_items.Count; index++)
@@ -224,10 +278,19 @@ namespace EnhancedValheimVRM
                 foreach (Transform child in prefab.transform)
                     if (child.name.StartsWith("attach"))
                         variants.Add(child.name);
-                rows.Append('"').Append(prefab.name.Replace("\"", "\"\"")).Append("\",").Append(data.m_itemType)
+                rows.Append('"')
+                    .Append(prefab.name.Replace("\"", "\"\""))
+                    .Append("\",")
+                    .Append(data.m_itemType)
                     .Append(',')
-                    .Append(data.m_attachOverride).Append(',').Append(data.m_skillType).Append(',').Append(special)
-                    .Append(',').Append(string.Join("|", variants)).Append('\n');
+                    .Append(data.m_attachOverride)
+                    .Append(',')
+                    .Append(data.m_skillType)
+                    .Append(',')
+                    .Append(special)
+                    .Append(',')
+                    .Append(string.Join("|", variants))
+                    .Append('\n');
             }
 
             string output = rows.ToString();
@@ -247,11 +310,12 @@ namespace EnhancedValheimVRM
             // Two-handed item type alone is insufficient: bows and ordinary greatswords
             // follow one socket. Only a mesh skinned to its OWN hand rig needs retargeting.
             return (left != null && left.GetComponentInChildren<MeshRenderer>(true) != null) ||
-                   (right != null && right.GetComponentInChildren<MeshRenderer>(true) != null) ||
-                   attachment.GetComponentsInChildren<SkinnedMeshRenderer>(true).Any(renderer =>
-                       renderer.sharedMesh != null && renderer.bones.Any(bone => bone != null &&
-                           ((left != null && (bone == left || bone.IsChildOf(left))) ||
-                            (right != null && (bone == right || bone.IsChildOf(right))))));
+                (right != null && right.GetComponentInChildren<MeshRenderer>(true) != null) ||
+                attachment.GetComponentsInChildren<SkinnedMeshRenderer>(true)
+                    .Any(renderer =>
+                        renderer.sharedMesh != null && renderer.bones.Any(bone => bone != null &&
+                            ((left != null && (bone == left || bone.IsChildOf(left))) ||
+                                (right != null && (bone == right || bone.IsChildOf(right))))));
         }
     }
 }

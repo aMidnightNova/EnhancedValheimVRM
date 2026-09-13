@@ -60,7 +60,11 @@ namespace EnhancedValheimVRM
                     item.SetActive(visible);
         }
 
-        private static void SetHand(VisEquipment equipment, string field, Vector3 offset, Vector3 rotation, VrmSettings settings)
+        private static void SetHand(VisEquipment equipment,
+            string field,
+            Vector3 offset,
+            Vector3 rotation,
+            VrmSettings settings)
         {
             if (!equipment.TryGetField<VisEquipment, GameObject>(field + "Instance", out var item)) return;
             string name = equipment.GetEquippedItemName(field);
@@ -100,8 +104,8 @@ namespace EnhancedValheimVRM
             // rebuild skinned clothing whose renderer visibility was previously hidden.
             foreach (string slot in new[]
                      {
-                         "LeftItem", "RightItem", "HelmetItem", "ChestItem", "LegItem", "ShoulderItem", "UtilityItem",
-                         "TrinketItem", "LeftBackItem", "RightBackItem"
+                         "LeftItem", "RightItem", "HelmetItem", "ChestItem", "LegItem", "ShoulderItem",
+                         "UtilityItem", "TrinketItem", "LeftBackItem", "RightBackItem"
                      })
                 AccessTools.Field(typeof(VisEquipment), "m_current" + slot + "Hash")?.SetValue(equipment, int.MinValue);
             equipment.InvokePrivateMethod("UpdateEquipmentVisuals");

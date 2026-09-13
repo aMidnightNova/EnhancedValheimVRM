@@ -14,7 +14,9 @@ namespace EnhancedValheimVRM
         // Includes the staging candidate so equipment hooks see its sockets during commit.
         private static readonly Dictionary<Player, VrmInstance> ActiveInstances = new Dictionary<Player, VrmInstance>();
         private static readonly HashSet<Player> Installing = new HashSet<Player>();
+
         private static readonly HashSet<Player> InitialInstalls = new HashSet<Player>();
+
         // Captured before the first VRM setup, never recaptured from a resized/reloaded avatar.
         private sealed class VanillaState
         {
@@ -23,8 +25,10 @@ namespace EnhancedValheimVRM
             internal Vector3 Center, MassCenter, EyePosition;
             internal bool AutomaticMassCenter, KeepAnimatorState;
             internal AnimatorCullingMode Culling;
+
             internal readonly List<Tuple<Transform, Transform, Vector3, Quaternion, Vector3>> Sockets =
                 new List<Tuple<Transform, Transform, Vector3, Quaternion, Vector3>>();
+
             internal readonly List<Tuple<SkinnedMeshRenderer, bool, bool, bool>> Renderers =
                 new List<Tuple<SkinnedMeshRenderer, bool, bool, bool>>();
 
@@ -32,23 +36,49 @@ namespace EnhancedValheimVRM
             {
                 Interaction = player.m_maxInteractDistance;
                 var capsule = player.GetComponent<CapsuleCollider>();
-                if (capsule != null) { Height = capsule.height; Radius = capsule.radius; Center = capsule.center; }
+                if (capsule != null)
+                {
+                    Height = capsule.height;
+                    Radius = capsule.radius;
+                    Center = capsule.center;
+                }
+
                 var body = player.GetComponent<Rigidbody>();
-                if (body != null) { MassCenter = body.centerOfMass; AutomaticMassCenter = body.automaticCenterOfMass; }
+                if (body != null)
+                {
+                    MassCenter = body.centerOfMass;
+                    AutomaticMassCenter = body.automaticCenterOfMass;
+                }
+
                 if (player.m_eye != null) EyePosition = player.m_eye.localPosition;
                 var animator = player.GetField<Player, Animator>("m_animator");
-                if (animator != null) { Culling = animator.cullingMode; KeepAnimatorState = animator.keepAnimatorStateOnDisable; }
+                if (animator != null)
+                {
+                    Culling = animator.cullingMode;
+                    KeepAnimatorState = animator.keepAnimatorStateOnDisable;
+                }
+
                 var equipment = player.GetComponent<VisEquipment>();
                 if (equipment != null)
-                    foreach (var socket in new[] { equipment.m_leftHand, equipment.m_rightHand, equipment.m_helmet,
-                        equipment.m_backShield, equipment.m_backMelee, equipment.m_backTwohandedMelee,
-                        equipment.m_backBow, equipment.m_backTool, equipment.m_backAtgeir })
-                        if (socket != null) Sockets.Add(Tuple.Create(socket, socket.parent, socket.localPosition, socket.localRotation, socket.localScale));
+                    foreach (var socket in new[]
+                             {
+                                 equipment.m_leftHand, equipment.m_rightHand, equipment.m_helmet,
+                                 equipment.m_backShield, equipment.m_backMelee, equipment.m_backTwohandedMelee,
+                                 equipment.m_backBow, equipment.m_backTool, equipment.m_backAtgeir
+                             })
+                        if (socket != null)
+                            Sockets.Add(Tuple.Create(socket,
+                                socket.parent,
+                                socket.localPosition,
+                                socket.localRotation,
+                                socket.localScale));
                 var imported = FindSharingInstance(player)?.GetGameObject();
                 foreach (var renderer in player.GetVisual().GetComponentsInChildren<SkinnedMeshRenderer>(true))
                     if (imported == null || !renderer.transform.IsChildOf(imported.transform))
-                        Renderers.Add(Tuple.Create(renderer, !WasPreHidden(player, renderer) && renderer.forceRenderingOff,
-                            renderer.updateWhenOffscreen, renderer.enabled));
+                        Renderers.Add(Tuple.Create(renderer,
+                            !WasPreHidden(player, renderer) && renderer.forceRenderingOff,
+                            renderer.updateWhenOffscreen,
+                            renderer.enabled));
             }
 
             internal void Restore(Player player)
@@ -60,18 +90,33 @@ namespace EnhancedValheimVRM
                     saved.Item1.SetLocalPositionAndRotation(saved.Item3, saved.Item4);
                     saved.Item1.localScale = saved.Item5;
                 }
+
                 var capsule = player.GetComponent<CapsuleCollider>();
-                if (capsule != null) { capsule.height = Height; capsule.radius = Radius; capsule.center = Center; }
+                if (capsule != null)
+                {
+                    capsule.height = Height;
+                    capsule.radius = Radius;
+                    capsule.center = Center;
+                }
+
                 var body = player.GetComponent<Rigidbody>();
                 if (body != null)
                 {
-                    if (AutomaticMassCenter) body.ResetCenterOfMass();
-                    else body.centerOfMass = MassCenter;
+                    if (AutomaticMassCenter)
+                        body.ResetCenterOfMass();
+                    else
+                        body.centerOfMass = MassCenter;
                 }
+
                 player.m_maxInteractDistance = Interaction;
                 if (player.m_eye != null) player.m_eye.localPosition = EyePosition;
                 var animator = player.GetField<Player, Animator>("m_animator");
-                if (animator != null) { animator.cullingMode = Culling; animator.keepAnimatorStateOnDisable = KeepAnimatorState; }
+                if (animator != null)
+                {
+                    animator.cullingMode = Culling;
+                    animator.keepAnimatorStateOnDisable = KeepAnimatorState;
+                }
+
                 foreach (var saved in Renderers)
                     if (saved.Item1 != null)
                     {
@@ -83,7 +128,9 @@ namespace EnhancedValheimVRM
         }
 
         private static readonly Dictionary<Player, VanillaState> VanillaStates = new Dictionary<Player, VanillaState>();
-        private static bool IsDisabled(Player player) => player != null && VanillaStates.TryGetValue(player, out var state) && state.Disabled;
+
+        private static bool IsDisabled(Player player) =>
+            player != null && VanillaStates.TryGetValue(player, out var state) && state.Disabled;
 
         internal static bool InitialLocalAvatarPending
         {
@@ -100,18 +147,33 @@ namespace EnhancedValheimVRM
         }
 
         // Publication/key handling remains available while local collision testing hides the VRM.
-        internal static VrmInstance FindSharingInstance(Player player) => player != null &&
-            ActiveInstances.TryGetValue(player, out var instance) ? instance : null;
+        internal static VrmInstance FindSharingInstance(Player player) =>
+            player != null &&
+            ActiveInstances.TryGetValue(player, out var instance)
+                ? instance
+                : null;
 
-        public static void AttachSharedVrm(Player player, AvatarBundle bundle, Action<bool> completed,
-            CancellationToken cancellation, string receiveTiming, double beforeImportMilliseconds)
+        public static void AttachSharedVrm(Player player,
+            AvatarBundle bundle,
+            Action<bool> completed,
+            CancellationToken cancellation,
+            string receiveTiming,
+            double beforeImportMilliseconds)
         {
-            CoroutineHelper.Instance.StartCoroutine(InstallShared(player, bundle, completed, cancellation,
-                receiveTiming, beforeImportMilliseconds));
+            CoroutineHelper.Instance.StartCoroutine(InstallShared(player,
+                bundle,
+                completed,
+                cancellation,
+                receiveTiming,
+                beforeImportMilliseconds));
         }
 
-        private static IEnumerator InstallShared(Player player, AvatarBundle bundle, Action<bool> completed,
-            CancellationToken cancellation, string receiveTiming, double beforeImportMilliseconds)
+        private static IEnumerator InstallShared(Player player,
+            AvatarBundle bundle,
+            Action<bool> completed,
+            CancellationToken cancellation,
+            string receiveTiming,
+            double beforeImportMilliseconds)
         {
             // A downloaded replacement waits for an existing install instead of throwing
             // away decrypted bytes and performing the receive/decrypt work a second time.
@@ -120,7 +182,8 @@ namespace EnhancedValheimVRM
             if (player == null || cancellation.IsCancellationRequested || IsDisabled(player))
             {
                 if (bundle != null)
-                    if (bundle.Vrm != null) System.Threading.Tasks.Task.Run(() => Array.Clear(bundle.Vrm, 0, bundle.Vrm.Length));
+                    if (bundle.Vrm != null)
+                        System.Threading.Tasks.Task.Run(() => Array.Clear(bundle.Vrm, 0, bundle.Vrm.Length));
                 completed(false);
                 yield break;
             }
@@ -140,7 +203,8 @@ namespace EnhancedValheimVRM
             try
             {
                 if (cancellation.IsCancellationRequested || player == null || player.IsDead() ||
-                    (bundle != null && player.GetPlayerID() != bundle.CharacterId)) yield break;
+                    (bundle != null && player.GetPlayerID() != bundle.CharacterId))
+                    yield break;
                 try
                 {
                     candidate = bundle == null ? new VrmInstance(player) : new VrmInstance(player, bundle);
@@ -154,10 +218,12 @@ namespace EnhancedValheimVRM
                 }
 
                 while ((candidate.IsLoading || (candidate.GetGameObject() != null && !candidate.IsReady)) &&
-                       player != null && !cancellation.IsCancellationRequested) yield return null;
+                       player != null && !cancellation.IsCancellationRequested)
+                    yield return null;
                 if (cancellation.IsCancellationRequested || player == null || player.IsDead() ||
                     (bundle != null && player.GetPlayerID() != bundle.CharacterId) ||
-                    candidate.GetGameObject() == null) yield break;
+                    candidate.GetGameObject() == null)
+                    yield break;
 
                 var equipment = player.GetComponent<VisEquipment>();
                 if (equipment != null)
@@ -170,13 +236,17 @@ namespace EnhancedValheimVRM
                              })
                     {
                         if (point != null)
-                            attachments.Add(Tuple.Create(point, point.parent, point.localPosition, point.localRotation,
+                            attachments.Add(Tuple.Create(point,
+                                point.parent,
+                                point.localPosition,
+                                point.localRotation,
                                 point.localScale));
                     }
                 }
 
                 foreach (var renderer in player.GetVisual().GetComponentsInChildren<SkinnedMeshRenderer>(true))
-                    renderers.Add(Tuple.Create(renderer, !WasPreHidden(player, renderer) && renderer.forceRenderingOff,
+                    renderers.Add(Tuple.Create(renderer,
+                        !WasPreHidden(player, renderer) && renderer.forceRenderingOff,
                         renderer.updateWhenOffscreen));
                 collider = player.GetComponent<CapsuleCollider>();
                 body = player.GetComponent<Rigidbody>();
@@ -238,7 +308,8 @@ namespace EnhancedValheimVRM
             finally
             {
                 if (candidate == null && bundle != null)
-                    if (bundle.Vrm != null) System.Threading.Tasks.Task.Run(() => Array.Clear(bundle.Vrm, 0, bundle.Vrm.Length));
+                    if (bundle.Vrm != null)
+                        System.Threading.Tasks.Task.Run(() => Array.Clear(bundle.Vrm, 0, bundle.Vrm.Length));
                 if (!succeeded)
                 {
                     foreach (var saved in attachments)
@@ -254,8 +325,10 @@ namespace EnhancedValheimVRM
                     {
                         if (ActiveInstances.TryGetValue(player, out var active) && active == candidate)
                         {
-                            if (previous != null) ActiveInstances[player] = previous;
-                            else ActiveInstances.Remove(player);
+                            if (previous != null)
+                                ActiveInstances[player] = previous;
+                            else
+                                ActiveInstances.Remove(player);
                         }
 
                         if (player != null && setupStarted)
@@ -283,7 +356,8 @@ namespace EnhancedValheimVRM
                             {
                                 if (previous != null)
                                     eye.Setup(player, player.GetField<Player, Animator>("m_animator"), previous);
-                                else UnityEngine.Object.Destroy(eye);
+                                else
+                                    UnityEngine.Object.Destroy(eye);
                             }
                         }
                     }
@@ -336,7 +410,9 @@ namespace EnhancedValheimVRM
                     string vrmPath = instance.GetVrmFilePath();
                     string outfitPath = string.IsNullOrEmpty(vrmPath)
                         ? null
-                        : System.IO.Path.Combine(Constants.Vrm.Dir, "outfits_" + System.IO.Path.GetFileNameWithoutExtension(vrmPath).ToLowerInvariant() + ".txt");
+                        : System.IO.Path.Combine(Constants.Vrm.Dir,
+                            "outfits_" + System.IO.Path.GetFileNameWithoutExtension(vrmPath).ToLowerInvariant() +
+                            ".txt");
                     var settingsNow = Stamp(settingsPath);
                     var outfitNow = Stamp(outfitPath);
                     if (!primed)
@@ -369,7 +445,9 @@ namespace EnhancedValheimVRM
         {
             try
             {
-                return !string.IsNullOrEmpty(path) && System.IO.File.Exists(path) ? System.IO.File.GetLastWriteTimeUtc(path) : System.DateTime.MinValue;
+                return !string.IsNullOrEmpty(path) && System.IO.File.Exists(path)
+                    ? System.IO.File.GetLastWriteTimeUtc(path)
+                    : System.DateTime.MinValue;
             }
             catch (System.IO.IOException)
             {
@@ -381,13 +459,19 @@ namespace EnhancedValheimVRM
         {
             if (player == null || player.IsDead() || IsDisabled(player) || !Reloading.Add(player)) return;
             bool replacingAvatar = FindInstance(player) != null;
-            CoroutineHelper.Instance.StartCoroutine(InstallShared(player, null, success =>
-            {
-                Reloading.Remove(player);
-                if (success) FileTransferController.RefreshUpload();
-                else if (replacingAvatar)
-                    Logger.LogWarning("VRM reload failed; previous avatar and settings retained.");
-            }, default, null, 0));
+            CoroutineHelper.Instance.StartCoroutine(InstallShared(player,
+                null,
+                success =>
+                {
+                    Reloading.Remove(player);
+                    if (success)
+                        FileTransferController.RefreshUpload();
+                    else if (replacingAvatar)
+                        Logger.LogWarning("VRM reload failed; previous avatar and settings retained.");
+                },
+                default,
+                null,
+                0));
         }
 
         public static void AttachVrmToPlayer(Player player)
@@ -410,7 +494,8 @@ namespace EnhancedValheimVRM
                 if (player != Player.m_localPlayer && shared.IsDisplayed && !shared.IsCorpse &&
                     shared.GetGameObject() != null && (shared.DeathSeen || player.IsDead()))
                     KeepForCorpse(shared, player.transform.position, CorpseSignature.Read(player));
-                else shared.Dispose();
+                else
+                    shared.Dispose();
             }
         }
 
@@ -447,12 +532,15 @@ namespace EnhancedValheimVRM
                 signature._helmet = zdo.GetInt(ZDOVars.s_helmetItem, 0);
                 signature._chest = zdo.GetInt(ZDOVars.s_chestItem, 0);
                 signature._legs = zdo.GetInt(ZDOVars.s_legItem, 0);
-                signature.Known = signature._model >= 0 && (signature._skin != Vector3.zero || signature._hair != 0 || signature._beard != 0);
+                signature.Known = signature._model >= 0 &&
+                    (signature._skin != Vector3.zero || signature._hair != 0 || signature._beard != 0);
                 return signature;
             }
 
-            internal bool Matches(CorpseSignature other) => Known && other.Known && _model == other._model &&
-                _skin == other._skin && _hairColor == other._hairColor && _beard == other._beard && _hair == other._hair &&
+            internal bool Matches(CorpseSignature other) =>
+                Known && other.Known && _model == other._model &&
+                _skin == other._skin && _hairColor == other._hairColor && _beard == other._beard &&
+                _hair == other._hair &&
                 _helmet == other._helmet && _chest == other._chest && _legs == other._legs;
         }
 
@@ -465,7 +553,9 @@ namespace EnhancedValheimVRM
         private static readonly Dictionary<Player, VrmInstance> DeadCorpses = new Dictionary<Player, VrmInstance>();
 
         internal static VrmInstance FindCorpseFor(Player player) =>
-            player != null && DeadCorpses.TryGetValue(player, out var corpse) && corpse.GetGameObject() != null ? corpse : null;
+            player != null && DeadCorpses.TryGetValue(player, out var corpse) && corpse.GetGameObject() != null
+                ? corpse
+                : null;
 
         internal static bool TransferToRagdoll(VrmInstance vrm, Ragdoll ragdoll)
         {
@@ -522,34 +612,59 @@ namespace EnhancedValheimVRM
             foreach (var pair in ActiveInstances)
             {
                 var player = pair.Key;
-                if (player == null || player == Player.m_localPlayer || pair.Value.IsCorpse || !pair.Value.IsDisplayed) continue;
+                if (player == null || player == Player.m_localPlayer || pair.Value.IsCorpse || !pair.Value.IsDisplayed)
+                    continue;
                 if (!(pair.Value.DeathSeen || player.IsDead())) continue;
-                float score = Score((player.transform.position - position).sqrMagnitude, radius, signature, CorpseSignature.Read(player));
-                if (score < bestScore) { bestScore = score; bestPlayer = player; bestOrphan = null; }
+                float score = Score((player.transform.position - position).sqrMagnitude,
+                    radius,
+                    signature,
+                    CorpseSignature.Read(player));
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    bestPlayer = player;
+                    bestOrphan = null;
+                }
             }
 
             foreach (var candidate in Orphans)
             {
-                float score = Score((candidate.Position - position).sqrMagnitude, radius, signature, candidate.Signature);
-                if (score < bestScore) { bestScore = score; bestOrphan = candidate; bestPlayer = null; }
+                float score = Score((candidate.Position - position).sqrMagnitude,
+                    radius,
+                    signature,
+                    candidate.Signature);
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    bestOrphan = candidate;
+                    bestPlayer = null;
+                }
             }
 
             if (bestPlayer != null)
             {
-                if (Settings.LogLoadTiming) Logger.Log(FileTransferController.PlayerLabel(bestPlayer) + ": corpse claimed while the player object still exists");
+                if (Settings.LogLoadTiming)
+                    Logger.Log(FileTransferController.PlayerLabel(bestPlayer) +
+                        ": corpse claimed while the player object still exists");
                 TransferToRagdoll(ActiveInstances[bestPlayer], ragdoll);
             }
             else if (bestOrphan != null)
             {
                 Orphans.Remove(bestOrphan);
-                if (Settings.LogLoadTiming) Logger.Log("Corpse at " + position.ToString("F1") + " claimed " + (Time.realtimeSinceStartup - bestOrphan.DiedAt).ToString("F1") + "s after death, " +
-                    Mathf.Sqrt((bestOrphan.Position - position).sqrMagnitude).ToString("F1") + "m from where the player fell");
+                if (Settings.LogLoadTiming)
+                    Logger.Log("Corpse at " + position.ToString("F1") + " claimed " +
+                        (Time.realtimeSinceStartup - bestOrphan.DiedAt).ToString("F1") + "s after death, " +
+                        Mathf.Sqrt((bestOrphan.Position - position).sqrMagnitude).ToString("F1") +
+                        "m from where the player fell");
                 if (!TransferToRagdoll(bestOrphan.Instance, ragdoll)) bestOrphan.Instance.Dispose();
             }
         }
 
         // Lower is better; MaxValue rules a candidate out.
-        private static float Score(float squaredDistance, float squaredRadius, CorpseSignature ragdoll, CorpseSignature player)
+        private static float Score(float squaredDistance,
+            float squaredRadius,
+            CorpseSignature ragdoll,
+            CorpseSignature player)
         {
             if (squaredDistance > squaredRadius) return float.MaxValue;
             if (ragdoll.Known && player.Known) return ragdoll.Matches(player) ? squaredDistance : float.MaxValue;
@@ -559,14 +674,17 @@ namespace EnhancedValheimVRM
         internal static bool ParkDeadRemote(Player player, VrmInstance instance)
         {
             if (player == null || instance == null || instance.IsCorpse || !instance.IsDisplayed ||
-                instance.GetGameObject() == null) return false;
-            if (!ActiveInstances.TryGetValue(player, out var active) || !ReferenceEquals(active, instance)) return false;
+                instance.GetGameObject() == null)
+                return false;
+            if (!ActiveInstances.TryGetValue(player, out var active) || !ReferenceEquals(active, instance))
+                return false;
             ActiveInstances.Remove(player);
             DeadCorpses[player] = instance;
             KeepForCorpse(instance, player.transform.position, CorpseSignature.Read(player));
             if (Settings.LogLoadTiming)
             {
-                Logger.Log(FileTransferController.PlayerLabel(player) + ": died at " + player.transform.position.ToString("F1") + "; model frozen until the corpse arrives");
+                Logger.Log(FileTransferController.PlayerLabel(player) + ": died at " +
+                    player.transform.position.ToString("F1") + "; model frozen until the corpse arrives");
                 CoroutineHelper.Instance.StartCoroutine(TraceDeadObject(player));
             }
 
@@ -586,16 +704,21 @@ namespace EnhancedValheimVRM
                 if ((now - last).sqrMagnitude > 0.25f)
                 {
                     var body = player.GetComponent<Rigidbody>();
-                    Logger.Log(label + " dead object moved to " + now.ToString("F1") + " at +" + (Time.realtimeSinceStartup - start).ToString("F2") + "s" +
-                               (body != null ? "; velocity " + body.velocity.magnitude.ToString("F1") + " m/s, kinematic=" + body.isKinematic : "") +
-                               "; dead=" + player.IsDead());
+                    Logger.Log(label + " dead object moved to " + now.ToString("F1") + " at +" +
+                        (Time.realtimeSinceStartup - start).ToString("F2") + "s" +
+                        (body != null
+                            ? "; velocity " + body.velocity.magnitude.ToString("F1") + " m/s, kinematic=" +
+                            body.isKinematic
+                            : "") +
+                        "; dead=" + player.IsDead());
                     last = now;
                 }
 
                 yield return null;
             }
 
-            Logger.Log(label + " dead object destroyed at +" + (Time.realtimeSinceStartup - start).ToString("F2") + "s; last position " + last.ToString("F1"));
+            Logger.Log(label + " dead object destroyed at +" + (Time.realtimeSinceStartup - start).ToString("F2") +
+                "s; last position " + last.ToString("F1"));
         }
 
         private static void KeepForCorpse(VrmInstance instance, Vector3 position, CorpseSignature signature)
@@ -604,7 +727,10 @@ namespace EnhancedValheimVRM
             model.transform.SetParent(null, true);
             var animation = model.GetComponent<VrmAnimator>();
             if (animation != null) animation.enabled = false; // Keep the last pose until the corpse claims it.
-            var orphan = new Orphan { Instance = instance, Position = position, Signature = signature, DiedAt = Time.realtimeSinceStartup };
+            var orphan = new Orphan
+            {
+                Instance = instance, Position = position, Signature = signature, DiedAt = Time.realtimeSinceStartup
+            };
             Orphans.Add(orphan);
             CoroutineHelper.Instance.StartCoroutine(ExpireOrphan(orphan));
         }
@@ -622,14 +748,17 @@ namespace EnhancedValheimVRM
         // shown again: a respawned or rejoined player object is hidden from the moment it
         // appears until the avatar is installed. A character's very first load is not hidden.
         private static readonly HashSet<long> KnownAvatars = new HashSet<long>();
-        private static readonly Dictionary<Player, List<SkinnedMeshRenderer>> Expected = new Dictionary<Player, List<SkinnedMeshRenderer>>();
+
+        private static readonly Dictionary<Player, List<SkinnedMeshRenderer>> Expected =
+            new Dictionary<Player, List<SkinnedMeshRenderer>>();
 
         internal static bool HasKnownAvatar(long characterId) => characterId != 0 && KnownAvatars.Contains(characterId);
 
         internal static void ExpectSharedAvatar(Player player)
         {
             if (player == null || player == Player.m_localPlayer || Expected.ContainsKey(player) ||
-                FindSharingInstance(player) != null) return;
+                FindSharingInstance(player) != null)
+                return;
             var visual = player.GetVisual();
             if (visual == null) return;
             var hidden = new List<SkinnedMeshRenderer>();
@@ -651,7 +780,8 @@ namespace EnhancedValheimVRM
             Expected.Remove(player);
             if (FindSharingInstance(player)?.IsDisplayed == true) return;
             foreach (var renderer in hidden)
-                if (renderer != null) renderer.forceRenderingOff = false;
+                if (renderer != null)
+                    renderer.forceRenderingOff = false;
         }
 
         private static bool WasPreHidden(Player player, SkinnedMeshRenderer renderer) =>
@@ -661,17 +791,22 @@ namespace EnhancedValheimVRM
         {
             var player = Player.m_localPlayer;
             if (player == null || player.IsDead()) return "Enter the world with a living character first.";
-            if (Installing.Contains(player) || Reloading.Contains(player)) return "Wait for the current avatar setup to finish.";
+            if (Installing.Contains(player) || Reloading.Contains(player))
+                return "Wait for the current avatar setup to finish.";
             var avatar = FindSharingInstance(player);
-            if (avatar == null || !avatar.IsDisplayed || avatar.IsCorpse || !VanillaStates.TryGetValue(player, out var baseline))
+            if (avatar == null || !avatar.IsDisplayed || avatar.IsCorpse ||
+                !VanillaStates.TryGetValue(player, out var baseline))
                 return "Load your VRM avatar first.";
             if (baseline.Switching) return "The VRM switch is already in progress.";
-            if (baseline.Disabled == !enabled) return enabled ? "Local VRM is already on." : "Local VRM is already off.";
+            if (baseline.Disabled == !enabled)
+                return enabled ? "Local VRM is already on." : "Local VRM is already off.";
             if (!enabled)
             {
                 DisableLocal(player, avatar, baseline);
-                return "Local VRM off: vanilla visuals, equipment, collider and camera restored. /vrm dev on restores the VRM.";
+                return
+                    "Local VRM off: vanilla visuals, equipment, collider and camera restored. /vrm dev on restores the VRM.";
             }
+
             baseline.Switching = true;
             CoroutineHelper.Instance.StartCoroutine(EnableLocal(player, avatar, baseline));
             return "Restoring your local VRM from its retained model.";
@@ -688,8 +823,10 @@ namespace EnhancedValheimVRM
             if (player.TryGetComponent<VisEquipment>(out var equipment))
             {
                 // These cached objects were hidden by VRM setup; force vanilla to recreate them too.
-                HarmonyLib.AccessTools.Field(typeof(VisEquipment), "m_currentHairItemHash")?.SetValue(equipment, int.MinValue);
-                HarmonyLib.AccessTools.Field(typeof(VisEquipment), "m_currentBeardItemHash")?.SetValue(equipment, int.MinValue);
+                HarmonyLib.AccessTools.Field(typeof(VisEquipment), "m_currentHairItemHash")
+                    ?.SetValue(equipment, int.MinValue);
+                HarmonyLib.AccessTools.Field(typeof(VisEquipment), "m_currentBeardItemHash")
+                    ?.SetValue(equipment, int.MinValue);
                 PatchVisEquipmentUpdateLodgroup.RecreateEquipment(equipment);
             }
         }
@@ -705,12 +842,16 @@ namespace EnhancedValheimVRM
                 while (player != null && !player.IsDead())
                 {
                     bool more;
-                    try { more = setup.MoveNext(); }
+                    try
+                    {
+                        more = setup.MoveNext();
+                    }
                     catch (Exception error)
                     {
                         Logger.LogError("Cannot restore local VRM: " + error.Message);
                         yield break;
                     }
+
                     if (!more)
                     {
                         avatar.GetGameObject().GetComponent<OutfitController>()?.SetStaging(false);
@@ -718,13 +859,15 @@ namespace EnhancedValheimVRM
                         Logger.Log("Local VRM on: restored VRM collider, equipment and camera settings.");
                         break;
                     }
+
                     yield return setup.Current;
                 }
             }
             finally
             {
                 (setup as IDisposable)?.Dispose();
-                if (!restored && player != null && !avatar.IsCorpse && avatar.GetGameObject() != null) DisableLocal(player, avatar, baseline);
+                if (!restored && player != null && !avatar.IsCorpse && avatar.GetGameObject() != null)
+                    DisableLocal(player, avatar, baseline);
                 baseline.Switching = false;
             }
         }
@@ -845,7 +988,7 @@ namespace EnhancedValheimVRM
 
             double beforeSprings = setupClock?.Elapsed.TotalMilliseconds ?? 0;
             var springs = vrmGo.GetComponent<SpringSettingsReference>() ??
-                          vrmGo.AddComponent<SpringSettingsReference>();
+                vrmGo.AddComponent<SpringSettingsReference>();
             springs.Apply(settings);
             double beforeEquipment = setupClock?.Elapsed.TotalMilliseconds ?? 0;
             // The equipment patch owns hiding the vanilla body as part of this commit.
@@ -864,7 +1007,9 @@ namespace EnhancedValheimVRM
             if (setupClock != null)
                 vrmInstance.SetSetupTiming(string.Format(System.Globalization.CultureInfo.InvariantCulture,
                     "setup: pre-springs/frames={0:F0}ms, springs={1:F0}ms, equipment={2:F0}ms, gizmos={3:F0}ms",
-                    beforeSprings, beforeEquipment - beforeSprings, beforeGizmos - beforeEquipment,
+                    beforeSprings,
+                    beforeEquipment - beforeSprings,
+                    beforeGizmos - beforeEquipment,
                     setupClock.Elapsed.TotalMilliseconds - beforeGizmos));
         }
     }

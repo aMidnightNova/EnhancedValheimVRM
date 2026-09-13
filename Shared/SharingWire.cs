@@ -13,7 +13,9 @@ namespace EnhancedValheimVRM.Sharing
         public const int DefaultBundleLimitBytes = 384 * 1024 * 1024;
         public const int MaxExpandedVrmBytes = 1024 * 1024 * 1024 - 1048576;
         public const int MaxSettingsBytes = 128 * 1024;
+
         public const byte Upload = 2, Download = 3;
+
         // Two blobs per character, both named by the model's hash: <hash>.vrm.bundle holds the
         // model and <hash>.settings.bundle holds settings + outfits and is replaced in place.
         public const string AvatarKind = "vrm", ProfileKind = "settings";
@@ -68,8 +70,11 @@ namespace EnhancedValheimVRM.Sharing
         public static bool IsValidOverride(string name, bool blend, float value)
         {
             if (string.IsNullOrWhiteSpace(name) || name.Length > 128 || Encoding.UTF8.GetByteCount(name) > 256 ||
-                float.IsNaN(value) || float.IsInfinity(value)) return false;
-            foreach (char c in name) if (char.IsControl(c)) return false;
+                float.IsNaN(value) || float.IsInfinity(value))
+                return false;
+            foreach (char c in name)
+                if (char.IsControl(c))
+                    return false;
             return blend ? value >= 0 && value <= 100 : value == 0 || value == 1;
         }
 
@@ -86,7 +91,9 @@ namespace EnhancedValheimVRM.Sharing
                     throw new InvalidDataException("Invalid hash.");
         }
 
-        public static void WriteThrottled(BinaryWriter writer, byte[] bytes, CancellationToken cancellation,
+        public static void WriteThrottled(BinaryWriter writer,
+            byte[] bytes,
+            CancellationToken cancellation,
             int bytesPerSecond)
         {
             writer.Write(bytes.Length);
@@ -95,7 +102,9 @@ namespace EnhancedValheimVRM.Sharing
                 CopyThrottled(input, writer.BaseStream, new BandwidthLimiter(bytesPerSecond), cancellation);
         }
 
-        public static void CopyThrottled(Stream input, Stream output, BandwidthLimiter limiter,
+        public static void CopyThrottled(Stream input,
+            Stream output,
+            BandwidthLimiter limiter,
             CancellationToken cancellation)
         {
             var buffer = new byte[16384];
@@ -127,11 +136,15 @@ namespace EnhancedValheimVRM.Sharing
         public string HashOf(string kind) => kind == SharingWire.AvatarKind ? Hash : ProfileHash;
         public string VersionOf(string kind) => kind == SharingWire.AvatarKind ? Version : ProfileVersion;
 
-        public bool SameAs(BundleInfo other) => other != null && other.Version == Version && other.Hash == Hash &&
-                                                other.ProfileVersion == ProfileVersion && other.ProfileHash == ProfileHash;
+        public bool SameAs(BundleInfo other) =>
+            other != null && other.Version == Version && other.Hash == Hash &&
+            other.ProfileVersion == ProfileVersion && other.ProfileHash == ProfileHash;
 
-        public BundleInfo Clone() => new BundleInfo
-            { Version = Version, Hash = Hash, ProfileVersion = ProfileVersion, ProfileHash = ProfileHash };
+        public BundleInfo Clone() =>
+            new BundleInfo
+            {
+                Version = Version, Hash = Hash, ProfileVersion = ProfileVersion, ProfileHash = ProfileHash
+            };
 
         public void Validate()
         {
@@ -154,11 +167,23 @@ namespace EnhancedValheimVRM.Sharing
         {
             var info = new BundleInfo
             {
-                Version = SharingWire.ReadText(reader), Hash = SharingWire.ReadText(reader),
-                ProfileVersion = SharingWire.ReadText(reader), ProfileHash = SharingWire.ReadText(reader)
+                Version = SharingWire.ReadText(reader),
+                Hash = SharingWire.ReadText(reader),
+                ProfileVersion = SharingWire.ReadText(reader),
+                ProfileHash = SharingWire.ReadText(reader)
             };
-            if (info.Version != "" || info.Hash != "") { SharingWire.ValidateHash(info.Version); SharingWire.ValidateHash(info.Hash); }
-            if (info.ProfileVersion != "" || info.ProfileHash != "") { SharingWire.ValidateHash(info.ProfileVersion); SharingWire.ValidateHash(info.ProfileHash); }
+            if (info.Version != "" || info.Hash != "")
+            {
+                SharingWire.ValidateHash(info.Version);
+                SharingWire.ValidateHash(info.Hash);
+            }
+
+            if (info.ProfileVersion != "" || info.ProfileHash != "")
+            {
+                SharingWire.ValidateHash(info.ProfileVersion);
+                SharingWire.ValidateHash(info.ProfileHash);
+            }
+
             return info;
         }
     }

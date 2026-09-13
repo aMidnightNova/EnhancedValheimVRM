@@ -11,8 +11,12 @@ namespace EnhancedValheimVRM
             return math.rotate(math.inverse(socketRotation), socketPosition - parentPosition);
         }
 
-        public static bool TryMapSocket(float4x4 parentToWorld, quaternion parentRotation,
-            quaternion socketLocalRotation, float3 originalOffset, float ratio, out float3 localPosition)
+        public static bool TryMapSocket(float4x4 parentToWorld,
+            quaternion parentRotation,
+            quaternion socketLocalRotation,
+            float3 originalOffset,
+            float ratio,
+            out float3 localPosition)
         {
             localPosition = float3.zero;
             if (!math.isfinite(ratio) || ratio <= 0 || !Finite(parentToWorld)) return false;
@@ -25,8 +29,10 @@ namespace EnhancedValheimVRM
             return math.all(math.isfinite(localPosition));
         }
 
-        public static bool TryLocalScale(float4x4 parentToWorld, quaternion localRotation,
-            float3 worldScale, out float3 localScale)
+        public static bool TryLocalScale(float4x4 parentToWorld,
+            quaternion localRotation,
+            float3 worldScale,
+            out float3 localScale)
         {
             localScale = new float3(1);
             if (!Finite(parentToWorld) || !math.all(math.isfinite(worldScale))) return false;
@@ -40,13 +46,20 @@ namespace EnhancedValheimVRM
             return math.all(math.isfinite(localScale));
         }
 
-        public static bool TryMapItemOffset(float4x4 socketToWorld, quaternion socketRotation,
-            float3 offsetInMeters, float ratio, out float3 localPosition)
+        public static bool TryMapItemOffset(float4x4 socketToWorld,
+            quaternion socketRotation,
+            float3 offsetInMeters,
+            float ratio,
+            out float3 localPosition)
         {
             // Settings express physical distances along socket axes. Convert those
             // distances into the socket's import units instead of scaling them twice.
-            return TryMapSocket(socketToWorld, socketRotation, quaternion.identity,
-                offsetInMeters, ratio, out localPosition);
+            return TryMapSocket(socketToWorld,
+                socketRotation,
+                quaternion.identity,
+                offsetInMeters,
+                ratio,
+                out localPosition);
         }
 
         public static float3 ToBoneOffset(quaternion boneRotation, float3 worldOffset, float3 adjustment)
@@ -62,7 +75,7 @@ namespace EnhancedValheimVRM
         private static bool Finite(float4x4 matrix)
         {
             return math.all(math.isfinite(matrix.c0)) && math.all(math.isfinite(matrix.c1)) &&
-                   math.all(math.isfinite(matrix.c2)) && math.all(math.isfinite(matrix.c3));
+                math.all(math.isfinite(matrix.c2)) && math.all(math.isfinite(matrix.c3));
         }
     }
 }

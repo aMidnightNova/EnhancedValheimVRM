@@ -52,7 +52,9 @@ namespace EnhancedValheimVRM.Sharing
 
         private static byte[] Derive(string key, string purpose)
         {
-            if (!IsValidKey(key)) throw new CryptographicException("Your sharing secret is invalid; clear Security.VrmKey in the config to regenerate it.");
+            if (!IsValidKey(key))
+                throw new CryptographicException(
+                    "Your sharing secret is invalid; clear Security.VrmKey in the config to regenerate it.");
             using (var hmac = new HMACSHA256(Convert.FromBase64String(key)))
                 return hmac.ComputeHash(Encoding.ASCII.GetBytes("EnhancedValheimVRM/v1/" + purpose));
         }
@@ -128,7 +130,8 @@ namespace EnhancedValheimVRM.Sharing
             using (var archive = OpenZip(bytes, 1))
             {
                 var avatar = archive.Entries[0];
-                if (avatar.FullName != "avatar.vrm" || avatar.Length == 0) throw new InvalidDataException("Missing bundle file.");
+                if (avatar.FullName != "avatar.vrm" || avatar.Length == 0)
+                    throw new InvalidDataException("Missing bundle file.");
                 return ReadEntry(avatar, SharingWire.MaxExpandedVrmBytes);
             }
         }
@@ -150,11 +153,13 @@ namespace EnhancedValheimVRM.Sharing
                             if (outfitsEntry != null) throw new InvalidDataException("Duplicate outfits.");
                             outfitsEntry = entry;
                             break;
-                        default: throw new InvalidDataException("Unexpected ZIP entry.");
+                        default:
+                            throw new InvalidDataException("Unexpected ZIP entry.");
                     }
                 }
 
-                if (settingsEntry == null || outfitsEntry == null) throw new InvalidDataException("Missing bundle file.");
+                if (settingsEntry == null || outfitsEntry == null)
+                    throw new InvalidDataException("Missing bundle file.");
                 settings = ReadTextEntry(settingsEntry, SharingWire.MaxSettingsBytes);
                 outfits = ReadTextEntry(outfitsEntry, SharingWire.MaxSettingsBytes);
             }
@@ -271,7 +276,8 @@ namespace EnhancedValheimVRM.Sharing
             using (var hmac = new HMACSHA256(Derive(key, "authentication")))
             {
                 hmac.TransformBlock(encrypted, 0, count, null, 0);
-                byte[] identity = Encoding.ASCII.GetBytes(version + ":" + characterId.ToString(CultureInfo.InvariantCulture));
+                byte[] identity =
+                    Encoding.ASCII.GetBytes(version + ":" + characterId.ToString(CultureInfo.InvariantCulture));
                 hmac.TransformFinalBlock(identity, 0, identity.Length);
                 return hmac.Hash;
             }
@@ -280,7 +286,11 @@ namespace EnhancedValheimVRM.Sharing
         public static byte[] Decrypt(byte[] bundle, string key, string version, long characterId) =>
             DecryptTimed(bundle, key, version, characterId, null);
 
-        internal static byte[] DecryptTimed(byte[] bundle, string key, string version, long characterId, Action<string> timing)
+        internal static byte[] DecryptTimed(byte[] bundle,
+            string key,
+            string version,
+            long characterId,
+            Action<string> timing)
         {
             var clock = timing == null ? null : System.Diagnostics.Stopwatch.StartNew();
             if (bundle.Length < 64 || bundle.Length > SharingWire.MaxBundleBytes)
@@ -301,7 +311,9 @@ namespace EnhancedValheimVRM.Sharing
                 byte[] plaintext;
                 using (var decryptor = aes.CreateDecryptor())
                     plaintext = decryptor.TransformFinalBlock(bundle, 16, authenticatedLength - 16);
-                timing?.Invoke("verified in " + verifyMs.ToString("F0", CultureInfo.InvariantCulture) + "ms; unpacked in " + clock.Elapsed.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture) + "ms");
+                timing?.Invoke("verified in " + verifyMs.ToString("F0", CultureInfo.InvariantCulture) +
+                    "ms; unpacked in " + clock.Elapsed.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture) +
+                    "ms");
                 return plaintext;
             }
         }

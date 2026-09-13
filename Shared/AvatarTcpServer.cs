@@ -34,8 +34,18 @@ namespace EnhancedValheimVRM.Sharing
         private readonly SemaphoreSlim _connections = new SemaphoreSlim(128);
         private readonly SemaphoreSlim _uploadSlots = new SemaphoreSlim(4);
         private readonly SemaphoreSlim _downloadSlots;
-        public SharingDownloadPolicy DownloadPolicy { get; }
-        public int BundleLimitBytes { get; set; } = SharingWire.DefaultBundleLimitBytes;
+
+        public SharingDownloadPolicy DownloadPolicy
+        {
+            get;
+        }
+
+        public int BundleLimitBytes
+        {
+            get;
+            set;
+        } = SharingWire.DefaultBundleLimitBytes;
+
         public int Port => ((IPEndPoint)_listener.LocalEndpoint).Port;
 
         public AvatarTcpServer(string directory, IPAddress address, int port, SharingDownloadPolicy downloadPolicy)
@@ -65,7 +75,13 @@ namespace EnhancedValheimVRM.Sharing
             string ticket = Guid.NewGuid().ToString("N");
             _tickets[ticket] = new Transfer
             {
-                Session = session, Id = id, Kind = kind, Hash = hash, Version = version, FileHash = info.Hash, Upload = upload,
+                Session = session,
+                Id = id,
+                Kind = kind,
+                Hash = hash,
+                Version = version,
+                FileHash = info.Hash,
+                Upload = upload,
                 Expires = DateTime.UtcNow.AddMinutes(2)
             };
             return ticket;
@@ -95,9 +111,7 @@ namespace EnhancedValheimVRM.Sharing
                     {
                         transfer.Stop.Cancel();
                     }
-                    catch (ObjectDisposedException)
-                    {
-                    }
+                    catch (ObjectDisposedException) { }
 
                     var client = transfer.Client;
                     if (client != null) _ = Task.Run(() => client.Close());
@@ -207,7 +221,8 @@ namespace EnhancedValheimVRM.Sharing
             using (var writer = new BinaryWriter(stream))
             {
                 if (reader.ReadInt32() != SharingWire.Magic)
-                    throw new InvalidDataException("EnhancedValheimVRM: unsupported TCP transfer header. Use matching mod builds on the server and clients, then restart them.");
+                    throw new InvalidDataException(
+                        "EnhancedValheimVRM: unsupported TCP transfer header. Use matching mod builds on the server and clients, then restart them.");
                 byte direction = reader.ReadByte();
                 long id = reader.ReadInt64();
                 string ticket = SharingWire.ReadText(reader, 64);
@@ -281,8 +296,10 @@ namespace EnhancedValheimVRM.Sharing
                                     writer.Write(true);
                                     writer.Write((int)file.Length);
                                     writer.Flush();
-                                    SharingWire.CopyThrottled(file, stream,
-                                        new BandwidthLimiter(DownloadPolicy.BytesPerSecond), cancellation);
+                                    SharingWire.CopyThrottled(file,
+                                        stream,
+                                        new BandwidthLimiter(DownloadPolicy.BytesPerSecond),
+                                        cancellation);
                                 }
                             }
                             finally
@@ -305,8 +322,7 @@ namespace EnhancedValheimVRM.Sharing
         private BundleInfo Upload(Transfer transfer, BinaryReader reader, CancellationToken cancellation)
         {
             int length = reader.ReadInt32();
-            if (length < 64 || length > BundleLimitBytes)
-                throw new InvalidDataException("Invalid upload size.");
+            if (length < 64 || length > BundleLimitBytes) throw new InvalidDataException("Invalid upload size.");
             string directory = CharacterDirectory(transfer.Id);
             Directory.CreateDirectory(directory);
             string temporary = Path.Combine(directory, Guid.NewGuid().ToString("N") + ".tmp");
@@ -342,7 +358,8 @@ namespace EnhancedValheimVRM.Sharing
                 {
                     cancellation.ThrowIfCancellationRequested();
                     if (transfer.Revoked) throw new OperationCanceledException();
-                    string destination = Path.Combine(directory, SharingWire.BlobFileName(transfer.Kind, transfer.FileHash));
+                    string destination = Path.Combine(directory,
+                        SharingWire.BlobFileName(transfer.Kind, transfer.FileHash));
                     // The model file is immutable per hash; the settings file is replaced in place.
                     if (transfer.Kind == SharingWire.ProfileKind && File.Exists(destination)) File.Delete(destination);
                     if (!File.Exists(destination)) File.Move(temporary, destination);
@@ -351,16 +368,23 @@ namespace EnhancedValheimVRM.Sharing
                     if (transfer.Kind == SharingWire.AvatarKind)
                     {
                         // A new model invalidates the settings file named after the previous model.
-                        if (current.Hash != transfer.Hash) { current.ProfileVersion = ""; current.ProfileHash = ""; }
+                        if (current.Hash != transfer.Hash)
+                        {
+                            current.ProfileVersion = "";
+                            current.ProfileHash = "";
+                        }
+
                         current.Version = transfer.Version;
                         current.Hash = transfer.Hash;
                     }
                     else
                     {
-                        if (current.Hash != transfer.FileHash) throw new InvalidDataException("Settings do not belong to the stored model.");
+                        if (current.Hash != transfer.FileHash)
+                            throw new InvalidDataException("Settings do not belong to the stored model.");
                         current.ProfileVersion = transfer.Version;
                         current.ProfileHash = transfer.Hash;
                     }
+
                     using (var metadata = new MemoryStream())
                     using (var manifest = new BinaryWriter(metadata))
                     {

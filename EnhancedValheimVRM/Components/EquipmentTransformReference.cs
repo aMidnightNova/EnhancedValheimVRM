@@ -23,6 +23,7 @@ namespace EnhancedValheimVRM
                     : item.position;
                 reference._captured = true;
             }
+
             return reference;
         }
 
@@ -34,7 +35,8 @@ namespace EnhancedValheimVRM
             var parentMatrix = transform.parent != null ? transform.parent.localToWorldMatrix : Matrix4x4.identity;
             if (AttachmentMath.TryLocalScale(AttachmentTransforms.Matrix(parentMatrix),
                     AttachmentTransforms.Rotation(transform.localRotation),
-                    AttachmentTransforms.Vector(Vector3.Scale(_worldScale * ratio, multiplier)), out var scale))
+                    AttachmentTransforms.Vector(Vector3.Scale(_worldScale * ratio, multiplier)),
+                    out var scale))
                 transform.localScale = AttachmentTransforms.Vector(scale);
         }
 
@@ -49,8 +51,10 @@ namespace EnhancedValheimVRM
             var matrix = parent != null ? parent.localToWorldMatrix : Matrix4x4.identity;
             var rotation = parent != null ? parent.rotation : Quaternion.identity;
             if (AttachmentMath.TryMapItemOffset(AttachmentTransforms.Matrix(matrix),
-                    AttachmentTransforms.Rotation(rotation), AttachmentTransforms.Vector(_baseOffsetInMeters + offsetInMeters),
-                    ratio, out var position))
+                    AttachmentTransforms.Rotation(rotation),
+                    AttachmentTransforms.Vector(_baseOffsetInMeters + offsetInMeters),
+                    ratio,
+                    out var position))
                 transform.localPosition = AttachmentTransforms.Vector(position);
         }
     }

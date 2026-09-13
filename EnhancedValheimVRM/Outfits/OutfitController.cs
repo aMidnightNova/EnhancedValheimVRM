@@ -36,6 +36,7 @@ namespace EnhancedValheimVRM
                             }
                     }
                 }
+
             ApplyValues();
         }
 
@@ -51,8 +52,17 @@ namespace EnhancedValheimVRM
         private readonly Dictionary<SkinnedMeshRenderer, Dictionary<int, float>> _weights =
             new Dictionary<SkinnedMeshRenderer, Dictionary<int, float>>();
 
-        public string CurrentName { get; private set; } = "";
-        public string SourceText { get; private set; } = "";
+        public string CurrentName
+        {
+            get;
+            private set;
+        } = "";
+
+        public string SourceText
+        {
+            get;
+            private set;
+        } = "";
 
         public IEnumerable<string> Names =>
             _config?.Outfits.Select(outfit => outfit.Name) ?? Enumerable.Empty<string>();
@@ -82,8 +92,10 @@ namespace EnhancedValheimVRM
                 prepared = null;
             }
 
-            if (prepared == null) LoadText(text);
-            else ApplyConfig(text, prepared);
+            if (prepared == null)
+                LoadText(text);
+            else
+                ApplyConfig(text, prepared);
         }
 
         private bool LoadText(string text)
@@ -137,7 +149,7 @@ namespace EnhancedValheimVRM
                 if (read.IsFaulted)
                 {
                     Logger.LogWarning("Outfit reload failed; previous outfits retained: " +
-                                      read.Exception.GetBaseException().Message);
+                        read.Exception.GetBaseException().Message);
                     yield break;
                 }
 
@@ -160,8 +172,10 @@ namespace EnhancedValheimVRM
             foreach (var entry in outfit.Meshes)
             {
                 var renderers = _originalVisibility.Keys
-                    .Where(renderer => renderer != null && renderer.name == entry.Key).ToArray();
-                if (renderers.Length == 0) Logger.LogOnce("outfit-mesh:" + entry.Key, "Outfit mesh not found: " + entry.Key);
+                    .Where(renderer => renderer != null && renderer.name == entry.Key)
+                    .ToArray();
+                if (renderers.Length == 0)
+                    Logger.LogOnce("outfit-mesh:" + entry.Key, "Outfit mesh not found: " + entry.Key);
                 foreach (var renderer in renderers) _visibility[renderer] = !entry.Value;
             }
 
@@ -207,6 +221,7 @@ namespace EnhancedValheimVRM
                             }
                     }
                 }
+
             foreach (var mesh in _weights)
                 if (mesh.Key != null)
                     foreach (var entry in mesh.Value)
@@ -225,12 +240,14 @@ namespace EnhancedValheimVRM
                     entry.Key.forceRenderingOff = _originalVisibility[entry.Key];
                     entry.Key.enabled = _originalEnabled[entry.Key];
                 }
+
             foreach (var mesh in _weights)
                 if (mesh.Key != null)
                     foreach (var entry in mesh.Value)
                         mesh.Key.SetBlendShapeWeight(entry.Key, _originalWeights[mesh.Key][entry.Key]);
             foreach (var node in _activatedNodes)
-                if (node != null) node.SetActive(false);
+                if (node != null)
+                    node.SetActive(false);
             _activatedNodes.Clear();
             _visibility.Clear();
             _weights.Clear();
@@ -238,7 +255,8 @@ namespace EnhancedValheimVRM
 
         private string DefaultTemplate()
         {
-            var text = new StringBuilder("# Named outfits; exactly one section has Default=True.\n[default]\nDefault=True\n");
+            var text = new StringBuilder(
+                "# Named outfits; exactly one section has Default=True.\n[default]\nDefault=True\n");
             foreach (var name in _originalVisibility.Keys.Where(r => r != null).Select(r => r.name).Distinct())
                 text.Append("mesh:").Append(name).Append("=True\n");
             return text.ToString();
@@ -254,12 +272,15 @@ namespace EnhancedValheimVRM
                 {
                     // CreateNew is atomic: never overwrite even if a file appears concurrently.
                     using (var file = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read))
-                    using (var writer = new StreamWriter(file)) writer.Write(text);
+                    using (var writer = new StreamWriter(file))
+                        writer.Write(text);
                     Logger.Log("Created default outfit: " + path + ". Use /vrm outfit reload to load it.");
                 }
                 catch (IOException error)
                 {
-                    Logger.LogWarning(File.Exists(path) ? "Outfit file already exists; left unchanged." : "Cannot generate outfit: " + error.Message);
+                    Logger.LogWarning(File.Exists(path)
+                        ? "Outfit file already exists; left unchanged."
+                        : "Cannot generate outfit: " + error.Message);
                 }
             });
             return "Creating default outfit file if none exists.";
@@ -269,8 +290,9 @@ namespace EnhancedValheimVRM
         {
             var mesh = _originalVisibility.Keys.FirstOrDefault(r => r != null && r.name == name);
             if (mesh == null) return false;
-            bool hidden = _visibility.TryGetValue(mesh, out var value) ? value :
-                mesh.forceRenderingOff || !mesh.enabled || !mesh.gameObject.activeInHierarchy;
+            bool hidden = _visibility.TryGetValue(mesh, out var value)
+                ? value
+                : mesh.forceRenderingOff || !mesh.enabled || !mesh.gameObject.activeInHierarchy;
             return Override(name, false, hidden ? 1 : 0, true);
         }
 
@@ -286,14 +308,17 @@ namespace EnhancedValheimVRM
                     found = true;
                 }
             }
-            else foreach (var skin in _originalWeights.Keys.Where(r => r != null))
-            {
-                int index = skin.sharedMesh.GetBlendShapeIndex(name);
-                if (index < 0) continue;
-                if (!_weights.TryGetValue(skin, out var values)) _weights[skin] = values = new Dictionary<int, float>();
-                values[index] = value;
-                found = true;
-            }
+            else
+                foreach (var skin in _originalWeights.Keys.Where(r => r != null))
+                {
+                    int index = skin.sharedMesh.GetBlendShapeIndex(name);
+                    if (index < 0) continue;
+                    if (!_weights.TryGetValue(skin, out var values))
+                        _weights[skin] = values = new Dictionary<int, float>();
+                    values[index] = value;
+                    found = true;
+                }
+
             if (!found) return false;
             ApplyValues();
             if (publish && _player == Player.m_localPlayer)

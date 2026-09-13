@@ -17,17 +17,25 @@ namespace EnhancedValheimVRM
         private readonly HashSet<Transform> _equipmentSockets = new HashSet<Transform>();
         private GUIStyle _labelStyle;
 
-        public void Setup(Player player, VrmInstance vrmInstance, bool playerGizmoEnabled = false, bool vrmGizmoEnabled = false)
+        public void Setup(Player player,
+            VrmInstance vrmInstance,
+            bool playerGizmoEnabled = false,
+            bool vrmGizmoEnabled = false)
         {
             ClearGizmos();
             _equipmentSockets.Clear();
             if (player.TryGetField<Player, VisEquipment>("m_visEquipment", out var equipment) && equipment != null)
             {
-                foreach (var socket in new[] { equipment.m_leftHand, equipment.m_rightHand, equipment.m_helmet,
-                    equipment.m_backShield, equipment.m_backMelee, equipment.m_backTwohandedMelee,
-                    equipment.m_backBow, equipment.m_backTool, equipment.m_backAtgeir })
-                    if (socket != null) _equipmentSockets.Add(socket);
+                foreach (var socket in new[]
+                         {
+                             equipment.m_leftHand, equipment.m_rightHand, equipment.m_helmet,
+                             equipment.m_backShield, equipment.m_backMelee, equipment.m_backTwohandedMelee,
+                             equipment.m_backBow, equipment.m_backTool, equipment.m_backAtgeir
+                         })
+                    if (socket != null)
+                        _equipmentSockets.Add(socket);
             }
+
             var shader = Shader.Find("Unlit/Color");
             if (shader == null) return;
             if (playerGizmoEnabled) AddSockets(player.GetField<Player, Animator>("m_animator"), "Player", shader);
@@ -45,9 +53,14 @@ namespace EnhancedValheimVRM
                 // Use the game's actual sockets, plus any additional attachment
                 // markers in either rig. Do not restrict this to particular slots.
                 bool forearm = bone == leftForearm || bone == rightForearm;
-                if (!forearm && !_equipmentSockets.Contains(bone) && bone.name.IndexOf("_attach", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                if (!forearm && !_equipmentSockets.Contains(bone) &&
+                    bone.name.IndexOf("_attach", StringComparison.OrdinalIgnoreCase) < 0)
+                    continue;
                 if (_gizmos.Exists(existing => existing.Bone == bone)) continue;
-                var gizmo = new SocketGizmo { Bone = bone, Label = source + " / " + bone.name + (forearm ? " (forearm bone)" : "") };
+                var gizmo = new SocketGizmo
+                {
+                    Bone = bone, Label = source + " / " + bone.name + (forearm ? " (forearm bone)" : "")
+                };
                 foreach (var color in new[] { Color.red, Color.green, Color.blue })
                 {
                     var line = new GameObject("BoneGizmoLine").AddComponent<LineRenderer>();
@@ -60,6 +73,7 @@ namespace EnhancedValheimVRM
                     line.sharedMaterial = new Material(shader) { color = color };
                     gizmo.Axes.Add(line);
                 }
+
                 _gizmos.Add(gizmo);
             }
         }
@@ -68,8 +82,9 @@ namespace EnhancedValheimVRM
         {
             enabled = visible;
             foreach (var gizmo in _gizmos)
-                foreach (var line in gizmo.Axes)
-                    if (line != null) line.enabled = visible;
+            foreach (var line in gizmo.Axes)
+                if (line != null)
+                    line.enabled = visible;
         }
 
         private void LateUpdate() => UpdateAxes();
@@ -97,13 +112,18 @@ namespace EnhancedValheimVRM
             var camera = Camera.main;
             if (camera == null || Event.current.type != EventType.Repaint) return;
             if (_labelStyle == null)
-                _labelStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.LowerCenter, fontSize = 14, fontStyle = FontStyle.Bold };
+                _labelStyle = new GUIStyle(GUI.skin.label)
+                {
+                    alignment = TextAnchor.LowerCenter, fontSize = 14, fontStyle = FontStyle.Bold
+                };
 
             foreach (var gizmo in _gizmos)
             {
                 if (gizmo.Bone == null || !gizmo.Bone.gameObject.activeInHierarchy) continue;
                 var screen = camera.WorldToScreenPoint(gizmo.Bone.position);
-                if (screen.z <= 0 || screen.x < 0 || screen.x > Screen.width || screen.y < 0 || screen.y > Screen.height) continue;
+                if (screen.z <= 0 || screen.x < 0 || screen.x > Screen.width || screen.y < 0 ||
+                    screen.y > Screen.height)
+                    continue;
                 var rect = new Rect(screen.x - 160, Screen.height - screen.y - 32, 320, 24);
                 _labelStyle.normal.textColor = Color.black;
                 GUI.Label(new Rect(rect.x + 1, rect.y + 1, rect.width, rect.height), gizmo.Label, _labelStyle);
@@ -121,6 +141,7 @@ namespace EnhancedValheimVRM
                 Destroy(line.sharedMaterial);
                 Destroy(line.gameObject);
             }
+
             _gizmos.Clear();
         }
 

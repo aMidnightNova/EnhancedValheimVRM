@@ -132,37 +132,25 @@ namespace EnhancedValheimVRM
 
     internal static class OutfitRpc
     {
-        public static void SelectionReceived(long id)
-        {
-        }
+        public static void SelectionReceived(long id) { }
 
-        public static void ClientReady()
-        {
-        }
+        public static void ClientReady() { }
     }
 
     internal static class Logger
     {
         internal static void Log(string message) { }
-        internal static void ResetOnce()
-        {
-        }
+        internal static void ResetOnce() { }
 
-        internal static void LogOnce(string key, string message)
-        {
-        }
+        internal static void LogOnce(string key, string message) { }
     }
 
     internal static class FileTransferController
     {
         public static string PlayerLabel(long id) => "player " + id;
 
-        public static void ForgetCharacter(long id)
-        {
-        }
+        public static void ForgetCharacter(long id) { }
 
-        public static void ResetConnection()
-        {
-        }
+        public static void ResetConnection() { }
     }
 }

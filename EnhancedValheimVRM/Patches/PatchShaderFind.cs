@@ -17,39 +17,63 @@ namespace EnhancedValheimVRM
         private static AssetBundle _bundle;
         private static AssetBundleCreateRequest _bundleRequest;
 
-        private static string BundlePath => Path.Combine(Constants.Shaders.Dir,
-            Settings.ShaderBundle == Settings.ShaderOptions.Old ? "OldUniVrm.shaders" : "UniVrm.shaders");
+        private static string BundlePath =>
+            Path.Combine(Constants.Shaders.Dir,
+                Settings.ShaderBundle == Settings.ShaderOptions.Old ? "OldUniVrm.shaders" : "UniVrm.shaders");
 
         private static void CaptureGameShaders()
         {
             foreach (var shader in Resources.FindObjectsOfTypeAll<Shader>())
-                if (!GameShaders.ContainsKey(shader.name)) GameShaders.Add(shader.name, shader);
+                if (!GameShaders.ContainsKey(shader.name))
+                    GameShaders.Add(shader.name, shader);
         }
 
         private static void AddShaders(Object[] assets)
         {
             foreach (var asset in assets)
-                if (asset is Shader shader) Shaders[shader.name] = shader;
+                if (asset is Shader shader)
+                    Shaders[shader.name] = shader;
         }
 
         internal static void EnsureLoadedForMenu()
         {
             if (_ready) return;
-            if (!_started) { CaptureGameShaders(); _started = true; }
+            if (!_started)
+            {
+                CaptureGameShaders();
+                _started = true;
+            }
+
             try
             {
                 // Like the old local loader, menu construction is synchronous.
                 // Reuse an existing request if returning from a world during its load.
-                if (_bundle == null) _bundle = _bundleRequest != null ? _bundleRequest.assetBundle : AssetBundle.LoadFromFile(BundlePath);
-                if (_bundle == null) { Logger.LogWarning("VRM shader bundle could not be loaded."); return; }
+                if (_bundle == null)
+                    _bundle = _bundleRequest != null
+                        ? _bundleRequest.assetBundle
+                        : AssetBundle.LoadFromFile(BundlePath);
+                if (_bundle == null)
+                {
+                    Logger.LogWarning("VRM shader bundle could not be loaded.");
+                    return;
+                }
+
                 AddShaders(_bundle.LoadAllAssets<Shader>());
             }
-            finally { _ready = true; }
+            finally
+            {
+                _ready = true;
+            }
         }
 
         internal static IEnumerator EnsureLoaded()
         {
-            if (_started) { while (!_ready) yield return null; yield break; }
+            if (_started)
+            {
+                while (!_ready) yield return null;
+                yield break;
+            }
+
             _started = true;
             try
             {
@@ -58,12 +82,20 @@ namespace EnhancedValheimVRM
                 yield return _bundleRequest;
                 if (_ready) yield break;
                 _bundle = _bundleRequest.assetBundle;
-                if (_bundle == null) { Logger.LogWarning("VRM shader bundle could not be loaded."); yield break; }
+                if (_bundle == null)
+                {
+                    Logger.LogWarning("VRM shader bundle could not be loaded.");
+                    yield break;
+                }
+
                 var assets = _bundle.LoadAllAssetsAsync<Shader>();
                 yield return assets;
                 if (!_ready) AddShaders(assets.allAssets);
             }
-            finally { _ready = true; }
+            finally
+            {
+                _ready = true;
+            }
         }
 
         private static bool Prefix(ref Shader __result, string name)

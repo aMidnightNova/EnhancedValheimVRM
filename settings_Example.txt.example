@@ -1,5 +1,5 @@
 # VRM model scale
-ModelScale=1.1
+ModelScale=1.0
 
 # Generic equipment adjustments in socket-local metres / Euler degrees.
 # Positions scale with avatar height; original prefab grip rotations are preserved.
@@ -51,7 +51,8 @@ EnablePlayerFade=true
 # Multipliers on the avatar's authored spring settings.
 SpringBoneStiffness=1.0
 SpringBoneGravityPower=1.0
+
 # Gameplay interaction distance multiplier; weapon attack range is unchanged.
 InteractionDistanceScale=1.0
-# Permit this character's bundle and sharing key to be supplied to viewers.
+# Permit this character's bundle and sharing key to be supplied to other game players.
 AllowShare=true

@@ -62,7 +62,9 @@ namespace EnhancedValheimVRM
                 if (mesh == null || !mesh.isReadable) continue;
                 var bones = renderer.bones;
                 var torsoIndices = new HashSet<int>();
-                for (int i = 0; i < bones.Length; i++) if (bones[i] != null && torso.Contains(bones[i])) torsoIndices.Add(i);
+                for (int i = 0; i < bones.Length; i++)
+                    if (bones[i] != null && torso.Contains(bones[i]))
+                        torsoIndices.Add(i);
                 if (torsoIndices.Count == 0) continue;
                 var vertices = mesh.vertices;
                 var weights = mesh.boneWeights;
@@ -72,9 +74,24 @@ namespace EnhancedValheimVRM
                     var w = weights[i];
                     int dominant = w.boneIndex0;
                     float best = w.weight0;
-                    if (w.weight1 > best) { best = w.weight1; dominant = w.boneIndex1; }
-                    if (w.weight2 > best) { best = w.weight2; dominant = w.boneIndex2; }
-                    if (w.weight3 > best) { best = w.weight3; dominant = w.boneIndex3; }
+                    if (w.weight1 > best)
+                    {
+                        best = w.weight1;
+                        dominant = w.boneIndex1;
+                    }
+
+                    if (w.weight2 > best)
+                    {
+                        best = w.weight2;
+                        dominant = w.boneIndex2;
+                    }
+
+                    if (w.weight3 > best)
+                    {
+                        best = w.weight3;
+                        dominant = w.boneIndex3;
+                    }
+
                     if (best < 0.5f || !torsoIndices.Contains(dominant)) continue;
                     var world = renderer.transform.TransformPoint(vertices[i]);
                     depths.Add(Vector3.Dot(world - chestRest, backward));

@@ -30,8 +30,11 @@ internal static class Program
         }
     }
 
-    static VrmAssetCache.Source Source(string key, byte first = 1) => new VrmAssetCache.Source
-        { Key = key, Path = key + ".vrm", Bytes = new byte[] { first, 2, 3 }, Settings = new VrmSettings("test") };
+    static VrmAssetCache.Source Source(string key, byte first = 1) =>
+        new VrmAssetCache.Source
+        {
+            Key = key, Path = key + ".vrm", Bytes = new byte[] { first, 2, 3 }, Settings = new VrmSettings("test")
+        };
 
     static void Main()
     {
@@ -259,30 +262,22 @@ namespace UniGLTF
         public static void FailOne() =>
             Pending.Dequeue().SetException(new InvalidOperationException("Test native failure"));
 
-        public void Dispose()
-        {
-        }
+        public void Dispose() { }
     }
 }
 
 namespace VRM
 {
-    public class NotVrm0Exception : Exception
-    {
-    }
+    public class NotVrm0Exception : Exception { }
 
     public class VRMData
     {
-        public VRMData(object data)
-        {
-        }
+        public VRMData(object data) { }
     }
 
     public class VRMImporterContext : UniGLTF.ImporterContext
     {
-        public VRMImporterContext(VRMData data, object map = null, object texture = null)
-        {
-        }
+        public VRMImporterContext(VRMData data, object map = null, object texture = null) { }
     }
 }
 
@@ -295,22 +290,19 @@ namespace UniVRM10
 
     public class Vrm10Importer : UniGLTF.ImporterContext
     {
-        public Vrm10Importer(Vrm10Data data, object map = null, object texture = null)
-        {
-        }
+        public Vrm10Importer(Vrm10Data data, object map = null, object texture = null) { }
     }
 }
 
-namespace VRMShaders
-{
-}
+namespace VRMShaders { }
 
 namespace HarmonyLib
 {
     public static class AccessTools
     {
-        public static System.Reflection.FieldInfo Field(Type type, string name) => type.GetField(name,
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        public static System.Reflection.FieldInfo Field(Type type, string name) =>
+            type.GetField(name,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
     }
 }
 
@@ -328,9 +320,7 @@ namespace EnhancedValheimVRM
             Name = name;
         }
 
-        public VrmSettings(string name, string settings)
-        {
-        }
+        public VrmSettings(string name, string settings) { }
     }
 
     public class OutfitConfig
@@ -353,20 +343,14 @@ namespace EnhancedValheimVRM
             Debug
         }
 
-        public static void Log(string value, LogLevel level = LogLevel.Debug)
-        {
-        }
+        public static void Log(string value, LogLevel level = LogLevel.Debug) { }
 
-        public static void LogWarning(string value)
-        {
-        }
+        public static void LogWarning(string value) { }
     }
 
     public class SharedVrmLifetime
     {
-        public void NotifyMaterial(object material)
-        {
-        }
+        public void NotifyMaterial(object material) { }
 
         public readonly List<UnityEngine.Object> ExtraResources = new List<UnityEngine.Object>();
     }
@@ -376,32 +360,25 @@ namespace EnhancedValheimVRM
         public static bool LogLoadTiming = false;
     }
 
-    public class TextureDeserializerAsync
-    {
-    }
+    public class TextureDeserializerAsync { }
 
     public class PersistentImportAwaitCaller
     {
-        public PersistentImportAwaitCaller(object importer)
-        {
-        }
+        public PersistentImportAwaitCaller(object importer) { }
 
-        public void Protect()
-        {
-        }
+        public void Protect() { }
 
-        public static UnityEngine.GameObject GetRoot(UniGLTF.ImporterContext importer) => importer == null
-            ? null
-            : typeof(UniGLTF.ImporterContext).GetField("Root",
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-                .GetValue(importer) as UnityEngine.GameObject;
+        public static UnityEngine.GameObject GetRoot(UniGLTF.ImporterContext importer) =>
+            importer == null
+                ? null
+                : typeof(UniGLTF.ImporterContext).GetField("Root",
+                        System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                    .GetValue(importer) as UnityEngine.GameObject;
     }
 
     public static class PatchShaderFind
     {
-        public static void EnsureLoadedForMenu()
-        {
-        }
+        public static void EnsureLoadedForMenu() { }
 
         public static IEnumerator EnsureLoaded()
         {
