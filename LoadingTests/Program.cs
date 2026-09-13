@@ -8,6 +8,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using EnhancedValheimVRM;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 internal static class Program
 {
@@ -167,7 +169,7 @@ namespace UnityEngine
 
     public class GameObject : Object
     {
-        private readonly Dictionary<Type, object> components = new();
+        private readonly Dictionary<Type, object> components = new Dictionary<Type, object>();
         public bool active = true;
 
         public GameObject()
@@ -195,7 +197,7 @@ namespace UnityEngine
 
     public class Animator
     {
-        public Avatar avatar = new();
+        public Avatar avatar = new Avatar();
     }
 
     public class Avatar
@@ -233,7 +235,7 @@ namespace UniGLTF
     public class RuntimeGltfInstance
     {
         public UnityEngine.GameObject Root;
-        public List<UnityEngine.Renderer> VisibleRenderers = new();
+        public List<UnityEngine.Renderer> VisibleRenderers = new List<Renderer>();
 
         public void TransferOwnership(Action<object, UnityEngine.Object> take)
         {
@@ -244,9 +246,10 @@ namespace UniGLTF
     public class ImporterContext : IDisposable
     {
         protected UnityEngine.GameObject Root;
-        public readonly List<UnityEngine.Transform> Nodes = new();
+        public readonly List<UnityEngine.Transform> Nodes = new List<Transform>();
 
-        public static readonly Queue<TaskCompletionSource<RuntimeGltfInstance>> Pending = new();
+        public static readonly Queue<TaskCompletionSource<RuntimeGltfInstance>> Pending =
+            new Queue<TaskCompletionSource<RuntimeGltfInstance>>();
 
         public static int Starts;
 
@@ -371,7 +374,7 @@ namespace EnhancedValheimVRM
     {
         public void NotifyMaterial(object material) { }
 
-        public readonly List<UnityEngine.Object> ExtraResources = new();
+        public readonly List<UnityEngine.Object> ExtraResources = new List<Object>();
     }
 
     public static class Settings
@@ -420,8 +423,8 @@ namespace EnhancedValheimVRM
 
     public class CoroutineHelper
     {
-        public static readonly CoroutineHelper Instance = new();
-        private readonly List<Stack<IEnumerator>> routines = new();
+        public static readonly CoroutineHelper Instance = new CoroutineHelper();
+        private readonly List<Stack<IEnumerator>> routines = new List<Stack<IEnumerator>>();
 
         public void StartCoroutine(IEnumerator work)
         {
