@@ -70,23 +70,11 @@ namespace EnhancedValheimVRM
         //Internal computed properties
         // a property {get set}
         // this is the scale of the VRM to the Player Model, typically its a smaller number but can be larger. E.G. 0.68f
-        public float PlayerVrmScale
-        {
-            get;
-            set;
-        } = 1f;
+        public float PlayerVrmScale { get; set; } = 1f;
 
-        public float VrmHeight
-        {
-            get;
-            set;
-        } = 1f;
+        public float VrmHeight { get; set; } = 1f;
 
-        public float VrmRadius
-        {
-            get;
-            set;
-        } = 0.5f;
+        public float VrmRadius { get; set; } = 0.5f;
 
 
         //Internal computed properties

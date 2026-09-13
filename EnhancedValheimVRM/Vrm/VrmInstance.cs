@@ -22,11 +22,7 @@ namespace EnhancedValheimVRM
         private State _state;
         public bool IsLoading => _state == State.Loading;
 
-        public bool IsShared
-        {
-            get;
-            private set;
-        }
+        public bool IsShared { get; private set; }
 
         // Set by the animator when the game marks this player dead; viewers lose the ZDO before
         // the player object is destroyed, so IsDead() alone is not reliable at that moment.
@@ -43,11 +39,7 @@ namespace EnhancedValheimVRM
 
         private bool _disposed => _state == State.Disposed;
 
-        internal Vector3 LodReferencePoint
-        {
-            get;
-            private set;
-        }
+        internal Vector3 LodReferencePoint { get; private set; }
 
         public bool IsReady => _state == State.Staged || _state == State.Displayed || _state == State.Corpse;
         internal bool IsDisplayed => _state == State.Displayed || _state == State.Corpse;

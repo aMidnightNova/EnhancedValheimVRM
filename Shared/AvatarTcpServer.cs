@@ -35,16 +35,9 @@ namespace EnhancedValheimVRM.Sharing
         private readonly SemaphoreSlim _uploadSlots = new SemaphoreSlim(4);
         private readonly SemaphoreSlim _downloadSlots;
 
-        public SharingDownloadPolicy DownloadPolicy
-        {
-            get;
-        }
+        public SharingDownloadPolicy DownloadPolicy { get; }
 
-        public int BundleLimitBytes
-        {
-            get;
-            set;
-        } = SharingWire.DefaultBundleLimitBytes;
+        public int BundleLimitBytes { get; set; } = SharingWire.DefaultBundleLimitBytes;
 
         public int Port => ((IPEndPoint)_listener.LocalEndpoint).Port;
 

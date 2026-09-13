@@ -108,11 +108,7 @@ namespace EnhancedValheimVRM
         private static bool _subscribed, _portReceived;
         private static int _port, _portAttempts;
 
-        internal static int BundleLimitBytes
-        {
-            get;
-            private set;
-        } = SharingWire.DefaultBundleLimitBytes;
+        internal static int BundleLimitBytes { get; private set; } = SharingWire.DefaultBundleLimitBytes;
 
         private static DateTime _nextPortRequest;
         private static System.Diagnostics.Stopwatch _timingClock;

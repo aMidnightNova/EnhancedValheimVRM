@@ -231,8 +231,12 @@ internal static class Program
             math.rotate(math.mul(renderedTurn, handAxes), forward),
             "Special weapon must follow rendered root rotation");
 
-        Check(
-            !AttachmentMath.TryMapSocket(float4x4.Scale(new float3(0)), identity, identity, captured, 1, out position),
+        Check(!AttachmentMath.TryMapSocket(float4x4.Scale(new float3(0)),
+                identity,
+                identity,
+                captured,
+                1,
+                out position),
             "Singular parent accepted");
         Check(!AttachmentMath.TryMapSocket(float4x4.identity, identity, identity, captured, float.NaN, out position),
             "NaN ratio accepted");

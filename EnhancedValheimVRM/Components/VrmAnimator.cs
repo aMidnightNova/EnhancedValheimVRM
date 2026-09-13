@@ -9,10 +9,7 @@ namespace EnhancedValheimVRM
 {
     public class VrmAnimator : MonoBehaviour, IMonoUpdater
     {
-        public static List<IMonoUpdater> Instances
-        {
-            get;
-        } = new List<IMonoUpdater>();
+        public static List<IMonoUpdater> Instances { get; } = new List<IMonoUpdater>();
 
         private Transform _vrmLeftMiddleFinger;
         private Transform _vrmRightMiddleFinger;
@@ -93,17 +90,9 @@ namespace EnhancedValheimVRM
         }
 
         // State variables for item names
-        public string LeftHandItemInstanceName
-        {
-            get;
-            set;
-        }
+        public string LeftHandItemInstanceName { get; set; }
 
-        public string RightHandItemInstanceName
-        {
-            get;
-            set;
-        }
+        public string RightHandItemInstanceName { get; set; }
 
         private Transform _vrmLeftHandTransform;
         private Transform _vrmRightHandTransform;
@@ -113,11 +102,7 @@ namespace EnhancedValheimVRM
         private Player _player;
         private VrmInstance _vrmInstance;
 
-        internal RigOffsets Offsets
-        {
-            get;
-            private set;
-        }
+        internal RigOffsets Offsets { get; private set; }
 
         private Animator _playerAnimator;
         private Animator _vrmGoAnimator;
