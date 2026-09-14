@@ -165,8 +165,24 @@ namespace EnhancedValheimVRM.Sharing
             return blob.Exists && blob.Length >= 64 && blob.Length <= BundleLimitBytes;
         }
 
+        // older builds never deleted superseded versions, so sweep them once on start
+        private void PruneAll()
+        {
+            foreach (var directory in Directory.GetDirectories(_directory))
+            {
+                if (!long.TryParse(Path.GetFileName(directory),
+                        NumberStyles.None,
+                        CultureInfo.InvariantCulture,
+                        out var id))
+                    continue;
+                var current = ReadManifest(id);
+                if (current != null) SharingWire.PruneBlobs(directory, current.Hash);
+            }
+        }
+
         public async Task RunAsync(CancellationToken cancellation)
         {
+            PruneAll();
             using (cancellation.Register(Dispose))
             {
                 while (!cancellation.IsCancellationRequested)
@@ -407,6 +423,7 @@ namespace EnhancedValheimVRM.Sharing
                         AvatarTcpClient.AtomicWrite(Path.Combine(directory, "current"), metadata.ToArray());
                     }
 
+                    SharingWire.PruneBlobs(directory, current.Hash);
                     return current;
                 }
             }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace EnhancedValheimVRM
@@ -15,6 +16,16 @@ namespace EnhancedValheimVRM
             public static readonly string DefaultName = "___Default.vrm";
             public static readonly string Dir = PluginDir;
             public static readonly string DefaultPath = Path.Combine(PluginDir, DefaultName);
+
+            // case-insensitive filenames
+            public static string Find(string fileName)
+            {
+                var exact = Path.Combine(Dir, fileName);
+                if (File.Exists(exact) || !Directory.Exists(Dir)) return exact;
+                var files = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var path in Directory.EnumerateFiles(Dir)) files[Path.GetFileName(path)] = path;
+                return files.TryGetValue(fileName, out var found) ? found : exact;
+            }
         }
 
         public static class Shaders

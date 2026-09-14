@@ -221,7 +221,7 @@ namespace EnhancedValheimVRM
         {
             _name = playerName;
 
-            _path = Path.Combine(Constants.Vrm.Dir, $"settings_{playerName}.txt");
+            _path = Constants.Vrm.Find($"settings_{playerName}.txt");
 
             if (File.Exists(_path)) Load();
         }

@@ -204,6 +204,9 @@ namespace EnhancedValheimVRM
                         System.Threading.Tasks.Task.Run(() => Array.Clear(bundle.Vrm, 0, bundle.Vrm.Length));
                 }
 
+                if (player != null && !cancellation.IsCancellationRequested)
+                    Logger.LogWarning(FileTransferController.PlayerLabel(player) +
+                        ": avatar not installed, vrm is turned off for this player");
                 completed(false);
                 yield break;
             }
@@ -211,6 +214,7 @@ namespace EnhancedValheimVRM
             Installing.Add(player);
             VrmInstance candidate = null;
             var succeeded = false;
+            string failure = null;
             var previous = FindInstance(player);
             if (!(previous?.IsDisplayed ?? false)) InitialInstalls.Add(player);
             var attachments = new List<Tuple<Transform, Transform, Vector3, Quaternion, Vector3>>();
@@ -222,9 +226,9 @@ namespace EnhancedValheimVRM
             var setupStarted = false;
             try
             {
-                if (cancellation.IsCancellationRequested || player == null || player.IsDead() ||
-                    (bundle != null && player.GetPlayerID() != bundle.CharacterId))
-                    yield break;
+                if (cancellation.IsCancellationRequested || player == null) yield break;
+                if (bundle != null && player.GetPlayerID() != bundle.CharacterId) yield break;
+
                 try
                 {
                     candidate = bundle == null ? new VrmInstance(player) : new VrmInstance(player, bundle);
@@ -233,17 +237,21 @@ namespace EnhancedValheimVRM
                 catch (Exception ex)
                 {
                     if (bundle != null || !(ex is System.IO.FileNotFoundException))
-                        Logger.LogWarning("VRM import failed: " + ex);
+                        failure = "import threw " + ex.GetType().Name + ": " + ex.Message;
                     yield break;
                 }
 
                 while ((candidate.IsLoading || (candidate.GetGameObject() != null && !candidate.IsReady)) &&
                        player != null && !cancellation.IsCancellationRequested)
                     yield return null;
-                if (cancellation.IsCancellationRequested || player == null || player.IsDead() ||
-                    (bundle != null && player.GetPlayerID() != bundle.CharacterId) ||
-                    candidate.GetGameObject() == null)
+                if (cancellation.IsCancellationRequested || player == null) yield break;
+                if (bundle != null && player.GetPlayerID() != bundle.CharacterId) yield break;
+
+                if (candidate.GetGameObject() == null)
+                {
+                    if (bundle != null) failure = "the model did not load";
                     yield break;
+                }
 
                 var equipment = player.GetComponent<VisEquipment>();
                 if (equipment != null)
@@ -298,13 +306,14 @@ namespace EnhancedValheimVRM
                         }
                         catch (Exception ex)
                         {
-                            Logger.LogWarning("VRM setup failed: " + ex);
+                            failure = "setup threw " + ex.GetType().Name + ": " + ex.Message;
                             yield break;
                         }
 
                         if (!more)
                         {
                             succeeded = candidate.GetGameObject()?.GetComponent<VrmAnimator>() != null;
+                            if (!succeeded) failure = "setup finished without an animator on the model";
                             break;
                         }
 
@@ -393,6 +402,9 @@ namespace EnhancedValheimVRM
                     candidate?.Dispose();
                 }
 
+                if (!succeeded && failure != null)
+                    Logger.LogWarning(FileTransferController.PlayerLabel(player) + ": avatar not installed, " +
+                        failure);
                 InitialInstalls.Remove(player);
                 Installing.Remove(player);
                 completed(succeeded);
@@ -438,9 +450,7 @@ namespace EnhancedValheimVRM
                     var vrmPath = instance.GetVrmFilePath();
                     var outfitPath = string.IsNullOrEmpty(vrmPath)
                         ? null
-                        : System.IO.Path.Combine(Constants.Vrm.Dir,
-                            "outfits_" + System.IO.Path.GetFileNameWithoutExtension(vrmPath).ToLowerInvariant() +
-                            ".txt");
+                        : Constants.Vrm.Find("outfits_" + System.IO.Path.GetFileNameWithoutExtension(vrmPath) + ".txt");
                     var settingsNow = Stamp(settingsPath);
                     var outfitNow = Stamp(outfitPath);
                     if (!primed)

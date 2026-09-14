@@ -13,7 +13,7 @@ namespace EnhancedValheimVRM
     {
         private const string PluginGuid = "com.rawrtastic.plugins.enhancedvalheimvrm";
         private const string PluginName = "EnhancedValheimVRM";
-        private const string PluginVersion = "1.1.0";
+        private const string PluginVersion = "1.1.1";
 
         private static EnhancedValheimVrmPlugin _instance;
         private static bool _clientInitialized;
@@ -76,6 +76,7 @@ namespace EnhancedValheimVRM
         {
             if (_clientInitialized) return;
             _clientInitialized = true;
+            FrameClock.Install();
             _harmony.PatchAll();
             _instance.gameObject.AddComponent<FileTransferController>();
             System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(ConsoleCommands).TypeHandle);

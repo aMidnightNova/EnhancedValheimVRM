@@ -424,7 +424,15 @@ namespace EnhancedValheimVRM
                         success =>
                         {
                             download.Installing = false;
-                            if (success) download.LoadedHash = received.Info.Key;
+                            if (success)
+                                download.LoadedHash = received.Info.Key;
+                            else if (!download.Stop.IsCancellationRequested && download.Player != null &&
+                                     download.Player.GetPlayerID() == download.Id)
+                            {
+                                download.BlockedHash = received.Info.Key;
+                                VrmController.RevealVanilla(download.Player);
+                                Logger.LogWarning("Shared avatar for " + PlayerLabel(download.Player) + " did not install.");
+                            }
                         },
                         download.Stop.Token,
                         received.Timing,

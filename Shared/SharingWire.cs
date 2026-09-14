@@ -25,6 +25,24 @@ namespace EnhancedValheimVRM.Sharing
             if (kind != AvatarKind && kind != ProfileKind) throw new InvalidDataException("Invalid blob kind.");
         }
 
+        // old versions of a character used to pile up forever on the server and in every clients cache.
+        // keep only the blobs named after the current model hash. a file that is still open somewhere
+        // (a download in flight) is skipped and caught on the next pass.
+        public static void PruneBlobs(string directory, string keepHash)
+        {
+            if (string.IsNullOrEmpty(keepHash) || !Directory.Exists(directory)) return;
+            foreach (var file in Directory.GetFiles(directory, "*.bundle"))
+            {
+                if (Path.GetFileName(file).StartsWith(keepHash + ".", StringComparison.Ordinal)) continue;
+                try
+                {
+                    File.Delete(file);
+                }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
+        }
+
         public static string BlobFileName(string kind, string hash)
         {
             ValidateKind(kind);

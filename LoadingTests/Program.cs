@@ -234,19 +234,19 @@ namespace UniGLTF
 
     public class RuntimeGltfInstance
     {
-        public UnityEngine.GameObject Root;
-        public List<UnityEngine.Renderer> VisibleRenderers = new List<Renderer>();
+        public GameObject Root;
+        public List<Renderer> VisibleRenderers = new List<Renderer>();
 
-        public void TransferOwnership(Action<object, UnityEngine.Object> take)
+        public void TransferOwnership(Action<object, Object> take)
         {
-            take(null, new UnityEngine.Object());
+            take(null, new Object());
         }
     }
 
     public class ImporterContext : IDisposable
     {
-        protected UnityEngine.GameObject Root;
-        public readonly List<UnityEngine.Transform> Nodes = new List<Transform>();
+        protected GameObject Root;
+        public readonly List<Transform> Nodes = new List<Transform>();
 
         public static readonly Queue<TaskCompletionSource<RuntimeGltfInstance>> Pending =
             new Queue<TaskCompletionSource<RuntimeGltfInstance>>();
@@ -255,10 +255,10 @@ namespace UniGLTF
 
         public RuntimeGltfInstance Load()
         {
-            return new RuntimeGltfInstance { Root = new UnityEngine.GameObject() };
+            return new RuntimeGltfInstance { Root = new GameObject() };
         }
 
-        public Task<RuntimeGltfInstance> LoadAsync(object caller)
+        public Task<RuntimeGltfInstance> LoadAsync(object caller, Func<string, IDisposable> measureTime = null)
         {
             Starts++;
             var task = new TaskCompletionSource<RuntimeGltfInstance>();
@@ -268,7 +268,7 @@ namespace UniGLTF
 
         public static void FinishOne()
         {
-            Pending.Dequeue().SetResult(new RuntimeGltfInstance { Root = new UnityEngine.GameObject() });
+            Pending.Dequeue().SetResult(new RuntimeGltfInstance { Root = new GameObject() });
         }
 
         public static void FailOne()
@@ -355,6 +355,15 @@ namespace EnhancedValheimVRM
         public static class Vrm
         {
             public static string Dir = "/tmp", DefaultPath = "/tmp/___Default.vrm", DefaultName = "___Default.vrm";
+
+            public static string Find(string fileName)
+            {
+                var exact = Path.Combine(Dir, fileName);
+                if (File.Exists(exact) || !Directory.Exists(Dir)) return exact;
+                var files = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var path in Directory.EnumerateFiles(Dir)) files[Path.GetFileName(path)] = path;
+                return files.TryGetValue(fileName, out var found) ? found : exact;
+            }
         }
     }
 
@@ -374,7 +383,7 @@ namespace EnhancedValheimVRM
     {
         public void NotifyMaterial(object material) { }
 
-        public readonly List<UnityEngine.Object> ExtraResources = new List<Object>();
+        public readonly List<Object> ExtraResources = new List<Object>();
     }
 
     public static class Settings
@@ -384,19 +393,32 @@ namespace EnhancedValheimVRM
 
     public class TextureDeserializerAsync { }
 
+    public static class FrameClock
+    {
+        public static double WorstFrameMs => 0;
+
+        public static void ResetWorst() { }
+    }
+
     public class PersistentImportAwaitCaller
     {
         public PersistentImportAwaitCaller(object importer) { }
 
         public void Protect() { }
 
-        public static UnityEngine.GameObject GetRoot(UniGLTF.ImporterContext importer)
+        public string SliceStats => "";
+
+        public string LongestStep => "";
+
+        public string Phase { set { } }
+
+        public static GameObject GetRoot(UniGLTF.ImporterContext importer)
         {
             return importer == null
                 ? null
                 : typeof(UniGLTF.ImporterContext).GetField("Root",
                         System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-                    .GetValue(importer) as UnityEngine.GameObject;
+                    .GetValue(importer) as GameObject;
         }
     }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
@@ -100,6 +101,21 @@ namespace EnhancedValheimVRM
             }
         }
 
+        private sealed class PhaseScope : IDisposable
+        {
+            private readonly Action _done;
+
+            internal PhaseScope(Action done)
+            {
+                _done = done;
+            }
+
+            public void Dispose()
+            {
+                _done();
+            }
+        }
+
         private static void Finish(Entry entry, RuntimeGltfInstance loaded)
         {
             entry.Root = loaded.Root;
@@ -142,7 +158,7 @@ namespace EnhancedValheimVRM
                 }
                 else
                 {
-                    source.Path = Path.Combine(Constants.Vrm.Dir, name + ".vrm");
+                    source.Path = Constants.Vrm.Find(name + ".vrm");
                     if (!File.Exists(source.Path))
                     {
                         if (!useDefault || !File.Exists(Constants.Vrm.DefaultPath))
@@ -154,9 +170,8 @@ namespace EnhancedValheimVRM
                     source.Settings = new VrmSettings(name);
                     var file = new FileInfo(source.Path);
                     source.Key = source.Path + ":" + file.Length + ":" + file.LastWriteTimeUtc.Ticks;
-                    source.OutfitPath = Path.Combine(Constants.Vrm.Dir,
-                        "outfits_" + Path.GetFileNameWithoutExtension(source.Path).ToLowerInvariant() +
-                        ".txt");
+                    source.OutfitPath = Constants.Vrm.Find(
+                        "outfits_" + Path.GetFileNameWithoutExtension(source.Path) + ".txt");
                     if (File.Exists(source.OutfitPath))
                     {
                         if (new FileInfo(source.OutfitPath).Length > Sharing.SharingWire.MaxSettingsBytes)
@@ -356,7 +371,23 @@ namespace EnhancedValheimVRM
                     : new Vrm10Importer((Vrm10Data)parsed, null, new TextureDeserializerAsync());
                 var caller = new PersistentImportAwaitCaller(importer);
                 if (timer != null) Logger.Log("Avatar import for " + source.Name + ": native import started");
-                var loading = importer.LoadAsync(caller);
+                // univrm reports each phase through this hook. keep the longest single call per phase so a
+                // spike can be named. only with the timing log on.
+                var phases = timer != null ? new Dictionary<string, double>() : null;
+                if (phases != null) FrameClock.ResetWorst();
+                var loading = importer.LoadAsync(caller,
+                    phases == null
+                        ? null
+                        : (Func<string, IDisposable>)(name =>
+                        {
+                            var clock = System.Diagnostics.Stopwatch.StartNew();
+                            caller.Phase = name;
+                            return new PhaseScope(() =>
+                            {
+                                phases.TryGetValue(name, out var worst);
+                                phases[name] = Math.Max(worst, clock.Elapsed.TotalMilliseconds);
+                            });
+                        }));
                 while (!loading.IsCompleted)
                 {
                     caller.Protect();
@@ -367,11 +398,21 @@ namespace EnhancedValheimVRM
                 if (timer != null)
                 {
                     entry.ImportTiming = string.Format(CultureInfo.InvariantCulture,
-                        "cold read/parse={0:F0}ms, queue={1:F0}ms, shaders={2:F0}ms, native/frames={3:F0}ms",
+                        "cold read/parse={0:F0}ms, queue={1:F0}ms, shaders={2:F0}ms, native/frames={3:F0}ms ({4})",
                         parseMs,
                         queueMs - parseMs,
                         shadersMs - queueMs,
-                        (timer?.Elapsed.TotalMilliseconds ?? 0) - shadersMs);
+                        (timer?.Elapsed.TotalMilliseconds ?? 0) - shadersMs,
+                        caller.SliceStats);
+                    entry.ImportTiming += string.Format(CultureInfo.InvariantCulture,
+                        "; worst frame={0:F1}ms; longest main thread stretch {2}; longest phase calls: {1}",
+                        FrameClock.WorstFrameMs,
+                        string.Join(", ",
+                            phases.OrderByDescending(p => p.Value)
+                                .Take(4)
+                                .Select(p =>
+                                    p.Key + "=" + p.Value.ToString("F1", CultureInfo.InvariantCulture) + "ms")),
+                        caller.LongestStep);
                 }
 
                 if (timer != null) Logger.Log("Avatar import for " + source.Name + ": " + entry.ImportTiming);

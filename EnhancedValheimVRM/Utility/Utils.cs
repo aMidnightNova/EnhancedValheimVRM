@@ -9,6 +9,14 @@ namespace EnhancedValheimVRM
 {
     public static class Utils
     {
+        // univrm keeps bind poses in the models root space, the games own models keep them
+        // relative to the renderer. skinning ignores the renderers transform either way, so a
+        // scaled mesh node in a vrm renders fine but would throw the measurements off.
+        private static Transform BindSpace(GameObject model, SkinnedMeshRenderer renderer)
+        {
+            return model.GetComponent<SharedVrmLifetime>() != null ? model.transform : renderer.transform;
+        }
+
         private static Vector3 RestPosition(GameObject model, Transform bone)
         {
             // Bind poses keep reload measurements stable while a character is running
@@ -19,7 +27,8 @@ namespace EnhancedValheimVRM
                 var index = Array.IndexOf(renderer.bones, bone);
                 var bindposes = renderer.sharedMesh.bindposes;
                 if (index >= 0 && index < bindposes.Length)
-                    return renderer.transform.TransformPoint(bindposes[index].inverse.MultiplyPoint3x4(Vector3.zero));
+                    return BindSpace(model, renderer)
+                        .TransformPoint(bindposes[index].inverse.MultiplyPoint3x4(Vector3.zero));
             }
 
             return bone.position;
@@ -99,7 +108,7 @@ namespace EnhancedValheimVRM
                     }
 
                     if (best < 0.5f || !torsoIndices.Contains(dominant)) continue;
-                    var world = renderer.transform.TransformPoint(vertices[i]);
+                    var world = BindSpace(model, renderer).TransformPoint(vertices[i]);
                     depths.Add(Vector3.Dot(world - chestRest, backward));
                 }
             }
@@ -147,7 +156,7 @@ namespace EnhancedValheimVRM
                 if (mesh == null || !mesh.isReadable) continue;
                 var bones = skin.bones;
                 var bindposes = mesh.bindposes;
-                var toMetres = worldToMetres * skin.transform.localToWorldMatrix;
+                var toMetres = worldToMetres * BindSpace(model, skin).localToWorldMatrix;
                 for (var i = 0; i < anatomy.Length; i++)
                 {
                     if (found[i]) continue;
@@ -199,7 +208,7 @@ namespace EnhancedValheimVRM
                 var vertices = mesh.vertices;
                 var weights = mesh.boneWeights;
                 if (weights.Length != vertices.Length) continue;
-                var toMetres = worldToMetres * skin.transform.localToWorldMatrix;
+                var toMetres = worldToMetres * BindSpace(model, skin).localToWorldMatrix;
 
                 int Group(int index)
                 {
