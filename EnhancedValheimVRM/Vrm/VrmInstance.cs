@@ -182,7 +182,7 @@ namespace EnhancedValheimVRM
                         // A remote player without an installed local file is normal;
                         // the TCP client may supply that avatar later.
                         if (IsShared || !(ex is System.IO.FileNotFoundException))
-                            Logger.LogError("VRM import failed: " + ex);
+                            Logger.LogError(_playerName + ": model failed to load: " + ex);
                         yield break;
                     }
 
@@ -294,6 +294,7 @@ namespace EnhancedValheimVRM
                 // Textures/meshes stay cached. Each live avatar owns mutable material copies.
                 var copies = new Dictionary<Material, Material>();
                 var copyBudget = System.Diagnostics.Stopwatch.StartNew();
+                var copySliceMs = PersistentImportAwaitCaller.SpareFrameMs();
                 foreach (var renderer in _vrmGo.GetComponentsInChildren<Renderer>(true))
                 {
                     if (_disposed || _player == null) yield break;
@@ -313,10 +314,11 @@ namespace EnhancedValheimVRM
                     }
 
                     renderer.sharedMaterials = materials;
-                    if (!_synchronousMenuLoad && copyBudget.Elapsed.TotalMilliseconds >= 1)
+                    if (!_synchronousMenuLoad && copyBudget.Elapsed.TotalMilliseconds >= copySliceMs)
                     {
                         yield return null;
                         copyBudget.Restart();
+                        copySliceMs = PersistentImportAwaitCaller.SpareFrameMs();
                     }
                 }
 
@@ -417,6 +419,13 @@ namespace EnhancedValheimVRM
                 _settings.VrmRadius = vrmWidth * 0.55f; // Half shoulder width plus 10% clearance.
 
                 _settings.PlayerVrmScale = vrmHeight / playerHeight;
+                Logger.Log(_playerName + ": avatar is " + vrmHeight.ToString("F2") + " m tall, " +
+                    vrmWidth.ToString("F2") + " m across the shoulders, " +
+                    _settings.PlayerVrmScale.ToString("F2") + "x the player");
+                if (_settings.PlayerVrmScale > 3f || _settings.PlayerVrmScale < 0.33f)
+                    Logger.LogWarning(_playerName +
+                        ": avatar size is way off, a node in the model is probably scaled. " +
+                        "weapons and the collider follow this number");
 
                 // ModelScale is already in these
                 SeatProportions = Vector3.zero;
@@ -497,13 +506,15 @@ namespace EnhancedValheimVRM
                             var rows = Math.Max(1, 65536 / width);
                             var stripes = new List<Color[]>();
                             var slice = System.Diagnostics.Stopwatch.StartNew();
+                            var sliceBudgetMs = PersistentImportAwaitCaller.SpareFrameMs();
                             for (var y = 0; y < height; y += rows)
                             {
                                 stripes.Add(mainTex.GetPixels(0, y, width, Math.Min(rows, height - y)));
-                                if (slice.Elapsed.TotalMilliseconds >= 1)
+                                if (slice.Elapsed.TotalMilliseconds >= sliceBudgetMs)
                                 {
                                     yield return null;
                                     slice.Restart();
+                                    sliceBudgetMs = PersistentImportAwaitCaller.SpareFrameMs();
                                 }
                             }
 
@@ -528,13 +539,15 @@ namespace EnhancedValheimVRM
 
                             if (lifetime == null || tex == null || mat == null) yield break;
                             slice.Restart();
+                            sliceBudgetMs = PersistentImportAwaitCaller.SpareFrameMs();
                             for (int y = 0, stripe = 0; y < height; y += rows, stripe++)
                             {
                                 tex.SetPixels(0, y, width, Math.Min(rows, height - y), stripes[stripe]);
-                                if (slice.Elapsed.TotalMilliseconds >= 1)
+                                if (slice.Elapsed.TotalMilliseconds >= sliceBudgetMs)
                                 {
                                     yield return null;
                                     slice.Restart();
+                                    sliceBudgetMs = PersistentImportAwaitCaller.SpareFrameMs();
                                 }
                             }
 

@@ -87,6 +87,7 @@ internal static class Program
             Check(aboveHardLimit, "Upload rate above the hard limit accepted");
             RpcChecks.UploadLimitChecks(Check);
             await UploadPolicyChecks.Run(root, Check);
+            await PruneChecks.Run(root, Check);
             await DownloadPolicyChecks.Run(root, dedicatedDownloads, Check);
             await DownloadPolicyChecks.Run(root, customDownloads, Check);
             Check(SharingEndpoint.ShouldHost(true, true, true),

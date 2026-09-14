@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using EnhancedValheimVRM;
 
@@ -123,6 +124,15 @@ namespace EnhancedValheimVRM
         public static class Vrm
         {
             public static string Dir;
+
+            public static string Find(string fileName)
+            {
+                var exact = Path.Combine(Dir, fileName);
+                if (File.Exists(exact) || !Directory.Exists(Dir)) return exact;
+                var files = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var path in Directory.EnumerateFiles(Dir)) files[Path.GetFileName(path)] = path;
+                return files.TryGetValue(fileName, out var found) ? found : exact;
+            }
         }
     }
 

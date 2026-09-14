@@ -137,6 +137,7 @@ namespace EnhancedValheimVRM.Sharing
                 var cacheStart = clock?.Elapsed.TotalMilliseconds ?? 0;
                 Directory.CreateDirectory(directory);
                 AtomicWrite(path, encrypted);
+                SharingWire.PruneBlobs(directory, info.Hash);
                 timing?.Invoke(label + ": saved to local cache in " +
                     (clock.Elapsed.TotalMilliseconds - cacheStart).ToString("F0") + "ms");
             }
