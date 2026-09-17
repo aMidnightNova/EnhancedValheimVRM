@@ -252,6 +252,15 @@ namespace EnhancedValheimVRM.Sharing
                 }
 
                 var direction = reader.ReadByte();
+                if (direction == SharingWire.Ping)
+                {
+                    // no ticket needed, it only proves the client reached this server
+                    var nonce = reader.ReadInt64();
+                    writer.Write(SharingWire.Magic);
+                    writer.Write(nonce);
+                    return;
+                }
+
                 var id = reader.ReadInt64();
                 var ticket = SharingWire.ReadText(reader, 64);
                 if (!_tickets.TryGetValue(ticket, out var transfer))

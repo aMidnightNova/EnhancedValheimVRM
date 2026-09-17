@@ -7,7 +7,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{56266ABF-B3F1-44F5-8790-D269FE536067}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>EnhancedValheimVRM</RootNamespace>
     <AssemblyName>EnhancedValheimVRM</AssemblyName>
@@ -69,6 +69,10 @@
     <Reference Include="System"/>
     <Reference Include="System.IO.Compression">
       <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\System.IO.Compression.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net.Http">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\System.Net.Http.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Core"/>
@@ -137,6 +141,8 @@
     <Compile Include="ExtensionMethods\GenericExtensions.cs"/>
     <Compile Include="ExtensionMethods\PlayerExtensions.cs"/>
     <Compile Include="Patches\PatchFejdStartup.cs"/>
+    <Compile Include="Patches\PatchJoinServer.cs"/>
+    <Compile Include="Patches\PatchVersionCheck.cs"/>
     <Compile Include="Patches\PatchAvatarLoadingScreen.cs"/>
     <Compile Include="Patches\PatchGameCameraGetCameraBaseOffset.cs"/>
     <Compile Include="Patches\PatchCharacterGetHeadPoint.cs"/>
@@ -224,6 +230,9 @@
     </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <!--    <Reference Include="UniUnlit">-->
     <!--      <HintPath>$(UNIVRM_UNITY_LIBS)\UniUnlit.dll</HintPath>-->

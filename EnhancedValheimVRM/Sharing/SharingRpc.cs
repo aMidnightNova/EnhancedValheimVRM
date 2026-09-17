@@ -13,8 +13,8 @@ namespace EnhancedValheimVRM
     // The TCP worker only owns transfers/storage; Unity/RPC calls run in Tick/Receive.
     internal static class SharingRpc
     {
-        private const int Protocol = 1;
-        private const string RpcName = "EVRM_SharingControl1";
+        internal const int Protocol = 2;
+        private const string RpcName = SharingWire.ControlRpc;
         private static readonly string ModVersion = typeof(SharingRpc).Assembly.GetName().Version.ToString();
 
         private static string LocalSharingVersion =>
@@ -49,6 +49,9 @@ namespace EnhancedValheimVRM
             internal long Request, Id;
             internal string Version = "", Hash = "", Value = "", Ticket = "";
             internal string ProfileVersion = "", ProfileHash = "", ProfileTicket = "";
+
+            // only the port announcement fills these
+            internal string FacePort = "", PublicAddress = "";
 
             internal BundleInfo Info =>
                 new BundleInfo
@@ -128,6 +131,27 @@ namespace EnhancedValheimVRM
 
         // udp port of the face relay announced by the server, 0 when it has none
         internal static int FacePort { get; private set; }
+
+        // client: the public address the server announced for itself, null when it sent none
+        internal static string ServerPublicAddress { get; private set; }
+
+        // server: the public address this dedicated server looked up, sent with every port announcement
+        private static string _publicAddress = "";
+
+        // null means the lookup found nothing, which leaves the address we already had
+        internal static void SetPublicAddress(string address)
+        {
+            Dispatch.Enqueue(() =>
+            {
+                if (address == null || address == _publicAddress) return;
+                Logger.Log(_publicAddress == ""
+                    ? "Avatar sharing public address: " + address + "."
+                    : "Avatar sharing public address changed to " + address + ".");
+                _publicAddress = address;
+                foreach (var peer in Peers.Values) peer.LastPort = -1; // announce again with the address
+            });
+        }
+
         private static string _pushedFaceTicket;
 
         // the ticket the server sent with its port announcement, handed out once
@@ -210,6 +234,7 @@ namespace EnhancedValheimVRM
             OwnerKeys.Clear();
             _port = 0;
             FacePort = 0;
+            ServerPublicAddress = null;
             _pushedFaceTicket = null;
             BundleLimitBytes = SharingWire.DefaultBundleLimitBytes;
             ServerUploadMbps = 0;
@@ -249,6 +274,7 @@ namespace EnhancedValheimVRM
                 ClientStopped(false);
                 _server = null;
                 _port = 0;
+                ServerPublicAddress = null;
                 _portReceived = false;
                 _portAttempts = 0;
             }
@@ -368,6 +394,7 @@ namespace EnhancedValheimVRM
                     ClientStopped(false);
                     _server = server;
                     _port = 0;
+                    ServerPublicAddress = null;
                     _portReceived = false;
                     _portAttempts = 0;
                     _nextPortRequest = default;
@@ -462,8 +489,8 @@ namespace EnhancedValheimVRM
                     Value = port.ToString(),
                     Request = _storage?.BundleLimitBytes ?? SharingWire.DefaultBundleLimitBytes,
                     Id = peer.LastUpload,
-                    // Reuse ProfileHash to announce the UDP face port.
-                    ProfileHash = port != 0 && _relay != null ? _relay.Port.ToString() : ""
+                    FacePort = port != 0 && _relay != null ? _relay.Port.ToString() : "",
+                    PublicAddress = port != 0 ? _publicAddress : ""
                 });
         }
 
@@ -572,6 +599,8 @@ namespace EnhancedValheimVRM
             p.Write(message.ProfileVersion);
             p.Write(message.ProfileHash);
             p.Write(message.ProfileTicket);
+            p.Write(message.FacePort);
+            p.Write(message.PublicAddress);
             rpc.Invoke(RpcName, p);
         }
 
@@ -593,10 +622,13 @@ namespace EnhancedValheimVRM
                     Ticket = package.ReadString(),
                     ProfileVersion = package.ReadString(),
                     ProfileHash = package.ReadString(),
-                    ProfileTicket = package.ReadString()
+                    ProfileTicket = package.ReadString(),
+                    FacePort = package.ReadString(),
+                    PublicAddress = package.ReadString()
                 };
                 if (m.Version.Length > 64 || m.Hash.Length > 64 || m.Value.Length > 256 || m.Ticket.Length > 64 ||
-                    m.ProfileVersion.Length > 64 || m.ProfileHash.Length > 64 || m.ProfileTicket.Length > 64)
+                    m.ProfileVersion.Length > 64 || m.ProfileHash.Length > 64 || m.ProfileTicket.Length > 64 ||
+                    m.FacePort.Length > 8 || m.PublicAddress.Length > 64)
                     return;
                 if (_network.IsServer())
                 {
@@ -970,7 +1002,7 @@ namespace EnhancedValheimVRM
                 if (limit == 0) port = 0;
                 // Servers older than the upload limit send 0; anything above the hard limit is capped.
                 var upload = m.Id <= 0 ? 0 : (int)Math.Min(m.Id, SharingUploadPolicy.HardLimitMbps);
-                var facePort = port != 0 && int.TryParse(m.ProfileHash, out var face) && face > 0 && face <= 65535
+                var facePort = port != 0 && int.TryParse(m.FacePort, out var face) && face > 0 && face <= 65535
                     ? face
                     : 0;
                 if (_portReceived && (_port != port || BundleLimitBytes != limit || ServerUploadMbps != upload))
@@ -978,6 +1010,9 @@ namespace EnhancedValheimVRM
                 BundleLimitBytes = limit;
                 ServerUploadMbps = upload;
                 FacePort = facePort;
+                ServerPublicAddress = port != 0 && System.Net.IPAddress.TryParse(m.PublicAddress, out _)
+                    ? m.PublicAddress
+                    : null;
                 if (facePort != 0 && m.Ticket.Length == 32) _pushedFaceTicket = m.Ticket;
                 _port = port;
                 _portReceived = true;

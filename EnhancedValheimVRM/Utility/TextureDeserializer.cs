@@ -9,8 +9,8 @@ namespace EnhancedValheimVRM
     {
         public async Task<Texture2D> LoadTextureAsync(DeserializingTextureInfo textureInfo, IAwaitCaller awaitCaller)
         {
-            // univrm asks for both halves of a merged pbr map even when the material only has one texture
-            if (textureInfo.ImageData == null || textureInfo.ImageData.Length == 0) return null;
+            // an image with no bytes in the file
+            if (textureInfo.ImageData == null || textureInfo.ImageData.Length == 0) return Blank(textureInfo);
             var settings = new AsyncImageLoader.LoaderSettings();
             settings.linear = textureInfo.ColorSpace == VRMShaders.ColorSpace.Linear;
 
@@ -49,7 +49,7 @@ namespace EnhancedValheimVRM
                 // the async loader refused it. one missing texture beats losing the avatar
                 Logger.LogWarning("Texture could not be decoded (" + textureInfo.DataMimeType + ", " +
                     textureInfo.ImageData.Length + " bytes), the avatar loads without it.");
-                return null;
+                return Blank(textureInfo);
             }
 
             texture.wrapModeU = textureInfo.WrapModeU;
@@ -58,6 +58,16 @@ namespace EnhancedValheimVRM
 
 
             return texture;
+        }
+
+        // a blank texture instead of null, a null fails the whole import
+        private static Texture2D Blank(DeserializingTextureInfo textureInfo)
+        {
+            return new Texture2D(2,
+                2,
+                TextureFormat.ARGB32,
+                textureInfo.UseMipmap,
+                textureInfo.ColorSpace == VRMShaders.ColorSpace.Linear);
         }
     }
 }

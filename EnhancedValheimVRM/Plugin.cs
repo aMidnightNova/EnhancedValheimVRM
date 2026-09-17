@@ -14,10 +14,10 @@ namespace EnhancedValheimVRM
     {
         private const string PluginGuid = "com.rawrtastic.plugins.enhancedvalheimvrm";
         private const string PluginName = "EnhancedValheimVRM";
-        private const string PluginVersion = "1.2.0";
+        internal const string PluginVersion = "1.3.0";
 
         private static EnhancedValheimVrmPlugin _instance;
-        private static bool _clientInitialized;
+        private static bool _clientInitialized, _serverInitialized;
 
         private static Harmony _harmony = new Harmony(PluginGuid);
 
@@ -33,6 +33,8 @@ namespace EnhancedValheimVRM
 
             // this make it so that the VRM patch is applied after the game loads a lot of itself.
             PatchFejdStartup.Apply(_harmony);
+            // server and client both need the version handshake, so it is not part of the client patches
+            PatchVersionCheck.Apply(_harmony);
         }
 
         // make <game>/EnhancedValheimVRM and keep the .example files in it current, so people see
@@ -95,9 +97,23 @@ namespace EnhancedValheimVRM
 
             // the server needs none of the client patches and has no univrm dlls to scan them against anyways
             // the dll on the server should be standalone
-            if (Application.isBatchMode || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return;
-            if (ZNet.instance != null && ZNet.instance.IsDedicated()) return;
+            if (Application.isBatchMode || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null ||
+                (ZNet.instance != null && ZNet.instance.IsDedicated()))
+            {
+                InitializeServer();
+                return;
+            }
+
             InitializeClient();
+        }
+
+        // the dedicated server side of startup. avatar sharing needs the public address before anyone joins,
+        // so the server waits for the lookup here
+        private static void InitializeServer()
+        {
+            if (_serverInitialized) return;
+            _serverInitialized = true;
+            if (Settings.EnableSharingServer) SharingRpc.SetPublicAddress(EmbeddedSharingHost.LookUpPublicAddress());
         }
     }
 }

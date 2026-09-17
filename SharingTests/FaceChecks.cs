@@ -194,10 +194,10 @@ internal static class FaceChecks
                 net.Peers.Add(peer);
                 SharingRpc.RegisterPeer(net, peer);
                 peer.m_rpc.Deliver(RpcChecks.Packet(0));
-                peer.m_rpc.Deliver(RpcChecks.Packet(12, version: "1"));
+                peer.m_rpc.Deliver(RpcChecks.Packet(12, version: SharingRpc.Protocol.ToString()));
                 SharingRpc.Tick(storage);
                 var port = LastPort(peer);
-                check(port != null && port.ProfileHash == relay.Port.ToString(),
+                check(port != null && port.FacePort == relay.Port.ToString(),
                     "Server did not announce the face port with the relay running");
                 check(port != null && port.Ticket.Length == 32,
                     "Port announcement to a known character carried no face ticket");
@@ -227,7 +227,7 @@ internal static class FaceChecks
                 net.Peers.Add(late);
                 SharingRpc.RegisterPeer(net, late);
                 late.m_rpc.Deliver(RpcChecks.Packet(0));
-                late.m_rpc.Deliver(RpcChecks.Packet(12, version: "1"));
+                late.m_rpc.Deliver(RpcChecks.Packet(12, version: SharingRpc.Protocol.ToString()));
                 SharingRpc.Tick(storage);
                 var early = LastPort(late);
                 check(early != null && early.Ticket == "",

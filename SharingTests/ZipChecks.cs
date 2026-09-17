@@ -271,7 +271,10 @@ internal static class ZipChecks
         net.Peers.Add(server);
         SharingRpc.Reset(net);
         SharingRpc.RegisterPeer(net, server);
-        server.m_rpc.Deliver(RpcChecks.Packet(13, SharingWire.DefaultBundleLimitBytes, version: "1", value: "6067"));
+        server.m_rpc.Deliver(RpcChecks.Packet(13,
+            SharingWire.DefaultBundleLimitBytes,
+            version: SharingRpc.Protocol.ToString(),
+            value: "6067"));
         SharingRpc.ClientReady();
         var client = new AvatarTcpClient("unused.invalid", 1, 750000);
         var zip = BundleCrypto.PackAvatar(vrm);

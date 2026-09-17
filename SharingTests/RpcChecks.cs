@@ -15,6 +15,7 @@ internal static class RpcChecks
         internal int Op;
         internal long Request, Id;
         internal string Version, Hash, Value, Ticket, ProfileVersion, ProfileHash, ProfileTicket;
+        internal string FacePort, PublicAddress;
     }
 
     internal static ZPackage Packet(int op,
@@ -26,7 +27,9 @@ internal static class RpcChecks
         string ticket = "",
         string profileVersion = "",
         string profileHash = "",
-        string profileTicket = "")
+        string profileTicket = "",
+        string facePort = "",
+        string publicAddress = "")
     {
         var packet = new ZPackage();
         packet.Write(op);
@@ -39,6 +42,8 @@ internal static class RpcChecks
         packet.Write(profileVersion);
         packet.Write(profileHash);
         packet.Write(profileTicket);
+        packet.Write(facePort);
+        packet.Write(publicAddress);
         return packet;
     }
 
@@ -56,7 +61,9 @@ internal static class RpcChecks
             Ticket = packet.ReadString(),
             ProfileVersion = packet.ReadString(),
             ProfileHash = packet.ReadString(),
-            ProfileTicket = packet.ReadString()
+            ProfileTicket = packet.ReadString(),
+            FacePort = packet.ReadString(),
+            PublicAddress = packet.ReadString()
         };
     }
 
@@ -91,8 +98,24 @@ internal static class RpcChecks
         check(SharingRpc.ServerUploadMbps == SharingUploadPolicy.HardLimitMbps,
             "Announced limit above the hard limit was not capped at 100");
         // A server built before the limit existed sends 0: the client falls back to its own cap.
-        server.m_rpc.Deliver(Packet(13, SharingWire.DefaultBundleLimitBytes, version: "1", value: "6067"));
+        server.m_rpc.Deliver(Packet(13,
+            SharingWire.DefaultBundleLimitBytes,
+            version: SharingRpc.Protocol.ToString(),
+            value: "6067"));
         check(SharingRpc.ServerUploadMbps == 0, "Missing server limit was not treated as unknown");
+        check(SharingRpc.ServerPublicAddress == null, "Server address known before the server announced one");
+        server.m_rpc.Deliver(Packet(13,
+            SharingWire.DefaultBundleLimitBytes,
+            version: SharingRpc.Protocol.ToString(),
+            value: "6067",
+            publicAddress: "203.0.113.5"));
+        check(SharingRpc.ServerPublicAddress == "203.0.113.5", "Announced server address was not kept");
+        server.m_rpc.Deliver(Packet(13,
+            SharingWire.DefaultBundleLimitBytes,
+            version: SharingRpc.Protocol.ToString(),
+            value: "6067",
+            publicAddress: "not an address"));
+        check(SharingRpc.ServerPublicAddress == null, "Announced text that is not an ip was kept");
         SharingRpc.Reset(null);
     }
 
@@ -140,11 +163,20 @@ internal static class RpcChecks
             SharingRpc.Reset(net);
             SharingRpc.Tick(storage);
             var owner = Add(net, 3001);
-            owner.m_rpc.Deliver(Packet(12, version: "1"));
+            owner.m_rpc.Deliver(Packet(12, version: SharingRpc.Protocol.ToString()));
             check(Last(owner, 13).Request == 384L * 1048576,
                 "Server did not announce its default compressed bundle limit");
             check(Last(owner, 13).Id == SharingUploadPolicy.DefaultServerMbps,
                 "Server did not announce its default per-upload limit");
+            check(Last(owner, 13).PublicAddress == "", "Server announced a public address before it had one");
+            SharingRpc.SetPublicAddress("203.0.113.5");
+            SharingRpc.Tick(storage);
+            SharingRpc.Tick(storage);
+            check(Last(owner, 13).PublicAddress == "203.0.113.5",
+                "Server did not announce its public address once the lookup finished");
+            SharingRpc.SetPublicAddress("");
+            SharingRpc.Tick(storage);
+            SharingRpc.Tick(storage);
             storage.UploadMbps = 40;
             SharingRpc.Tick(storage);
             check(Last(owner, 13).Id == 40, "Changed per-upload limit was not re-announced");
@@ -336,7 +368,10 @@ internal static class RpcChecks
         net.Peers.Add(server);
         SharingRpc.Reset(net);
         SharingRpc.RegisterPeer(net, server);
-        server.m_rpc.Deliver(Packet(13, SharingWire.DefaultBundleLimitBytes, version: "1", value: "6067"));
+        server.m_rpc.Deliver(Packet(13,
+            SharingWire.DefaultBundleLimitBytes,
+            version: SharingRpc.Protocol.ToString(),
+            value: "6067"));
         using (var stop = new CancellationTokenSource())
         {
             var receive = SharingRpc.ReceiveAsync(new AvatarTcpClient("unused.invalid", 1, 750000),

@@ -191,6 +191,8 @@ If you put someones vrm and settings file in your folder yourself, that is used 
 - Build without deploying with `dotnet build EnhancedValheimVRM/EnhancedValheimVRM.csproj -p:DeployToGame=false`. Normal builds deploy the mod to `BepInEx/plugins` of **VALHEIM_INSTALL**; Release builds also create `artifacts/EnhancedValheimVRM-<version>.zip`.
 - Tests: `dotnet run --project SharingTests/SharingTests.csproj` (add `-- --zip-only` or `-- --rpc-only` for the focused sets) and `dotnet run --project LoadingTests/LoadingTests.csproj`.
 - If you bump the sharing protocol (Protocol in SharingRpc.cs) the server and every client have to update together.
+- In SharingWire.cs (Magic (EVV1), EVV_SharingControl1 and EVV_Version) never change again. \
+  A build that cant read them cant tell the player why, and EVV_Version is what puts both version numbers in the error popup.
 
 
 - If for whatever reason you are targeting 111 still, Make sure in Unity you have Mono  and .NET 4.x selected.

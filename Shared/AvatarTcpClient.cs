@@ -24,11 +24,16 @@ namespace EnhancedValheimVRM.Sharing
 
         private TcpClient Connect(CancellationToken cancellation)
         {
+            return Connect(_host, _port, 10000, cancellation);
+        }
+
+        private static TcpClient Connect(string host, int port, int timeoutMs, CancellationToken cancellation)
+        {
             var client = new TcpClient { NoDelay = true, ReceiveTimeout = 30000, SendTimeout = 30000 };
             try
             {
-                var connecting = client.ConnectAsync(_host, _port);
-                if (!connecting.Wait(10000, cancellation))
+                var connecting = client.ConnectAsync(host, port);
+                if (!connecting.Wait(timeoutMs, cancellation))
                     throw new TimeoutException("TCP server connection timed out.");
                 connecting.GetAwaiter().GetResult();
                 return client;
@@ -37,6 +42,37 @@ namespace EnhancedValheimVRM.Sharing
             {
                 client.Dispose();
                 throw;
+            }
+        }
+
+        // plain tcp, sends the wire magic, ping and a random number. only the sharing server answers with the
+        // magic and that same number, anything else on the port counts as no answer
+        public static bool Ping(string host, int port, int timeoutMs)
+        {
+            var random = new byte[8];
+            using (var generator = System.Security.Cryptography.RandomNumberGenerator.Create())
+                generator.GetBytes(random);
+            var nonce = BitConverter.ToInt64(random, 0);
+            try
+            {
+                using (var client = Connect(host, port, timeoutMs, CancellationToken.None))
+                using (var stream = client.GetStream())
+                using (var reader = new BinaryReader(stream))
+                using (var writer = new BinaryWriter(stream))
+                {
+                    client.ReceiveTimeout = client.SendTimeout = timeoutMs;
+                    writer.Write(SharingWire.Magic);
+                    writer.Write(SharingWire.Ping);
+                    writer.Write(nonce);
+                    writer.Flush();
+                    return reader.ReadInt32() == SharingWire.Magic && reader.ReadInt64() == nonce;
+                }
+            }
+            catch (Exception error) when (error is SocketException || error is IOException ||
+                                          error is TimeoutException || error is AggregateException ||
+                                          error is ObjectDisposedException)
+            {
+                return false;
             }
         }
 
