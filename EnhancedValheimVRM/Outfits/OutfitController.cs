@@ -115,7 +115,7 @@ namespace EnhancedValheimVRM
             _config = config;
             SourceText = text;
             var outfit = config.Find(CurrentName) ?? config.Default;
-            Apply(outfit.Name);
+            if (outfit != null) Apply(outfit.Name);
         }
 
         private bool _reloading;
@@ -300,6 +300,61 @@ namespace EnhancedValheimVRM
                 }
             });
             return "Creating default outfit file if none exists.";
+        }
+
+        // writes a [Blendshapes] section with every blendshape the avatar has. (commented out)
+        // appended to the outfit file, or the file is created with just that section
+        public string GenerateBlendShapeList()
+        {
+            if (_path == null) return "Generate the blendshape list on the avatar owner's client.";
+            var names = new List<string>();
+            foreach (var skin in _originalWeights.Keys)
+            {
+                if (skin == null || skin.sharedMesh == null) continue;
+                for (var i = 0; i < skin.sharedMesh.blendShapeCount; i++)
+                {
+                    var name = skin.sharedMesh.GetBlendShapeName(i);
+                    if (!names.Contains(name)) names.Add(name);
+                }
+            }
+
+            if (names.Count == 0) return "This avatar has no blendshapes.";
+            var text = new StringBuilder("\n[" + OutfitConfig.KeepSection + "]\n");
+            text.Append(
+                "# every blendshape this avatar has. only the ones the vrm expressions or this file use get loaded,\n");
+            text.Append("# remove the # in front of a name to keep it loaded\n");
+            foreach (var name in names) text.Append('#').Append(name).Append('\n');
+            string path = _path, section = text.ToString();
+            Task.Run(() =>
+            {
+                try
+                {
+                    if (File.Exists(path) && File.ReadAllText(path)
+                            .IndexOf("[" + OutfitConfig.KeepSection + "]",
+                                StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        Logger.LogWarning("The outfit file already has a [" + OutfitConfig.KeepSection +
+                            "] section; left unchanged.");
+                        return;
+                    }
+
+                    File.AppendAllText(path, section);
+                    Logger.Log("Blendshape list written to " + path + ". Use /vrm outfit reload after editing it.");
+                }
+                catch (IOException error)
+                {
+                    Logger.LogWarning("Cannot write the blendshape list: " + error.Message);
+                }
+            });
+            return "Writing " + names.Count + " blendshape names to the outfit file.";
+        }
+
+        // the weight a shape had when the avatar was imported, what a face hands back when it goes idle
+        internal float OriginalWeight(SkinnedMeshRenderer skin, int index)
+        {
+            return _originalWeights.TryGetValue(skin, out var weights) && index >= 0 && index < weights.Length
+                ? weights[index]
+                : 0f;
         }
 
         public bool Toggle(string name)

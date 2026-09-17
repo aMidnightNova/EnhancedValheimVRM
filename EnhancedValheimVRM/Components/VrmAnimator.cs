@@ -11,11 +11,7 @@ namespace EnhancedValheimVRM
     {
         public static List<IMonoUpdater> Instances { get; } = new List<IMonoUpdater>();
 
-        private Transform _vrmLeftMiddleFinger;
-        private Transform _vrmRightMiddleFinger;
-
         private GameObject _leftHandItemInstance;
-        private Transform _leftHandItemInstanceTransform;
 
         public GameObject LeftHandItemInstance
         {
@@ -28,7 +24,6 @@ namespace EnhancedValheimVRM
         }
 
         private GameObject _rightHandItemInstance;
-        private Transform _rightHandItemInstanceTransform;
 
         public GameObject RightHandItemInstance
         {
@@ -40,55 +35,27 @@ namespace EnhancedValheimVRM
             }
         }
 
-        private struct WeaponArmBone
-        {
-            internal Transform Weapon, Player, Avatar, PlayerHand, AvatarHand;
-        }
-
-        private readonly List<WeaponArmBone> _weaponArmBones = new List<WeaponArmBone>();
+        // rigged weapon waiting to move onto the avatar, done after the next pose copy
+        private GameObject _pendingRig;
+        private string _rigItemName;
 
         private void SetupHands()
         {
-            _weaponArmBones.Clear();
-            _leftHandItemInstanceTransform = null;
-            _rightHandItemInstanceTransform = null;
-            _vrmLeftMiddleFinger = null;
-            _vrmRightMiddleFinger = null;
+            _pendingRig = null;
             if (_vrmGoAnimator == null) return;
-
-            // These weapons have a rig containing both hands; ordinary weapons follow
-            // the reparented sockets without any per-frame bone adjustment.
-            var rig = GameItem.IsSpecialCase(RightHandItemInstanceName) ? _rightHandItemInstance : null;
-            if (rig == null && GameItem.IsSpecialCase(LeftHandItemInstanceName)) rig = _leftHandItemInstance;
-            if (rig == null) return;
-            _leftHandItemInstanceTransform = BoneLookup.Find(rig.transform, HumanBodyBones.LeftHand);
-            _rightHandItemInstanceTransform = BoneLookup.Find(rig.transform, HumanBodyBones.RightHand);
-            // FistGold's guards are skinned to LeftForeArm/RightForeArm, not to extra sockets.
-            // Bind present arm bones once when equipment changes; hands retain their palm correction below.
-            foreach (var bone in new[] { HumanBodyBones.LeftLowerArm, HumanBodyBones.RightLowerArm })
+            var name = RightHandItemInstanceName;
+            var rig = GameItem.IsSpecialCase(name) ? _rightHandItemInstance : null;
+            if (rig == null && GameItem.IsSpecialCase(LeftHandItemInstanceName))
             {
-                var hand = bone == HumanBodyBones.LeftLowerArm ? HumanBodyBones.LeftHand : HumanBodyBones.RightHand;
-                var weaponBone = BoneLookup.Find(rig.transform, bone);
-                var playerBone = BoneLookup.Get(_playerAnimator, bone);
-                var avatarBone = BoneLookup.Get(_vrmGoAnimator, bone);
-                var playerHand = BoneLookup.Get(_playerAnimator, hand);
-                var avatarHand = BoneLookup.Get(_vrmGoAnimator, hand);
-                if (weaponBone != null && playerBone != null && avatarBone != null && playerHand != null &&
-                    avatarHand != null)
-                {
-                    _weaponArmBones.Add(new WeaponArmBone
-                    {
-                        Weapon = weaponBone,
-                        Player = playerBone,
-                        Avatar = avatarBone,
-                        PlayerHand = playerHand,
-                        AvatarHand = avatarHand
-                    });
-                }
+                name = LeftHandItemInstanceName;
+                rig = _leftHandItemInstance;
             }
 
-            _vrmLeftMiddleFinger = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.LeftMiddleProximal);
-            _vrmRightMiddleFinger = _vrmGoAnimator.GetBoneTransform(HumanBodyBones.RightMiddleProximal);
+            if (rig == null) return;
+            var pieces = rig.GetComponent<RiggedItemPieces>();
+            if (pieces != null && pieces.Avatar == _vrmGoAnimator) return;
+            _pendingRig = rig;
+            _rigItemName = name;
         }
 
         // State variables for item names
@@ -333,66 +300,181 @@ namespace EnhancedValheimVRM
                 if (_player != Player.m_localPlayer && VrmController.ParkDeadRemote(_player, _vrmInstance)) return;
             }
 
-            // Evaluate grip deltas after pose transfer. Startup can have the vanilla
-            // rig animated while the newly imported VRM is still in its rest pose.
-            // Keep the special weapon rig aligned with the same rendered turn.
-            var visualTurnCorrection = _vrmGo.transform.rotation *
+            if (_pendingRig != null)
+            {
+                MoveRigOntoAvatar(_pendingRig);
+                _pendingRig = null;
+            }
+        }
+
+        // rebinds a rigged weapon to its own skeleton, then parents its hands to the avatars hand sockets and
+        // its forearms to the avatars forearms.
+        private void MoveRigOntoAvatar(GameObject rig)
+        {
+            var body = _visEquipment != null ? _visEquipment.m_bodyModel : null;
+            if (body == null || _playerLeftHandTransform == null || _playerRightHandTransform == null) return;
+            // rigged weapons use the bodys bone names in the bodys order
+            var own = new Dictionary<string, Transform>();
+            var pieces = rig.GetComponent<RiggedItemPieces>() ?? rig.AddComponent<RiggedItemPieces>();
+            // already moved pieces are no longer under the weapon
+            foreach (var moved in pieces.Moved)
+            {
+                if (moved == null) continue;
+                foreach (var bone in moved.GetComponentsInChildren<Transform>(true)) own[bone.name] = bone;
+            }
+
+            foreach (var bone in rig.GetComponentsInChildren<Transform>(true))
+            {
+                if (!own.ContainsKey(bone.name)) own[bone.name] = bone;
+            }
+
+            var bodyBones = body.bones;
+            foreach (var renderer in rig.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (renderer.bones.Length != bodyBones.Length) continue;
+                var bones = new Transform[bodyBones.Length];
+                for (var i = 0; i < bones.Length; i++)
+                    bones[i] = bodyBones[i] != null && own.TryGetValue(bodyBones[i].name, out var mine)
+                        ? mine
+                        : bodyBones[i];
+                renderer.bones = bones;
+                if (body.rootBone != null && own.TryGetValue(body.rootBone.name, out var root))
+                    renderer.rootBone = root;
+                // its pieces end up far from where the prefab put them
+                renderer.updateWhenOffscreen = true;
+            }
+
+            pieces.Avatar = _vrmGoAnimator;
+            // forearms first, the hands are their children in the weapons skeleton
+            var turn = _vrmGo.transform.rotation *
                 Quaternion.Inverse(_playerAnimator.transform.rotation * _visualRotationOffset);
-            // Move forearms before their child hands; then apply the existing hand/palm grip math.
-            // The rig bone keeps the vanilla bone's axis convention, but its elbow-to-wrist
-            // direction has to follow the avatar's forearm. Copying only the vanilla rotation
-            // points the guard along the vanilla arm while the hand sits on the VRM wrist.
-            foreach (var bone in _weaponArmBones)
+            MoveForearm(own, pieces, turn, HumanBodyBones.LeftLowerArm, HumanBodyBones.LeftHand, "LeftForeArm");
+            MoveForearm(own, pieces, turn, HumanBodyBones.RightLowerArm, HumanBodyBones.RightHand, "RightForeArm");
+            MoveHand(own, pieces, _playerLeftHandTransform, _visEquipment.m_leftHand, "LeftHand");
+            MoveHand(own, pieces, _playerRightHandTransform, _visEquipment.m_rightHand, "RightHand");
+        }
+
+        // forearms have no socket, the guard goes on the avatars forearm bone pointed elbow to wrist
+        private void MoveForearm(Dictionary<string, Transform> own,
+            RiggedItemPieces pieces,
+            Quaternion turn,
+            HumanBodyBones bone,
+            HumanBodyBones hand,
+            string part)
+        {
+            var player = BoneLookup.Get(_playerAnimator, bone);
+            var avatar = BoneLookup.Get(_vrmGoAnimator, bone);
+            var playerHand = BoneLookup.Get(_playerAnimator, hand);
+            var avatarHand = BoneLookup.Get(_vrmGoAnimator, hand);
+            if (player == null || avatar == null || playerHand == null || avatarHand == null ||
+                !own.TryGetValue(player.name, out var piece))
+                return;
+            var rotation = turn * player.rotation;
+            var vanillaForearm = turn * (playerHand.position - player.position);
+            var avatarForearm = avatarHand.position - avatar.position;
+            if (vanillaForearm.sqrMagnitude > 1e-8f && avatarForearm.sqrMagnitude > 1e-8f)
+                rotation = Quaternion.FromToRotation(vanillaForearm, avatarForearm) * rotation;
+            var position = avatar.position;
+            if (_vrmSettings.TryGetRigOffset(_rigItemName, part, out var pos, out var rot))
             {
-                if (bone.Weapon == null || bone.Player == null || bone.Avatar == null ||
-                    bone.PlayerHand == null || bone.AvatarHand == null)
-                    continue;
-                var rotation = visualTurnCorrection * bone.Player.rotation;
-                var vanillaForearm = visualTurnCorrection * (bone.PlayerHand.position - bone.Player.position);
-                var avatarForearm = bone.AvatarHand.position - bone.Avatar.position;
-                if (vanillaForearm.sqrMagnitude > 1e-8f && avatarForearm.sqrMagnitude > 1e-8f)
-                    rotation = Quaternion.FromToRotation(vanillaForearm, avatarForearm) * rotation;
-                bone.Weapon.SetPositionAndRotation(bone.Avatar.position, rotation);
+                // spins around the middle of the forearm, not the elbow
+                var pivot = (avatar.position + avatarHand.position) * 0.5f;
+                var turned = rotation * Quaternion.Euler(rot);
+                position = pivot + turned * (Quaternion.Inverse(rotation) * (position - pivot)) +
+                    rotation * (pos * _vrmSettings.PlayerVrmScale);
+                rotation = turned;
             }
 
-            var adjustment = new Vector3(0, -0.06f, 0.04f) * (1f - _vrmSettings.PlayerVrmScale);
-            if (_leftHandItemInstanceTransform != null && _playerLeftHandTransform != null &&
-                _vrmLeftHandTransform != null)
+            piece.SetPositionAndRotation(position, rotation);
+            piece.SetParent(avatar, true);
+            if (!pieces.Moved.Contains(piece)) pieces.Moved.Add(piece);
+        }
+
+        // a hand piece goes on the avatars hand socket where the vanilla hand sits from its socket, so it keeps
+        // the games grip, scaled around it like a normal weapon
+        private void MoveHand(Dictionary<string, Transform> own,
+            RiggedItemPieces pieces,
+            Transform player,
+            Transform socket,
+            string part)
+        {
+            if (socket == null || !own.TryGetValue(player.name, out var piece) ||
+                !VrmController.TryGetVanillaSocket(_player, socket, out var at, out var turn, out var size) ||
+                size.x == 0 || size.y == 0 || size.z == 0)
+                return;
+            var ratio = _vrmSettings.PlayerVrmScale * _vrmSettings.GetWeaponScale(_rigItemName);
+            var inverse = Quaternion.Inverse(turn);
+            var shrink = new Vector3(1f / size.x, 1f / size.y, 1f / size.z);
+            var localPosition = -Vector3.Scale(inverse * at, shrink) * ratio;
+            var localRotation = inverse;
+            if (_vrmSettings.TryGetRigOffset(_rigItemName, part, out var pos, out var rot))
             {
-                var rotation = visualTurnCorrection * _playerLeftHandTransform.rotation;
-                // Move the palm midpoint 10% of the remaining distance toward the
-                // middle-finger base (55% along hand -> finger). Keep the existing
-                // one-tenth grip factor; missing finger bones use the hand origin.
-                var leftPalmCenter = _vrmLeftMiddleFinger != null
-                    ? Vector3.Lerp(_vrmLeftHandTransform.position, _vrmLeftMiddleFinger.position, 0.55f)
-                    : _vrmLeftHandTransform.position;
-                var delta = (leftPalmCenter - _vrmLeftHandTransform.position) / 10f;
-                var offset = AttachmentMath.ToBoneOffset(AttachmentTransforms.Rotation(rotation),
-                    AttachmentTransforms.Vector(delta),
-                    AttachmentTransforms.Vector(adjustment));
-                var position = AttachmentMath.PlaceBone(AttachmentTransforms.Vector(_vrmLeftHandTransform.position),
-                    AttachmentTransforms.Rotation(rotation),
-                    offset);
-                _leftHandItemInstanceTransform.SetPositionAndRotation(AttachmentTransforms.Vector(position), rotation);
+                // Rot spins it around the grip, Pos moves it along the sockets axes in meters
+                var spin = Quaternion.Euler(rot);
+                localRotation = spin * localRotation;
+                localPosition = spin * localPosition +
+                    socket.InverseTransformVector(socket.TransformDirection(pos) * _vrmSettings.PlayerVrmScale);
             }
 
-            if (_rightHandItemInstanceTransform != null && _playerRightHandTransform != null &&
-                _vrmRightHandTransform != null)
+            piece.SetParent(socket, false);
+            piece.SetLocalPositionAndRotation(localPosition, localRotation);
+            piece.localScale = shrink * ratio;
+            if (!pieces.Moved.Contains(piece)) pieces.Moved.Add(piece);
+        }
+
+        private static bool _physicsPoseInstalled;
+
+        // /vrm dev physics on | off. not saved
+        internal static bool PoseAvatarBeforePhysics = true;
+
+        // poses the avatar in the physics step too, like the game does its own skeleton, right before the simulation
+        internal static void InstallPhysicsPose()
+        {
+            if (_physicsPoseInstalled) return;
+            var loop = UnityEngine.LowLevel.PlayerLoop.GetCurrentPlayerLoop();
+            if (!FrameClock.AddBefore(ref loop,
+                    typeof(UnityEngine.PlayerLoop.FixedUpdate),
+                    typeof(UnityEngine.PlayerLoop.FixedUpdate.PhysicsFixedUpdate),
+                    CopyPosesForPhysics,
+                    typeof(VrmAnimator)))
             {
-                var rotation = visualTurnCorrection * _playerRightHandTransform.rotation;
-                var rightPalmCenter = _vrmRightMiddleFinger != null
-                    ? Vector3.Lerp(_vrmRightHandTransform.position, _vrmRightMiddleFinger.position, 0.55f)
-                    : _vrmRightHandTransform.position;
-                // Preserve the opposite sign used for the right-hand weapon rig.
-                var delta = -(rightPalmCenter - _vrmRightHandTransform.position) / 10f;
-                var offset = AttachmentMath.ToBoneOffset(AttachmentTransforms.Rotation(rotation),
-                    AttachmentTransforms.Vector(delta),
-                    AttachmentTransforms.Vector(adjustment));
-                var position = AttachmentMath.PlaceBone(AttachmentTransforms.Vector(_vrmRightHandTransform.position),
-                    AttachmentTransforms.Rotation(rotation),
-                    offset);
-                _rightHandItemInstanceTransform.SetPositionAndRotation(AttachmentTransforms.Vector(position), rotation);
+                Logger.LogWarning(
+                    "Could not hook the physics step, items that swing from the avatar may lag behind it.");
+                return;
             }
+
+            UnityEngine.LowLevel.PlayerLoop.SetPlayerLoop(loop);
+            _physicsPoseInstalled = true;
+        }
+
+        private static void CopyPosesForPhysics()
+        {
+            if (!PoseAvatarBeforePhysics) return;
+            for (var i = 0; i < Instances.Count; i++)
+            {
+                if (!(Instances[i] is VrmAnimator animator)) continue;
+                try
+                {
+                    animator.CopyPoseForPhysics();
+                }
+                catch (Exception error)
+                {
+                    Logger.LogOnce("physics-pose:" + error.GetType().Name,
+                        "Avatar pose for the physics step failed: " + error.Message);
+                }
+            }
+        }
+
+        // the frame copy without turn smoothing, that is only for drawing
+        private void CopyPoseForPhysics()
+        {
+            if (!isActiveAndEnabled || _playerPoseHandler == null || _vrmPoseHandler == null ||
+                _playerAnimator == null || _vrmGoAnimator == null || (_vrmInstance != null && _vrmInstance.DeathSeen))
+                return;
+            _playerPoseHandler.GetHumanPose(ref _humanPose);
+            _vrmGo.transform.rotation = _playerAnimator.transform.rotation * _visualRotationOffset;
+            _vrmPoseHandler.SetHumanPose(ref _humanPose);
+            UpdateSeatedPosition();
         }
 
         private void UpdateSeatedPosition()

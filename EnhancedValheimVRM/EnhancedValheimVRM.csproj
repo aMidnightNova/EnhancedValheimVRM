@@ -7,7 +7,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{56266ABF-B3F1-44F5-8790-D269FE536067}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>EnhancedValheimVRM</RootNamespace>
     <AssemblyName>EnhancedValheimVRM</AssemblyName>
@@ -82,6 +82,10 @@
     <Compile Include="Components\BoneGizmos.cs"/>
     <Compile Include="Components\AttachmentReference.cs"/>
     <Compile Include="Components\EquipmentTransformReference.cs"/>
+    <Compile Include="Components\BindPoseSpace.cs"/>
+    <Compile Include="Components\WallSensor.cs"/>
+    <Compile Include="Components\RiggedItemPieces.cs"/>
+    <Compile Include="Components\CapsuleGizmo.cs"/>
     <Compile Include="Utility\AttachmentMath.cs"/>
     <Compile Include="Utility\SeatSupportMeasurement.cs"/>
     <Compile Include="Utility\FixedRotationSmoother.cs"/>
@@ -91,6 +95,12 @@
     <Compile Include="Sharing\SharedVrmLifetime.cs"/>
     <Compile Include="..\Shared\SharingWire.cs">
       <Link>Sharing\SharingWire.cs</Link>
+    </Compile>
+    <Compile Include="..\Shared\FaceWire.cs">
+      <Link>Sharing\FaceWire.cs</Link>
+    </Compile>
+    <Compile Include="..\Shared\FaceRelay.cs">
+      <Link>Sharing\FaceRelay.cs</Link>
     </Compile>
     <Compile Include="..\Shared\BandwidthLimiter.cs">
       <Link>Sharing\BandwidthLimiter.cs</Link>
@@ -116,6 +126,9 @@
     <Compile Include="Sharing\EmbeddedSharingHost.cs"/>
     <Compile Include="Sharing\SharingPortDiscovery.cs"/>
     <Compile Include="Sharing\SharingRpc.cs"/>
+    <Compile Include="Sharing\FaceStreamClient.cs"/>
+    <Compile Include="Sharing\VmcReceiver.cs"/>
+    <Compile Include="Components\FaceApplier.cs"/>
     <Compile Include="Sharing\PeerCharacter.cs"/>
     <Compile Include="Components\VrmAnimator.cs"/>
     <Compile Include="Components\VrmEyeAnimator.cs"/>
@@ -135,8 +148,11 @@
     <Compile Include="Patches\PatchCharacterSetVisible.cs"/>
     <Compile Include="Patches\PatchShaderFind.cs"/>
     <Compile Include="Patches\PatchUnityUpdates.cs"/>
-    <Compile Include="Patches\PatchVisEquipmentAttachItem.cs"/>
     <Compile Include="Patches\PatchVisEquipmentUpdateLodgroup.cs"/>
+    <Compile Include="Patches\PatchMetallicMerge.cs"/>
+    <Compile Include="Patches\PatchBlendShapes.cs"/>
+    <Compile Include="Patches\PatchStepOver.cs"/>
+    <Compile Include="Patches\PatchAvatarJointLookup.cs"/>
     <Compile Include="Plugin.cs"/>
     <Compile Include="Properties\AssemblyInfo.cs"/>
     <Compile Include="Settings.cs"/>
@@ -156,6 +172,8 @@
     <Compile Include="Vrm\VrmAssetCache.cs"/>
     <Compile Include="Vrm\PersistentImportAwaitCaller.cs"/>
     <Compile Include="Vrm\VrmSettings.cs"/>
+    <Compile Include="Vrm\TextureFixMaterialGenerator.cs"/>
+    <Compile Include="Vrm\UsedBlendShapes.cs"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.3"/>
@@ -346,7 +364,7 @@
       <ReleaseLibraryName Include="AsyncImageLoader.Runtime;Unity.Burst;Unity.Mathematics"/>
       <ReleaseLibrary Include="@(ReleaseLibraryName->'$(UNIVRM_UNITY_LIBS)/Managed/%(Identity).dll')"/>
       <ReleaseLibrary Include="$(FreeImagePath)"/>
-      <ReleaseDocumentation Include="$(EnhancedProjectRoot)/README.md;$(EnhancedProjectRoot)/WEAPONS.md;$(EnhancedProjectRoot)/outfits_Example.txt.example;$(EnhancedProjectRoot)/settings_Example.txt.example;$(EnhancedProjectRoot)/settings____Default.txt.example"/>
+      <ReleaseDocumentation Include="$(EnhancedProjectRoot)/README.md;$(EnhancedProjectRoot)/CHANGELOG.md;$(EnhancedProjectRoot)/WEAPONS.md;$(EnhancedProjectRoot)/outfits_Example.txt.example;$(EnhancedProjectRoot)/settings_Example.txt.example;$(EnhancedProjectRoot)/settings____Default.txt.example"/>
     </ItemGroup>
     <RemoveDir Directories="$(ReleasePackageRoot)"/>
     <MakeDir Directories="$(ReleasePath)/BepInEx/plugins;$(ReleasePath)/valheim_Data/Managed;$(ReleasePath)/EnhancedValheimVRM/shaders"/>
@@ -384,12 +402,13 @@
     <RemoveDir Directories="$(ThunderstorePackageRoot)"/>
     <MakeDir Directories="$(ThunderstorePackageRoot)"/>
     <ItemGroup>
-      <!-- the github readme stays out of the thunderstore zip -->
-      <ThunderstoreRuntimeFile Include="$(ThunderstoreReleasePath)**/*" Exclude="$(ThunderstoreReleasePath)EnhancedValheimVRM/README.md"/>
+      <!-- the github readme stays out of the thunderstore zip, the changelog goes in its root -->
+      <ThunderstoreRuntimeFile Include="$(ThunderstoreReleasePath)**/*" Exclude="$(ThunderstoreReleasePath)EnhancedValheimVRM/README.md;$(ThunderstoreReleasePath)EnhancedValheimVRM/CHANGELOG.md"/>
     </ItemGroup>
     <Copy SourceFiles="@(ThunderstoreRuntimeFile)"
           DestinationFiles="@(ThunderstoreRuntimeFile->'$(ThunderstorePackageRoot)/%(RecursiveDir)%(Filename)%(Extension)')"/>
     <Copy SourceFiles="$(EnhancedProjectRoot)/thunderstore/README.md" DestinationFolder="$(ThunderstorePackageRoot)"/>
+    <Copy SourceFiles="$(EnhancedProjectRoot)/CHANGELOG.md" DestinationFolder="$(ThunderstorePackageRoot)"/>
     <Copy SourceFiles="$(EnhancedProjectRoot)/icon.png" DestinationFolder="$(ThunderstorePackageRoot)"/>
     <WriteLinesToFile File="$(ThunderstorePackageRoot)/manifest.json"
                       Lines="$(ThunderstoreManifest)" Overwrite="true" Encoding="ASCII"/>
@@ -507,6 +526,8 @@
     <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)settings____Default.txt.example&quot; &quot;$(ReleasePath)EnhancedValheimVRM\settings___Default.txt.example&quot;"/>
     <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)settings_Example.txt.example&quot; &quot;$(ReleasePath)EnhancedValheimVRM\settings_Example.txt.example&quot;"/>
     <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)README.md&quot; &quot;$(ReleasePath)EnhancedValheimVRM\README.md&quot;"/>
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)CHANGELOG.md&quot; &quot;$(ReleasePath)EnhancedValheimVRM\CHANGELOG.md&quot;"/>
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)WEAPONS.md&quot; &quot;$(ReleasePath)EnhancedValheimVRM\WEAPONS.md&quot;"/>
 
 
     <!-- Zip for release -->

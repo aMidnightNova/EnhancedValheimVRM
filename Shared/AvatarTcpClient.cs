@@ -55,7 +55,7 @@ namespace EnhancedValheimVRM.Sharing
         {
             if (encrypted.Length > BundleLimitBytes)
             {
-                throw new InvalidDataException("Encrypted ZIP exceeds the server bundle limit (" +
+                throw new InvalidDataException("Avatar bundle exceeds the server bundle limit (" +
                     BundleLimitBytes / 1048576 + " MiB).");
             }
 

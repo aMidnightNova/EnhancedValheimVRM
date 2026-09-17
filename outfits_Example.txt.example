@@ -11,3 +11,9 @@ Default=False
 mesh:Body=True
 mesh:Shirt=False
 mesh:Hoodie=True
+
+# Blendshapes unused by VRM expressions or outfits are stripped.
+# List the blendshapes you want to keep here.
+# Run "/vrm outfit blendshapes" to generate a commented list of all blendshapes in your VRM.
+[Blendshapes]
+jawOpen

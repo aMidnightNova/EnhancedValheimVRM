@@ -37,6 +37,15 @@ namespace EnhancedValheimVRM
             return playerName;
         }
 
+        // the character id lives in the players zdo and is not there right after the player spawns,
+        // the same story as the name above. false until the game has filled it in, so callers keep
+        // asking until it gets a real one
+        public static bool TryGetPlayerId(this Player player, out long id)
+        {
+            id = player != null ? player.GetPlayerID() : 0;
+            return id != 0;
+        }
+
         public static bool IsInStartMenu(this Player player)
         {
             // i wonder if player.InIntro() is effectively the same as this.

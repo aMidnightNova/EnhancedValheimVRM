@@ -108,6 +108,7 @@ namespace EnhancedValheimVRM
                     capsule.height = Height;
                     capsule.radius = Radius;
                     capsule.center = Center;
+                    WallSensor.Detach(player);
                 }
 
                 var body = player.GetComponent<Rigidbody>();
@@ -141,6 +142,29 @@ namespace EnhancedValheimVRM
         }
 
         private static readonly Dictionary<Player, VanillaState> VanillaStates = new Dictionary<Player, VanillaState>();
+
+        // where a socket sat inside its bone on the vanilla character, before any avatar moved it
+        internal static bool TryGetVanillaSocket(Player player,
+            Transform socket,
+            out Vector3 position,
+            out Quaternion rotation,
+            out Vector3 scale)
+        {
+            position = Vector3.zero;
+            rotation = Quaternion.identity;
+            scale = Vector3.one;
+            if (player == null || socket == null || !VanillaStates.TryGetValue(player, out var state)) return false;
+            foreach (var saved in state.Sockets)
+            {
+                if (saved.Item1 != socket) continue;
+                position = saved.Item3;
+                rotation = saved.Item4;
+                scale = saved.Item5;
+                return true;
+            }
+
+            return false;
+        }
 
         private static bool IsDisabled(Player player)
         {
@@ -510,6 +534,35 @@ namespace EnhancedValheimVRM
                 default,
                 null,
                 0));
+        }
+
+        // dev only. drops every cached import and installs everyone again so a code or file change
+        // shows without logging out. a name limits it to that player. the wait is so the console can
+        // be closed before the frames get watched
+        internal static string DevReload(string name)
+        {
+            var players = new List<Player>();
+            foreach (var player in Player.GetAllPlayers())
+            {
+                if (player != null && (name == null ||
+                        string.Equals(player.GetPlayerName(), name, StringComparison.OrdinalIgnoreCase)))
+                    players.Add(player);
+            }
+
+            if (players.Count == 0) return "No player called " + name;
+            CoroutineHelper.Instance.StartCoroutine(DevReloadAfter(3f, players));
+            return "Reloading " + players.Count + (players.Count == 1 ? " avatar" : " avatars") + " in 3 seconds";
+        }
+
+        private static IEnumerator DevReloadAfter(float seconds, List<Player> players)
+        {
+            yield return new WaitForSeconds(seconds);
+            VrmAssetCache.Forget();
+            foreach (var player in players)
+            {
+                if (player == null) continue;
+                if (player == Player.m_localPlayer || !FileTransferController.Refetch(player)) ReloadPlayer(player);
+            }
         }
 
         public static void AttachVrmToPlayer(Player player)
@@ -953,9 +1006,17 @@ namespace EnhancedValheimVRM
 
             if (collider != null)
             {
-                collider.height = settings.VrmHeight;
-                collider.radius = settings.VrmRadius;
-                collider.center = new Vector3(0, settings.VrmHeight / 2, 0);
+                // the vanilla capsule scaled by how the avatar compares to the player, bones measured the same
+                // way on both. the bones alone undershoot, a head bone sits well below the top of the head
+                var height = baseline.Height * settings.PlayerVrmScale;
+                var radius = Mathf.Min(baseline.Radius * settings.PlayerVrmWidthScale, height / 2f);
+                collider.height = height;
+                collider.radius = radius;
+                collider.center = new Vector3(0, height / 2, 0);
+                Logger.Log(player.GetPlayerName() + ": collider " + height.ToString("F2") + " m tall, " +
+                    radius.ToString("F2") + " m radius",
+                    Logger.LogLevel.Debug);
+                WallSensor.Attach(player);
             }
             else
                 Logger.LogError("CapsuleCollider component is missing on the player object.");
@@ -996,6 +1057,8 @@ namespace EnhancedValheimVRM
                 }
                 else
                     vrmAnimator.Setup(player, playerAnimator, vrmInstance);
+
+                (vrmGo.GetComponent<FaceApplier>() ?? vrmGo.AddComponent<FaceApplier>()).Setup(player, vrmInstance);
 
                 yield return null;
 

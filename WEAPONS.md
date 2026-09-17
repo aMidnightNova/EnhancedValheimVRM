@@ -47,7 +47,7 @@ Cultivator, Feaster, Hammer_0, Hoe
 ### Torch
 Lantern, Lantern_DN, Sparkler_0, Torch, TorchMist
 
-### Not adjustable
-These come with their own hand rig and are placed by that rig, so the lines above do nothing for them:
+### Rigged
+These come with their own hand rig, so the lines above do nothing for them. Each piece gets its own line instead, e.g. `KnifeSkollAndHatiLeftHandPos=<0, 0.01, 0>`, using LeftHand, RightHand, LeftForeArm or RightForeArm. Only the Knucklechains (FistGold ones) have forearm pieces.
 
 AxeBerzerkr, AxeBerzerkrBlood, AxeBerzerkrLightning, AxeBerzerkrNature, AxeEarly, FW_KnifeSkollAndHati, FistBjornClaw, FistBjornUndeadClaw, FistFenrirClaw, FistGold, FistGold_BloodLightning, FistGold_FrostFire, KnifeSkollAndHati, SP_KnifeSkollAndHati

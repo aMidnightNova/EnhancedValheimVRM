@@ -265,7 +265,7 @@ namespace EnhancedValheimVRM
                 _nextPublish = float.PositiveInfinity;
                 var path = localVrm.GetVrmFilePath();
                 var settings = localVrm.GetSettings().Serialize();
-                var outfits = localOutfits?.SourceText ?? "";
+                var outfits = SharingWire.StripComments(localOutfits?.SourceText);
                 var id = _localId;
                 var key = _key;
                 var client = _client;
@@ -390,7 +390,13 @@ namespace EnhancedValheimVRM
                 if (player == null || player == local || player.IsDead() || player.GetPlayerID() == 0) continue;
                 if (local == null && !string.IsNullOrEmpty(localName) && player.GetPlayerName() == localName) continue;
                 // An explicitly installed avatar takes precedence over sharing and the default model.
-                if (_installedAvatars.Contains(player.GetPlayerName())) continue;
+                if (_installedAvatars.Contains(player.GetPlayerName()))
+                {
+                    // nothing to download, face stream still needs the key grant
+                    AskFaceKey(player.GetPlayerID());
+                    continue;
+                }
+
                 if (!_downloads.TryGetValue(player, out var download))
                 {
                     download = new Download
@@ -406,6 +412,29 @@ namespace EnhancedValheimVRM
 
                 PumpDownload(download);
             }
+        }
+
+        private readonly Dictionary<long, float> _faceKeyAsked = new Dictionary<long, float>();
+
+        private void AskFaceKey(long id)
+        {
+            if (id == 0 || SharingRpc.TryGetOwnerKey(id, out _)) return;
+            if (_faceKeyAsked.TryGetValue(id, out var last) && Time.realtimeSinceStartup - last < 5f) return;
+            _faceKeyAsked[id] = Time.realtimeSinceStartup;
+            var token = _session.Token;
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await SharingRpc.EnsureOwnerKeyAsync(id, token).ConfigureAwait(false);
+                }
+                catch (Exception error) when (!(error is OperationCanceledException))
+                {
+                    Logger.LogOnce("face-key-ask-failed:" + id,
+                        "Could not get avatar " + id + " for its face stream: " + error.Message,
+                        Logger.LogLevel.Debug);
+                }
+            });
         }
 
         private void PumpDownload(Download download)
@@ -431,7 +460,8 @@ namespace EnhancedValheimVRM
                             {
                                 download.BlockedHash = received.Info.Key;
                                 VrmController.RevealVanilla(download.Player);
-                                Logger.LogWarning("Shared avatar for " + PlayerLabel(download.Player) + " did not install.");
+                                Logger.LogWarning("Shared avatar for " + PlayerLabel(download.Player) +
+                                    " did not install.");
                             }
                         },
                         download.Stop.Token,
@@ -536,6 +566,16 @@ namespace EnhancedValheimVRM
                 // The owner withdrew the avatar: a hidden body must not stay invisible.
                 if (SharingRpc.GetAvailable(id) == null) VrmController.RevealVanilla(pair.Key);
             }
+        }
+
+        // dev command to reinstall a players VRM.
+        internal static bool Refetch(Player player)
+        {
+            if (_instance == null || player == null || !_instance._downloads.TryGetValue(player, out var download))
+                return false;
+            CancelDownload(download);
+            _instance._downloads.Remove(player);
+            return true;
         }
 
         internal static void PlayerDestroyed(Player player)

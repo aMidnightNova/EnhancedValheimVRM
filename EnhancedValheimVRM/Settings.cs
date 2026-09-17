@@ -30,6 +30,9 @@ namespace EnhancedValheimVRM
         private static ConfigEntry<int> _dedicatedDownloadMbps;
         private static ConfigEntry<int> _dedicatedUploadMbps;
         private static ConfigEntry<int> _dedicatedDownloadSlots;
+        private static ConfigEntry<int> _facePort, _vmcPort, _faceSendRate;
+        private static ConfigEntry<int> _faceJitterMs;
+        private static ConfigEntry<bool> _faceEnabled, _receiveFaceStreams;
 
 
         public static class ShaderOptions
@@ -141,6 +144,37 @@ namespace EnhancedValheimVRM
                 4,
                 new ConfigDescription("Simultaneous downloads served by a dedicated server.",
                     new AcceptableValueRange<int>(1, 32)));
+            _facePort = config.Bind("Sharing",
+                "FacePort",
+                0,
+                new ConfigDescription(
+                    "Server only UDP port for the face stream relay. 0 uses ServerPort on UDP. Open it as UDP, TCP is not enough. Any free port works, valheim itself holds the game port and the one above it on UDP.",
+                    new AcceptableValueRange<int>(0, 65535)));
+            _faceEnabled = config.Bind("Face",
+                "Enabled",
+                false,
+                "Listen for VMC steam on localhost, drive your own avatar with it and publish your face to the server.");
+            _receiveFaceStreams = config.Bind("Face",
+                "ReceiveFaceStreams",
+                true,
+                "Show other players faces. false opens no stream session and other faces stay neutral.");
+            _vmcPort = config.Bind("Face",
+                "VmcPort",
+                39539,
+                new ConfigDescription("UDP port your VMC sender talks to. localhost only, the sender is on this PC.",
+                    new AcceptableValueRange<int>(1, 65535)));
+            _faceSendRate = config.Bind("Face",
+                "SendRate",
+                30,
+                new ConfigDescription(
+                    "Face frames per second sent to the server. 30 is plenty, 60 is for trackers that actually run at 60, some run tracking independent of render FPS",
+                    new AcceptableValueRange<int>(15, 60)));
+            _faceJitterMs = config.Bind("Face",
+                "JitterBufferMs",
+                20,
+                new ConfigDescription(
+                    "How long a face packet from another player may run late and still be shown, in milliseconds. Packets later than that are dropped instead of played out of order. Raise it on a bad connection, it adds that much delay.",
+                    new AcceptableValueRange<int>(0, 200)));
             _vrmKey = config.Bind("Security",
                 "VrmKey",
                 string.Empty,
@@ -178,5 +212,11 @@ namespace EnhancedValheimVRM
         internal static string SharingHost => _sharingHost.Value;
         internal static int BundleLimitBytes => _bundleLimitMiB.Value * 1048576;
         internal static int SharingPort => _sharingPort.Value;
+        internal static int FacePort => _facePort.Value == 0 ? _sharingPort.Value : _facePort.Value;
+        internal static bool FaceEnabled => _faceEnabled.Value;
+        internal static bool ReceiveFaceStreams => _receiveFaceStreams.Value;
+        internal static int VmcPort => _vmcPort.Value;
+        internal static int FaceSendRate => _faceSendRate.Value;
+        internal static int FaceJitterMs => _faceJitterMs.Value;
     }
 }

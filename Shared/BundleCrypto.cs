@@ -50,7 +50,7 @@ namespace EnhancedValheimVRM.Sharing
             return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
         }
 
-        private static byte[] Derive(string key, string purpose)
+        internal static byte[] Derive(string key, string purpose)
         {
             if (!IsValidKey(key))
             {
@@ -96,7 +96,7 @@ namespace EnhancedValheimVRM.Sharing
                 {
                     using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, true)) write(archive);
                     if (stream.Length > SharingWire.MaxBundleBytes - 64)
-                        throw new InvalidDataException("ZIP exceeds the encrypted bundle limit.");
+                        throw new InvalidDataException("Avatar bundle exceeds the bundle limit.");
                     return stream.ToArray();
                 }
                 finally
@@ -299,7 +299,7 @@ namespace EnhancedValheimVRM.Sharing
         {
             var clock = timing == null ? null : System.Diagnostics.Stopwatch.StartNew();
             if (bundle.Length < 64 || bundle.Length > SharingWire.MaxBundleBytes)
-                throw new InvalidDataException("Invalid encrypted bundle size.");
+                throw new InvalidDataException("Invalid bundle size.");
             var authenticatedLength = bundle.Length - 32;
             var expected = Authenticate(bundle, authenticatedLength, key, version, characterId);
             var difference = 0;

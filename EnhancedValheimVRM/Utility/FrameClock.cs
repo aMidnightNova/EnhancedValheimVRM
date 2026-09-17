@@ -20,6 +20,31 @@ namespace EnhancedValheimVRM
         // longest frame since ResetWorst, for the timing log
         internal static double WorstFrameMs { get; private set; }
 
+        // what the import was doing this frame, named in the long frame report
+        internal static string Label
+        {
+            set
+            {
+                if (_notes.Count == 6) _notes.RemoveAt(0);
+                _notes.Add("+" + ((Time.realtimeSinceStartupAsDouble - _start) * 1000.0).ToString("F0") + "ms " +
+                    value);
+            }
+        }
+
+        private static readonly List<string> _notes = new List<string>();
+        private static double _importMs;
+
+        // main thread time the import itself spent this frame.
+        internal static void Charge(double ms)
+        {
+            _importMs += ms;
+        }
+
+        // while set, every frame over this many ms is logged with the notes. 0 is off
+        internal static double ReportAboveMs;
+
+        internal static bool Reporting => ReportAboveMs > 0;
+
         internal static void ResetWorst()
         {
             WorstFrameMs = 0;
@@ -65,7 +90,22 @@ namespace EnhancedValheimVRM
             // the fps wait sits before this stamp, so start to start is the real frame period.
             // whatever ran past the deadline last frame comes off the next slice, and fades
             // once frames land inside it again.
-            if (_startFrame == Time.frameCount - 1) WorstFrameMs = Math.Max(WorstFrameMs, (now - _start) * 1000.0);
+            if (_startFrame == Time.frameCount - 1)
+            {
+                var periodMs = (now - _start) * 1000.0;
+                WorstFrameMs = Math.Max(WorstFrameMs, periodMs);
+                if (ReportAboveMs > 0 && periodMs > ReportAboveMs)
+                {
+                    Logger.Log("Long frame " + periodMs.ToString("F0") + "ms: update part " +
+                        ((_updateEnd - _start) * 1000.0).ToString("F0") + "ms, render part " +
+                        ((now - _updateEnd) * 1000.0).ToString("F0") + "ms, import used " + _importMs.ToString("F1") +
+                        "ms; " + string.Join(", ", _notes));
+                }
+            }
+
+            _notes.Clear();
+            _importMs = 0;
+
             if (_startFrame == Time.frameCount - 1 && _deadlineMs > 0)
             {
                 var over = (now - _start) * 1000.0 - _deadlineMs;
@@ -93,23 +133,24 @@ namespace EnhancedValheimVRM
             return Edit(ref loop, phase, list => list.Insert(0, Stamp(fn)));
         }
 
-        private static bool AddBefore(ref PlayerLoopSystem loop,
+        internal static bool AddBefore(ref PlayerLoopSystem loop,
             Type phase,
             Type before,
-            PlayerLoopSystem.UpdateFunction fn)
+            PlayerLoopSystem.UpdateFunction fn,
+            Type owner = null)
         {
             return Edit(ref loop,
                 phase,
                 list =>
                 {
                     var at = list.FindIndex(s => s.type == before);
-                    list.Insert(at < 0 ? list.Count : at, Stamp(fn));
+                    list.Insert(at < 0 ? list.Count : at, Stamp(fn, owner));
                 });
         }
 
-        private static PlayerLoopSystem Stamp(PlayerLoopSystem.UpdateFunction fn)
+        private static PlayerLoopSystem Stamp(PlayerLoopSystem.UpdateFunction fn, Type owner = null)
         {
-            return new PlayerLoopSystem { type = typeof(FrameClock), updateDelegate = fn };
+            return new PlayerLoopSystem { type = owner ?? typeof(FrameClock), updateDelegate = fn };
         }
 
         private static bool Edit(ref PlayerLoopSystem loop, Type phase, Action<List<PlayerLoopSystem>> edit)

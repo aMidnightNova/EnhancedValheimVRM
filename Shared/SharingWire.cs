@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -73,6 +74,21 @@ namespace EnhancedValheimVRM.Sharing
         public static void WriteText(BinaryWriter writer, string text)
         {
             WriteBytes(writer, Encoding.UTF8.GetBytes(text));
+        }
+
+        // comment and blank lines are for the owner, nobody else needs to download them
+        public static string StripComments(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return "";
+            var kept = new List<string>();
+            foreach (var raw in text.Split('\n'))
+            {
+                var line = raw.TrimEnd('\r').Trim();
+                if (line.Length == 0 || line.StartsWith("#") || line.StartsWith("//") || line.StartsWith(";")) continue;
+                kept.Add(line);
+            }
+
+            return kept.Count == 0 ? "" : string.Join("\n", kept) + "\n";
         }
 
         public static void ValidateOutfitName(string name)

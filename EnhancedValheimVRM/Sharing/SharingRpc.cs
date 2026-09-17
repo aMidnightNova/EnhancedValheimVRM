@@ -39,7 +39,8 @@ namespace EnhancedValheimVRM
             Outfit = 15,
             SetOverride = 16,
             Override = 17,
-            CancelKey = 18
+            CancelKey = 18,
+            FaceTicket = 19
         }
 
         private sealed class Message
@@ -67,6 +68,7 @@ namespace EnhancedValheimVRM
             internal BundleInfo Available;
             internal Message AwaitingCharacter, PendingOutfit;
             internal DateTime CharacterDeadline, OutfitDeadline;
+            internal long TicketedId; // character the last face ticket was issued for
             internal readonly Dictionary<string, Message> Overrides = new Dictionary<string, Message>();
         }
 
@@ -103,6 +105,56 @@ namespace EnhancedValheimVRM
         private static ZNet _network;
         private static ZRpc _server;
         private static AvatarTcpServer _storage;
+        private static FaceRelay _relay;
+
+        // owner keys handed to this client with a download grant, the face stream opens packets with them
+        private static readonly ConcurrentDictionary<long, string> OwnerKeys = new ConcurrentDictionary<long, string>();
+
+        internal static bool TryGetOwnerKey(long id, out string key)
+        {
+            return OwnerKeys.TryGetValue(id, out key);
+        }
+
+        // a face stream for an avatar this client shows but was never granted, or lost the grant
+        // for: ask the server again, same permission check a download makes
+        internal static async Task EnsureOwnerKeyAsync(long id, CancellationToken token)
+        {
+            if (OwnerKeys.ContainsKey(id)) return;
+            var info = GetAvailable(id);
+            if (info == null) return;
+            var grant = await RequestKeyAsync(id, info, token, Epoch, null).ConfigureAwait(false);
+            if (BundleCrypto.IsValidKey(grant.Value) && grant.Info.SameAs(info)) OwnerKeys[id] = grant.Value;
+        }
+
+        // udp port of the face relay announced by the server, 0 when it has none
+        internal static int FacePort { get; private set; }
+        private static string _pushedFaceTicket;
+
+        // the ticket the server sent with its port announcement, handed out once
+        internal static string TakePushedFaceTicket()
+        {
+            var ticket = _pushedFaceTicket;
+            _pushedFaceTicket = null;
+            return ticket;
+        }
+
+        internal static void RelayStarted(FaceRelay relay)
+        {
+            Dispatch.Enqueue(() =>
+            {
+                _relay = relay;
+                foreach (var peer in Peers.Values) peer.LastPort = -1; // announce again with the face port
+            });
+        }
+
+        internal static void RelayStopped(FaceRelay relay)
+        {
+            Dispatch.Enqueue(() =>
+            {
+                if (ReferenceEquals(_relay, relay)) _relay = null;
+            });
+        }
+
         private static long _sequence, _epoch, _localId, _sentOutfitId;
         private static string _localVersion, _localProfileVersion, _sentOutfit;
         private static bool _subscribed, _portReceived;
@@ -139,15 +191,26 @@ namespace EnhancedValheimVRM
 
         internal static void Reset(ZNet network)
         {
-            foreach (var peer in Peers.Values) _storage?.RevokeSession(peer.Session);
+            foreach (var peer in Peers.Values)
+            {
+                _storage?.RevokeSession(peer.Session);
+                _relay?.RevokeSession(peer.Session);
+            }
+
             Peers.Clear();
             LivePeers.Clear();
             KeyRequests.Clear();
             ClientStopped(false);
             _server = null;
             _storage = null;
+            _relay = null;
             _network = network;
+            // avatars stay loaded across a sharing restart on the same server, so the faces they
+            // stream stay readable. only a new world forgets them
+            OwnerKeys.Clear();
             _port = 0;
+            FacePort = 0;
+            _pushedFaceTicket = null;
             BundleLimitBytes = SharingWire.DefaultBundleLimitBytes;
             ServerUploadMbps = 0;
             _portReceived = false;
@@ -198,15 +261,18 @@ namespace EnhancedValheimVRM
             if (clearOutfit)
             {
                 _storage?.RevokeSession(peer.Session);
+                _relay?.RevokeSession(peer.Session);
                 peer.Session = Guid.NewGuid().ToString("N");
             }
 
             _storage?.RevokeCharacter(peer.Id);
+            _relay?.RevokeCharacter(peer.Id);
             if (peer.Available != null) Broadcast(new Message { Op = Op.Absent, Id = peer.Id });
             peer.Available = null;
             peer.Version = null;
             peer.Id = 0;
             peer.AwaitingCharacter = null;
+            peer.TicketedId = 0;
             if (clearOutfit)
             {
                 if (peer.OutfitId != 0) Broadcast(new Message { Op = Op.Outfit, Id = peer.OutfitId });
@@ -285,10 +351,12 @@ namespace EnhancedValheimVRM
                     if (peer.CharacterId != 0) ReceiveServer(peer, request);
                 }
 
+
                 var port = _storage?.Port ?? 0;
                 if (_network.IsServer() && peer.PortRequested && (peer.LastPort != port ||
                         peer.LastLimit != (_storage?.BundleLimitBytes ?? SharingWire.DefaultBundleLimitBytes) ||
-                        peer.LastUpload != (_storage?.UploadMbps ?? 0)))
+                        peer.LastUpload != (_storage?.UploadMbps ?? 0) ||
+                        (_relay != null && peer.CharacterId != 0 && peer.TicketedId != peer.CharacterId)))
                     AnnouncePort(peer, port);
             }
 
@@ -371,15 +439,31 @@ namespace EnhancedValheimVRM
             peer.LastPort = port;
             peer.LastLimit = _storage?.BundleLimitBytes ?? SharingWire.DefaultBundleLimitBytes;
             peer.LastUpload = _storage?.UploadMbps ?? 0;
+            // the first face ticket rides along once the character is verified, the client only asks
+            // for another when it has to register again
+            var ticket = "";
+            if (port != 0 && _relay != null && peer.CharacterId != 0)
+            {
+                try
+                {
+                    ticket = _relay.AuthorizeStream(peer.Session, peer.CharacterId);
+                }
+                catch (IOException) { }
+            }
+
+            peer.TicketedId = ticket == "" ? 0 : peer.CharacterId;
             Send(peer.GamePeer.m_rpc,
                 new Message
                 {
                     Op = Op.Port,
+                    Ticket = ticket,
                     Version = Protocol.ToString(),
                     Hash = ModVersion,
                     Value = port.ToString(),
                     Request = _storage?.BundleLimitBytes ?? SharingWire.DefaultBundleLimitBytes,
-                    Id = peer.LastUpload
+                    Id = peer.LastUpload,
+                    // Reuse ProfileHash to announce the UDP face port.
+                    ProfileHash = port != 0 && _relay != null ? _relay.Port.ToString() : ""
                 });
         }
 
@@ -573,6 +657,17 @@ namespace EnhancedValheimVRM
             {
                 ClearPeer(peer);
                 peer.Subscribed = false;
+                return;
+            }
+
+            if (m.Op == Op.FaceTicket)
+            {
+                if (_relay == null)
+                    Reply(peer, m, value: "no-face-relay");
+                else if (peer.CharacterId == 0)
+                    Reply(peer, m, value: "identity");
+                else
+                    Reply(peer, m, ticket: _relay.AuthorizeStream(peer.Session, peer.CharacterId));
                 return;
             }
 
@@ -875,10 +970,15 @@ namespace EnhancedValheimVRM
                 if (limit == 0) port = 0;
                 // Servers older than the upload limit send 0; anything above the hard limit is capped.
                 var upload = m.Id <= 0 ? 0 : (int)Math.Min(m.Id, SharingUploadPolicy.HardLimitMbps);
+                var facePort = port != 0 && int.TryParse(m.ProfileHash, out var face) && face > 0 && face <= 65535
+                    ? face
+                    : 0;
                 if (_portReceived && (_port != port || BundleLimitBytes != limit || ServerUploadMbps != upload))
                     FileTransferController.ResetConnection();
                 BundleLimitBytes = limit;
                 ServerUploadMbps = upload;
+                FacePort = facePort;
+                if (facePort != 0 && m.Ticket.Length == 32) _pushedFaceTicket = m.Ticket;
                 _port = port;
                 _portReceived = true;
                 _portStamp = _timingClock?.Elapsed.TotalMilliseconds ?? 0;
@@ -969,6 +1069,21 @@ namespace EnhancedValheimVRM
                         Value = allow ? Settings.VrmKey : "",
                         Hash = denied ? "denied" : "not-ready"
                     });
+            }
+        }
+
+        // a ticket for the face relay, null when the server has none or the call did not go through
+        internal static async Task<string> RequestFaceTicketAsync(CancellationToken cancellation)
+        {
+            try
+            {
+                var reply = await CallTimed(new Message { Op = Op.FaceTicket, Id = _localId }, cancellation, Epoch, 15)
+                    .ConfigureAwait(false);
+                return reply.Ticket == "" ? null : reply.Ticket;
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
             }
         }
 
@@ -1266,6 +1381,7 @@ namespace EnhancedValheimVRM
             if (!BundleCrypto.IsValidKey(grant.Value) || !grant.Info.SameAs(info) || grant.Ticket == "" ||
                 grant.ProfileTicket == "")
                 throw new IOException("The avatar owner has not made it available.");
+            OwnerKeys[id] = grant.Value;
             var granted = clock?.Elapsed.TotalMilliseconds ?? 0;
             timing?.Invoke("server accepted the request in " + (granted - keySent).ToString("F0") + "ms");
             timing?.Invoke(string.Format(System.Globalization.CultureInfo.InvariantCulture,

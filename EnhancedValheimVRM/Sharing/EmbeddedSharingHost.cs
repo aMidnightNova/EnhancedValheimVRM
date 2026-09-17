@@ -28,7 +28,7 @@ namespace EnhancedValheimVRM
 
         private Task _stopping = Task.CompletedTask;
         private float _nextCheck;
-        private int _port, _bytesPerSecond, _slots, _bundleLimit, _uploadMbps;
+        private int _port, _facePort, _bytesPerSecond, _slots, _bundleLimit, _uploadMbps;
         private string _bindAddress;
         private bool _dedicated;
 
@@ -56,7 +56,7 @@ namespace EnhancedValheimVRM
             if (_serving != null && !_serving.IsCompleted && _bytesPerSecond == policy.BytesPerSecond &&
                 _bundleLimit == Settings.BundleLimitBytes && _slots == policy.Slots && _network == network &&
                 _uploadMbps == Settings.DedicatedUploadMbps &&
-                _port == Settings.SharingPort &&
+                _port == Settings.SharingPort && _facePort == Settings.FacePort &&
                 _bindAddress == Settings.SharingBindAddress && _dedicated == network.IsDedicated())
                 return;
             var failed = _serving?.IsFaulted ?? false;
@@ -71,6 +71,7 @@ namespace EnhancedValheimVRM
 
             _network = network;
             _port = Settings.SharingPort;
+            _facePort = Settings.FacePort;
             _bindAddress = Settings.SharingBindAddress;
             _dedicated = network.IsDedicated();
             _bytesPerSecond = policy.BytesPerSecond;
@@ -80,7 +81,7 @@ namespace EnhancedValheimVRM
             _stop = new CancellationTokenSource();
             var cancellation = _stop.Token;
             string bindAddress = _bindAddress, path = Path.Combine(Constants.Vrm.Dir, "Server");
-            int port = _port, bundleLimit = _bundleLimit, uploadMbps = _uploadMbps;
+            int port = _port, facePort = _facePort, bundleLimit = _bundleLimit, uploadMbps = _uploadMbps;
             var stopped = _stopping;
             var listening = new TaskCompletionSource<int>();
             _listening = listening.Task;
@@ -99,7 +100,42 @@ namespace EnhancedValheimVRM
                     _storage = server;
                     listening.TrySetResult(server.Port);
                     Logger.Log("Avatar sharing started on port " + port + ".");
-                    await server.RunAsync(cancellation).ConfigureAwait(false);
+                    // Face relay failure does not stop avatar sharing.
+                    FaceRelay relay = null;
+                    var relaying = Task.CompletedTask;
+                    try
+                    {
+                        relay = new FaceRelay(address, facePort)
+                        {
+                            Notice = text => Logger.Log(text, Logger.LogLevel.Debug)
+                        };
+                        SharingRpc.RelayStarted(relay);
+                        relaying = relay.RunAsync(cancellation);
+                        Logger.Log("Face stream relay listening on udp port " + relay.Port + ".");
+                    }
+                    catch (System.Net.Sockets.SocketException error)
+                    {
+                        Logger.LogWarning("Face stream relay could not listen on udp port " + facePort + ": " +
+                            error.Message + ". Faces are off, avatar sharing still works.");
+                    }
+
+                    try
+                    {
+                        await server.RunAsync(cancellation).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        if (relay != null)
+                        {
+                            SharingRpc.RelayStopped(relay);
+                            relay.Dispose();
+                            try
+                            {
+                                await relaying.ConfigureAwait(false);
+                            }
+                            catch (Exception) { }
+                        }
+                    }
                 }
             });
         }

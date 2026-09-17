@@ -88,6 +88,8 @@ internal static class Program
             RpcChecks.UploadLimitChecks(Check);
             await UploadPolicyChecks.Run(root, Check);
             await PruneChecks.Run(root, Check);
+            await FaceChecks.Run(root, Check);
+            await FaceChecks.TicketRpcChecks(root, Check);
             await DownloadPolicyChecks.Run(root, dedicatedDownloads, Check);
             await DownloadPolicyChecks.Run(root, customDownloads, Check);
             Check(SharingEndpoint.ShouldHost(true, true, true),

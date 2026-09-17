@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
@@ -52,6 +53,10 @@ namespace EnhancedValheimVRM
 
         public bool AttemptTextureFix = false;
 
+        // only blendshapes the vrm expressions or your outfit file use get loaded, the rest stay empty so models
+        // with hundreds of them load faster and cause less of a frame spike. true loads all of them.
+        public bool KeepAllBlendShapes = false;
+
         // With AttemptTextureFix, how much of the avatar's own colour glows on its own (0 = none,
         // 1 = fully self-lit). Keeps a toon avatar from going black in shadow.
         public float TextureFixEmission = 0.15f;
@@ -73,6 +78,9 @@ namespace EnhancedValheimVRM
         // a property {get set}
         // this is the scale of the VRM to the Player Model, typically its a smaller number but can be larger. E.G. 0.68f
         public float PlayerVrmScale { get; set; } = 1f;
+
+        // avatar to player, measured the same way on both so where the bones sit inside the body cancels out
+        public float PlayerVrmWidthScale { get; set; } = 1f;
 
         public float VrmHeight { get; set; } = 1f;
 
@@ -121,6 +129,55 @@ namespace EnhancedValheimVRM
 
         private readonly Dictionary<string, float> _weaponScales =
             new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+
+        // per piece offsets for rigged weapons:
+        //   KnifeSkollAndHatiLeftHandPos=<0, 0.01, 0>
+        //   FistGoldRightForeArmRot=<0, 10, 0>
+        public static readonly string[] RigParts = { "LeftHand", "RightHand", "LeftForeArm", "RightForeArm" };
+
+        private readonly Dictionary<string, ItemAdjustment> _rigParts =
+            new Dictionary<string, ItemAdjustment>(StringComparer.OrdinalIgnoreCase);
+
+        public bool TryGetRigOffset(string prefabName, string part, out Vector3 pos, out Vector3 rot)
+        {
+            pos = Vector3.zero;
+            rot = Vector3.zero;
+            if (string.IsNullOrEmpty(prefabName) || !_rigParts.TryGetValue(prefabName + part, out var offset))
+                return false;
+            pos = offset.Pos;
+            rot = offset.Rot;
+            return true;
+        }
+
+        private bool TryParseRigLine(string key, string value)
+        {
+            string suffix;
+            if (key.EndsWith("Pos", StringComparison.OrdinalIgnoreCase))
+                suffix = "Pos";
+            else if (key.EndsWith("Rot", StringComparison.OrdinalIgnoreCase))
+                suffix = "Rot";
+            else
+                return false;
+            var stem = key.Substring(0, key.Length - 3);
+            var part = Array.Find(RigParts, p => stem.EndsWith(p, StringComparison.OrdinalIgnoreCase));
+            if (part == null || stem.Length == part.Length) return false;
+            var vector = ParseVector3(value);
+            if (vector == null) throw new InvalidDataException("Cannot parse setting " + key + ": " + value);
+            var name = stem.Substring(0, stem.Length - part.Length) + part;
+            if (!_rigParts.TryGetValue(name, out var offset)) _rigParts[name] = offset = new ItemAdjustment();
+            if (suffix == "Pos")
+            {
+                offset.Pos = vector.Value;
+                offset.HasPos = true;
+            }
+            else
+            {
+                offset.Rot = vector.Value;
+                offset.HasRot = true;
+            }
+
+            return true;
+        }
 
         private static string ItemKey(string scope, bool hand)
         {
@@ -297,6 +354,22 @@ namespace EnhancedValheimVRM
             foreach (var pair in _weaponScales)
                 lines.Add("WeaponScale=" + pair.Key + "," + pair.Value.ToString("R", CultureInfo.InvariantCulture));
 
+            foreach (var pair in _rigParts)
+            {
+                if (pair.Value.HasPos)
+                    lines.Add(pair.Key + "Pos=" + string.Format(CultureInfo.InvariantCulture,
+                        "({0:R},{1:R},{2:R})",
+                        pair.Value.Pos.x,
+                        pair.Value.Pos.y,
+                        pair.Value.Pos.z));
+                if (pair.Value.HasRot)
+                    lines.Add(pair.Key + "Rot=" + string.Format(CultureInfo.InvariantCulture,
+                        "({0:R},{1:R},{2:R})",
+                        pair.Value.Rot.x,
+                        pair.Value.Rot.y,
+                        pair.Value.Rot.z));
+            }
+
             lines.Sort(StringComparer.Ordinal);
             return string.Join("\n", lines);
         }
@@ -325,6 +398,7 @@ namespace EnhancedValheimVRM
 
                 if (TryParseWeaponScaleLine(key, value)) continue;
                 if (!_fields.ContainsKey(key) && TryParseItemLine(key, value)) continue;
+                if (!_fields.ContainsKey(key) && TryParseRigLine(key, value)) continue;
 
                 if (_fields.TryGetValue(key, out var field))
                 {
@@ -342,7 +416,7 @@ namespace EnhancedValheimVRM
 
         private void Validate()
         {
-            foreach (var pair in _items)
+            foreach (var pair in _items.Concat(_rigParts))
             foreach (var v in new[] { pair.Value.Pos, pair.Value.Rot })
             {
                 if (float.IsNaN(v.x) || float.IsInfinity(v.x) || float.IsNaN(v.y) || float.IsInfinity(v.y) ||

@@ -8,9 +8,10 @@ namespace EnhancedValheimVRM
         public static readonly Terminal.ConsoleCommand Vrm;
 
         private const string Usage =
-            "/vrm outfit list | next | reload | generate | set <name>; /vrm toggle <mesh>; /vrm blend <shape> <1-100>; /vrm settings reload | auto on | auto off";
+            "/vrm outfit list | next | reload | generate | blendshapes | set <name>; /vrm mesh <name> on | off; /vrm toggle <mesh>; /vrm blend <shape> <1-100>; /vrm settings reload | auto on | auto off";
 
-        private const string DevUsage = "Usage: /vrm dev on | off";
+        private const string DevUsage =
+            "Usage: /vrm dev on | off | reload [player] | capsule show | hide | physics on | off | stepover on | off | sensor on | off";
 
         // Test-spawning items and writing the weapon catalogue are developer actions: they
         // require the game's own cheat mode, like vanilla spawn commands.
@@ -44,13 +45,46 @@ namespace EnhancedValheimVRM
                         var twoHanded = args.Args.Length == 4 &&
                             args.Args[2].Equals("weapons", StringComparison.OrdinalIgnoreCase) &&
                             args.Args[3].Equals("twohanded", StringComparison.OrdinalIgnoreCase);
-                        if (args.Args.Length != 3 && !twoHanded)
+                        var reload = args.Args[2].Equals("reload", StringComparison.OrdinalIgnoreCase);
+                        var capsule = args.Args.Length == 4 &&
+                            args.Args[2].Equals("capsule", StringComparison.OrdinalIgnoreCase);
+                        var physics = args.Args.Length == 4 &&
+                            args.Args[2].Equals("physics", StringComparison.OrdinalIgnoreCase);
+                        var stepOver = args.Args.Length == 4 &&
+                            args.Args[2].Equals("stepover", StringComparison.OrdinalIgnoreCase);
+                        var sensor = args.Args.Length == 4 &&
+                            args.Args[2].Equals("sensor", StringComparison.OrdinalIgnoreCase);
+                        if (args.Args.Length != 3 && !twoHanded && !reload && !capsule && !physics && !stepOver &&
+                            !sensor)
                         {
                             args.Context.AddString(DevUsage);
                             return;
                         }
 
-                        if (args.Args[2].Equals("off", StringComparison.OrdinalIgnoreCase))
+                        if (stepOver || sensor)
+                        {
+                            var on = args.Args[3].Equals("on", StringComparison.OrdinalIgnoreCase);
+                            if (stepOver)
+                                PatchStepOver.Enabled = on;
+                            else
+                                PatchStepOver.UseSensor = on;
+                            args.Context.AddString((stepOver ? "Step over " : "Wall sensor ") + (on ? "on." : "off."));
+                        }
+                        else if (physics)
+                        {
+                            VrmAnimator.PoseAvatarBeforePhysics =
+                                args.Args[3].Equals("on", StringComparison.OrdinalIgnoreCase);
+                            args.Context.AddString("Avatar pose in the physics step " +
+                                (VrmAnimator.PoseAvatarBeforePhysics ? "on." : "off."));
+                        }
+                        else if (capsule)
+                            args.Context.AddString(CapsuleGizmo.Set(Player.m_localPlayer,
+                                args.Args[3].Equals("show", StringComparison.OrdinalIgnoreCase)));
+                        else if (reload)
+                            args.Context.AddString(VrmController.DevReload(args.Args.Length > 3
+                                ? string.Join(" ", args.Args.Skip(3)).Trim().Trim('"')
+                                : null));
+                        else if (args.Args[2].Equals("off", StringComparison.OrdinalIgnoreCase))
                             args.Context.AddString(VrmController.SetLocalEnabled(false));
                         else if (args.Args[2].Equals("on", StringComparison.OrdinalIgnoreCase))
                             args.Context.AddString(VrmController.SetLocalEnabled(true));
@@ -60,6 +94,7 @@ namespace EnhancedValheimVRM
                         //     args.Context.AddString(CheatsEnabled ? GameItem.ClearTestWeapons() : "Enable devcommands first.");
                         else
                             args.Context.AddString(DevUsage);
+
                         return;
                     }
 
@@ -103,6 +138,7 @@ namespace EnhancedValheimVRM
                     }
 
                     if (!group.Equals("outfit", StringComparison.OrdinalIgnoreCase) &&
+                        !group.Equals("mesh", StringComparison.OrdinalIgnoreCase) &&
                         !group.Equals("toggle", StringComparison.OrdinalIgnoreCase) &&
                         !group.Equals("blend", StringComparison.OrdinalIgnoreCase))
                     {
@@ -116,6 +152,23 @@ namespace EnhancedValheimVRM
                     if (outfits == null)
                     {
                         args.Context.AddString("Load a character with a VRM first.");
+                        return;
+                    }
+
+                    if (group.Equals("mesh", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var state = args.Args.Length > 3 ? args.Args.Last() : "";
+                        var on = state.Equals("on", StringComparison.OrdinalIgnoreCase);
+                        if (!on && !state.Equals("off", StringComparison.OrdinalIgnoreCase))
+                        {
+                            args.Context.AddString("Usage: /vrm mesh <name> on | off");
+                            return;
+                        }
+
+                        var part = string.Join(" ", args.Args.Skip(2).Take(args.Args.Length - 3)).Trim().Trim('"');
+                        args.Context.AddString(outfits.Override(part, false, on ? 1 : 0, true)
+                            ? part + (on ? " shown" : " hidden")
+                            : "Unknown mesh: " + part);
                         return;
                     }
 
@@ -147,6 +200,12 @@ namespace EnhancedValheimVRM
                     if (action.Equals("generate", StringComparison.OrdinalIgnoreCase))
                     {
                         args.Context.AddString(outfits.Generate());
+                        return;
+                    }
+
+                    if (action.Equals("blendshapes", StringComparison.OrdinalIgnoreCase))
+                    {
+                        args.Context.AddString(outfits.GenerateBlendShapeList());
                         return;
                     }
 

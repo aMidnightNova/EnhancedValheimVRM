@@ -37,6 +37,7 @@ namespace EnhancedValheimVRM
             public bool Imported;
             public Exception Error;
             public string ImportTiming;
+            public bool Forgotten;
         }
 
         private static readonly Dictionary<string, Entry> Entries = new Dictionary<string, Entry>();
@@ -76,7 +77,28 @@ namespace EnhancedValheimVRM
         internal static void Release(Entry entry)
         {
             entry.LiveClones--;
+            if (entry.Forgotten)
+            {
+                if (entry.LiveClones == 0 && entry.Root != null) Object.Destroy(entry.Root);
+                return;
+            }
+
             RetireSuperseded(entry.Path);
+        }
+
+        // dev reload. every cached import is dropped so the next request imports again. a root still
+        // worn by someone goes when its last clone lets go
+        internal static void Forget()
+        {
+            foreach (var entry in Entries.Values)
+            {
+                entry.Forgotten = true;
+                if (entry.LiveClones == 0 && entry.Root != null) Object.Destroy(entry.Root);
+            }
+
+            Entries.Clear();
+            Latest.Clear();
+            ImportedKeys.Clear();
         }
 
         private static void RetireSuperseded(string path)
@@ -123,6 +145,7 @@ namespace EnhancedValheimVRM
             if (animator == null || animator.avatar == null || !animator.avatar.isValid || !animator.avatar.isHuman)
                 throw new InvalidDataException("VRM requires a valid humanoid avatar.");
             Object.DontDestroyOnLoad(entry.Root);
+            BindPoseSpace.Detect(entry.Root);
             entry.Root.SetActive(false);
             var owner = entry.Root.AddComponent<SharedVrmLifetime>();
             loaded.TransferOwnership((key, resource) => owner.ExtraResources.Add(resource));
@@ -218,6 +241,7 @@ namespace EnhancedValheimVRM
             // so character switches and world entry do not import it again.
             var entry = new Entry { Path = source.Path };
             ImporterContext importer = null;
+            PatchBlendShapes.Import blendShapes = null;
             try
             {
                 var timer = Settings.LogLoadTiming ? System.Diagnostics.Stopwatch.StartNew() : null;
@@ -226,15 +250,20 @@ namespace EnhancedValheimVRM
                 var bytes = File.ReadAllBytes(source.Path);
                 var readMs = timer?.Elapsed.TotalMilliseconds ?? 0;
                 var data = new GlbBinaryParser(bytes, source.Path).Parse();
+                object parsed;
                 try
                 {
-                    importer = new VRMImporterContext(new VRMData(data));
+                    parsed = new VRMData(data);
                 }
                 catch (NotVrm0Exception)
                 {
-                    importer = new Vrm10Importer(Vrm10Data.Parse(data));
+                    parsed = Vrm10Data.Parse(data);
                 }
 
+                importer = parsed is VRMData vrm0
+                    ? (ImporterContext)new VRMImporterContext(vrm0)
+                    : new Vrm10Importer((Vrm10Data)parsed);
+                blendShapes = PatchBlendShapes.Begin(BlendShapesToKeep(parsed, source), false);
                 var parseMs = timer?.Elapsed.TotalMilliseconds ?? 0;
                 var loaded = importer.Load();
                 if (timer != null)
@@ -259,6 +288,7 @@ namespace EnhancedValheimVRM
             }
             finally
             {
+                if (blendShapes != null) PatchBlendShapes.End(blendShapes);
                 importer?.Dispose();
             }
 
@@ -362,19 +392,32 @@ namespace EnhancedValheimVRM
 
             var queueMs = timer?.Elapsed.TotalMilliseconds ?? 0;
             ImporterContext importer = null;
+            var blendShapes = PatchBlendShapes.Begin(BlendShapesToKeep(parsed, source), true);
             try
             {
                 yield return PatchShaderFind.EnsureLoaded();
                 var shadersMs = timer?.Elapsed.TotalMilliseconds ?? 0;
+                var textureFix = source.Settings != null && source.Settings.AttemptTextureFix;
                 importer = parsed is VRMData vrm0
-                    ? (ImporterContext)new VRMImporterContext(vrm0, null, new TextureDeserializerAsync())
-                    : new Vrm10Importer((Vrm10Data)parsed, null, new TextureDeserializerAsync());
+                    ? (ImporterContext)new VRMImporterContext(vrm0,
+                        null,
+                        new TextureDeserializerAsync(),
+                        textureFix ? TextureFixMaterialGenerator.For(vrm0) : null)
+                    : new Vrm10Importer((Vrm10Data)parsed,
+                        null,
+                        new TextureDeserializerAsync(),
+                        textureFix ? TextureFixMaterialGenerator.For((Vrm10Data)parsed) : null);
                 var caller = new PersistentImportAwaitCaller(importer);
                 if (timer != null) Logger.Log("Avatar import for " + source.Name + ": native import started");
                 // univrm reports each phase through this hook. keep the longest single call per phase so a
                 // spike can be named. only with the timing log on.
                 var phases = timer != null ? new Dictionary<string, double>() : null;
-                if (phases != null) FrameClock.ResetWorst();
+                if (phases != null)
+                {
+                    FrameClock.ResetWorst();
+                    FrameClock.ReportAboveMs = 20;
+                }
+
                 var loading = importer.LoadAsync(caller,
                     phases == null
                         ? null
@@ -394,6 +437,8 @@ namespace EnhancedValheimVRM
                     yield return null;
                 }
 
+                while (PatchMetallicMerge.InFlight > 0) yield return null;
+                if (FrameClock.Reporting) FrameClock.Label = "import finished, attaching";
                 var loaded = loading.GetAwaiter().GetResult();
                 if (timer != null)
                 {
@@ -416,6 +461,7 @@ namespace EnhancedValheimVRM
                 }
 
                 if (timer != null) Logger.Log("Avatar import for " + source.Name + ": " + entry.ImportTiming);
+                FrameClock.ReportAboveMs = 0;
                 Finish(entry, loaded);
                 ImportedKeys[source.Key] = 0;
                 yield return ProcessMaterials(entry, source);
@@ -433,8 +479,27 @@ namespace EnhancedValheimVRM
                     }
                 }
 
+                PatchBlendShapes.End(blendShapes);
                 importer?.Dispose();
             }
+        }
+
+        // null keeps every blendshape
+        private static HashSet<string> BlendShapesToKeep(object parsed, Source source)
+        {
+            if (source.Settings != null && source.Settings.KeepAllBlendShapes) return null;
+            var names = UsedBlendShapes.Names(parsed, source.Outfits);
+            // the face stream drives the arkit shapes and visemes by name when a model has them but no expressions for them
+            if (Settings.FaceEnabled || Settings.ReceiveFaceStreams)
+            {
+                names.UnionWith(Sharing.FaceWire.Catalogue);
+                for (var i = 0; i < Sharing.FaceWire.ValueCount; i++)
+                {
+                    var alias = Sharing.FaceWire.MeshAlias(i);
+                    if (alias != null) names.Add(alias);
+                }
+            }
+            return names;
         }
 
         private static IEnumerator ProcessMaterials(Entry entry, Source source)
