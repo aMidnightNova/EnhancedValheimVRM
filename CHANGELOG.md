@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0
+
+### fixed
+
+- some shared avatars failed to load images, and didnt load for other players
+- avatar sharing not starting unless ServerHost was set by hand
+
+### new features
+
+- players on a different version than the server get turned away with a popup showing both versions
+
 ## 1.2.0
 
 ### fixed
@@ -21,4 +32,4 @@
 - face streams: a VMC tracker drives your avatar's face and other players see it through the server
 - rigged dual wield weapons like Skoll and Hati, the Berserkir axes and fists can have each hand and forearm piece moved and rotated on its own, see WEAPONS.md
 - only the blendshapes an avatar uses get loaded, with a setting and an outfit file section to keep more
-- `/vrm mesh <name> on | off`, `/vrm outfit blendshapes`, `/vrm dev reload [player]` and `/vrm dev capsule show | hide`
+- `/vrm mesh <name> on | off`, `/vrm outfit blendshapes`

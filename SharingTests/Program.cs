@@ -99,20 +99,15 @@ internal static class Program
             Check(!SharingEndpoint.ShouldHost(false, false, true), "Remote client must not host TCP");
             Check(!SharingEndpoint.ShouldHost(true, false, true), "Private single-player game must not host TCP");
             Check(!SharingEndpoint.ShouldHost(true, true, false), "Disabled TCP server started");
-            Check(SharingEndpoint.ResolveClientHost("", "socket/192.0.2.10:2456") == "192.0.2.10",
-                "Direct server IP discovery");
-            Check(SharingEndpoint.ResolveClientHost("", "socket/valheim.example:2456") == "valheim.example",
-                "Server hostname discovery");
-            Check(SharingEndpoint.ResolveClientHost("", "steam/12345/192.0.2.10:2456") == "192.0.2.10",
-                "Steam direct address discovery");
-            Check(SharingEndpoint.ResolveClientHost("", "socket/[2001:db8::1]:2456") == "2001:db8::1",
-                "IPv6 server discovery");
-            Check(SharingEndpoint.ResolveClientHost("", "steam/12345/:0") == null,
-                "Steam identity mistaken for TCP address");
-            Check(SharingEndpoint.ResolveClientHost("", "playfab/12345") == null,
-                "PlayFab identity mistaken for TCP address");
-            Check(SharingEndpoint.ResolveClientHost(" custom.example ", "playfab/12345") == "custom.example",
-                "Relay hostname override");
+            var candidates = SharingEndpoint.Candidates(" custom.example ", "valheim.example", "203.0.113.5");
+            Check(candidates.Select(c => c.Host)
+                    .SequenceEqual(new[] { "custom.example", "valheim.example", "203.0.113.5" }),
+                "Address order must be ServerHost, the joined address, then the servers public address");
+            Check(SharingEndpoint.Candidates("", null, "203.0.113.5")
+                    .Select(c => c.Host)
+                    .SequenceEqual(new[] { "203.0.113.5" }),
+                "Empty ServerHost or join address became a candidate");
+            Check(SharingEndpoint.Candidates(" ", null, null).Count == 0, "Blank addresses became candidates");
             var key = BundleCrypto.GenerateKey();
             var vrm = new byte[600000];
             RandomNumberGenerator.Fill(vrm);
@@ -154,6 +149,35 @@ internal static class Program
                 server.Uploaded += (session, uploadedId, uploaded) => commits.Enqueue(uploaded);
                 var serving = server.RunAsync(stop.Token);
                 var client = new AvatarTcpClient("127.0.0.1", server.Port, 750000);
+                Check(AvatarTcpClient.Ping("127.0.0.1", server.Port, 2000), "Sharing server did not answer the ping");
+                using (var other = new TcpListener(IPAddress.Loopback, 0))
+                {
+                    // something else on the port that answers, but not with the magic and the same number
+                    other.Start();
+                    var answering = other.AcceptTcpClientAsync()
+                        .ContinueWith(accepted =>
+                        {
+                            using (var socket = accepted.Result) socket.GetStream().Write(new byte[12], 0, 12);
+                        });
+                    Check(!AvatarTcpClient.Ping("127.0.0.1", ((IPEndPoint)other.LocalEndpoint).Port, 2000),
+                        "A listener that is not the sharing server passed the ping");
+                    await answering;
+                }
+
+                var found = SharingEndpoint.FindReachableAddress(
+                    SharingEndpoint.Candidates("127.0.0.2", "localhost", "127.0.0.1"),
+                    server.Port,
+                    2000,
+                    out var tried);
+                Check(found == "127.0.0.1" && tried.Contains("127.0.0.2 from ServerHost in your config: no answer") &&
+                    tried.Contains("localhost (127.0.0.1) from the address you joined with: answered") &&
+                    !tried.Contains("public address"),
+                    "Address search did not stop at the first answer in order: " + tried);
+                Check(SharingEndpoint.FindReachableAddress(SharingEndpoint.Candidates("127.0.0.2", null, "127.0.0.2"),
+                        server.Port,
+                        2000,
+                        out tried) == null && tried.Contains("same ip as above"),
+                    "Address search answered without a server or pinged one ip twice: " + tried);
                 Check(server.ReadCurrent(id) == null, "Unpublished avatar advertised");
                 var info = new BundleInfo
                 {

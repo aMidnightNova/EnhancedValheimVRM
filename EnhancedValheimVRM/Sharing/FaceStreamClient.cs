@@ -164,7 +164,7 @@ namespace EnhancedValheimVRM
             if (usable)
             {
                 facePort = SharingRpc.FacePort;
-                host = SharingEndpoint.ResolveClientHost(Settings.SharingHost, ZNet.GetServerString());
+                host = FileTransferController.ServerAddress(network, port);
                 usable = !string.IsNullOrEmpty(host);
             }
 

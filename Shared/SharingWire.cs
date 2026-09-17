@@ -9,13 +9,19 @@ namespace EnhancedValheimVRM.Sharing
     // This protocol runs exclusively over the TCP server's TCP sockets, never ZPackage/RPC.
     public static class SharingWire
     {
-        public const int Magic = 0x45565232;
+        // the names on the wire, never change these three. a build that cannot read them cannot tell the
+        // player why, and the version handshake is the one thing that can say the versions differ
+        public const int Magic = 0x45565631; // EVV1, the mod prefix and the wire version
+        public const string ControlRpc = "EVV_SharingControl1";
+        public const string VersionRpc = "EVV_Version";
+
         public const int MaxBundleBytes = 1024 * 1024 * 1024;
         public const int DefaultBundleLimitBytes = 384 * 1024 * 1024;
         public const int MaxExpandedVrmBytes = 1024 * 1024 * 1024 - 1048576;
         public const int MaxSettingsBytes = 128 * 1024;
 
-        public const byte Upload = 2, Download = 3;
+        // ping is the plain "this port reaches the sharing server" check a client runs before using an address
+        public const byte Ping = 1, Upload = 2, Download = 3;
 
         // Two blobs per character, both named by the model's hash: <hash>.vrm.bundle holds the
         // model and <hash>.settings.bundle holds settings + outfits and is replaced in place.

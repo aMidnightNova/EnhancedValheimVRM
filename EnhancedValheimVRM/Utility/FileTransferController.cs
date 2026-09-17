@@ -40,7 +40,11 @@ namespace EnhancedValheimVRM
         private int _port, _uploadBytesPerSecond;
         private Task<BundleInfo> _upload;
         private volatile BundleInfo _published;
-        private float _nextTick, _nextPublish, _nextAddressWarning;
+        private float _nextTick, _nextPublish;
+        private ZNet _addressNetwork;
+        private int _addressPort;
+        private string _address, _addressCandidates;
+        private Task<string> _addressSearch;
         private Player _localPlayer;
         private bool _wasSharing;
         private static FileTransferController _instance;
@@ -151,17 +155,10 @@ namespace EnhancedValheimVRM
                 return;
             }
 
-            var serverHost = SharingEndpoint.ResolveClientHost(Settings.SharingHost, ZNet.GetServerString());
-            if (string.IsNullOrEmpty(serverHost))
+            var serverHost = FindServerAddress(network, serverPort);
+            if (serverHost == null)
             {
                 StopSession();
-                if (Time.realtimeSinceStartup >= _nextAddressWarning)
-                {
-                    _nextAddressWarning = Time.realtimeSinceStartup + 60;
-                    Logger.LogOnce("sharing-address",
-                        "The game connection does not expose a TCP server address. Set Sharing.ServerHost to the game server's reachable hostname.");
-                }
-
                 return;
             }
 
@@ -196,6 +193,67 @@ namespace EnhancedValheimVRM
             PumpPublish(local);
             if (_session == null) return;
             PumpDownloads(local);
+        }
+
+        // the sharing address that answered a ping on this connection, null until one has
+        internal static string ServerAddress(ZNet network, int port)
+        {
+            return _instance != null && _instance._addressNetwork == network && _instance._addressPort == port
+                ? _instance._address
+                : null;
+        }
+
+        // tries the candidates in order once per connection. a pass where nothing answers is logged and
+        // not repeated, only a new candidate (the server announcing its address) starts another
+        private string FindServerAddress(ZNet network, int port)
+        {
+            if (_addressNetwork != network || _addressPort != port)
+            {
+                _addressNetwork = network;
+                _addressPort = port;
+                _address = null;
+                _addressCandidates = null;
+                _addressSearch = null;
+            }
+
+            if (_address != null) return _address;
+            if (_addressSearch != null)
+            {
+                if (!_addressSearch.IsCompleted) return null;
+                _address = _addressSearch.Status == TaskStatus.RanToCompletion ? _addressSearch.Result : null;
+                _addressSearch = null;
+                return _address;
+            }
+
+            var candidates = SharingEndpoint.Candidates(Settings.SharingHost,
+                PatchJoinServer.Host,
+                SharingRpc.ServerPublicAddress);
+            var list = string.Join(", ", candidates.Select(c => c.Host));
+            if (list == _addressCandidates) return null;
+            _addressCandidates = list;
+            var connection = ZNet.GetServerString();
+            if (candidates.Count == 0)
+            {
+                Logger.LogWarning("Avatar sharing has no server address to try (game connection " + connection +
+                    "). Open BepInEx/config/com.rawrtastic.plugins.enhancedvalheimvrm.cfg and set ServerHost under [Sharing] to the servers address.");
+                return null;
+            }
+
+            _addressSearch = Task.Run(() =>
+            {
+                var found = SharingEndpoint.FindReachableAddress(candidates, port, 5000, out var tried);
+                if (found != null)
+                    Logger.Log("Avatar sharing server on " + found + " port " + port + ". Tried " + tried + ".");
+                else
+                {
+                    Logger.LogWarning("Avatar sharing could not reach the server on tcp port " + port + ". Tried " +
+                        tried + " (game connection " + connection + "). The server needs tcp port " + port +
+                        " open, or open BepInEx/config/com.rawrtastic.plugins.enhancedvalheimvrm.cfg and set ServerHost under [Sharing] to the servers address.");
+                }
+
+                return found;
+            });
+            return null;
         }
 
         private void ResetPublish()

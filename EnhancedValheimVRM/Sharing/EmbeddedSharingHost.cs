@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,7 +28,8 @@ namespace EnhancedValheimVRM
                 : 0;
 
         private Task _stopping = Task.CompletedTask;
-        private float _nextCheck;
+        private Task _addressCheck;
+        private float _nextCheck, _nextAddressCheck = 3600;
         private int _port, _facePort, _bytesPerSecond, _slots, _bundleLimit, _uploadMbps;
         private string _bindAddress;
         private bool _dedicated;
@@ -50,6 +52,13 @@ namespace EnhancedValheimVRM
             {
                 StopHost();
                 return;
+            }
+
+            // If for whatever reason the server is on a dynamic ip this will update its ip once per hour.
+            if (Time.realtimeSinceStartup >= _nextAddressCheck && (_addressCheck == null || _addressCheck.IsCompleted))
+            {
+                _nextAddressCheck = Time.realtimeSinceStartup + 3600;
+                _addressCheck = Task.Run(() => SharingRpc.SetPublicAddress(LookUpPublicAddress()));
             }
 
             var policy = Settings.GetDownloadPolicy();
@@ -138,6 +147,47 @@ namespace EnhancedValheimVRM
                     }
                 }
             });
+        }
+
+        private static readonly string[] PublicAddressServices =
+        {
+            "https://ipv4.icanhazip.com/", "https://api.ipify.org", "https://ipv4.myip.wtf/text",
+            "https://checkip.amazonaws.com/", "https://ipinfo.io/ip/"
+        };
+
+        // based on valheims ZNet.GetPublicIP and its ipv4 sites. random order like its random pick, 500ms each
+        // and the list runs twice, so this blocks the caller about 5s at worst. null when none answered
+        internal static string LookUpPublicAddress()
+        {
+            var random = new System.Random();
+            var order = PublicAddressServices.OrderBy(service => random.Next()).ToArray();
+            using (var client = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromMilliseconds(500) })
+            {
+                foreach (var service in order.Concat(order))
+                {
+                    // on a worker so the request never needs the main thread this is blocking
+                    var request = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            return await client.GetStringAsync(service);
+                        }
+                        catch (Exception)
+                        {
+                            return null;
+                        }
+                    });
+                    var answer = request.Wait(500) ? request.Result : null;
+                    if (!IPAddress.TryParse(answer?.Trim(), out var address) ||
+                        address.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
+                        continue;
+                    return address.ToString();
+                }
+            }
+
+            Logger.LogWarning(
+                "Could not look up this servers public address. Players might need to set ServerHost under [Sharing] in their config.");
+            return null;
         }
 
         private void StopHost()
