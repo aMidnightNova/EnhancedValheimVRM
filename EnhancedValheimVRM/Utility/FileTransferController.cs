@@ -248,7 +248,7 @@ namespace EnhancedValheimVRM
                 {
                     Logger.LogWarning("Avatar sharing could not reach the server on tcp port " + port + ". Tried " +
                         tried + " (game connection " + connection + "). The server needs tcp port " + port +
-                        " open, or open BepInEx/config/com.rawrtastic.plugins.enhancedvalheimvrm.cfg and set ServerHost under [Sharing] to the servers address.");
+                        " open, or edit BepInEx/config/com.rawrtastic.plugins.enhancedvalheimvrm.cfg and set ServerHost under [Sharing] to the servers address.");
                 }
 
                 return found;
