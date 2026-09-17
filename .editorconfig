@@ -90,6 +90,8 @@ resharper_csharp_keep_blank_lines_in_declarations = 2
 resharper_csharp_empty_block_style = together_same_line
 
 # keep `new Type()` instead of c# 9 `new()`
+# keep `namespace X { }`
+csharp_style_namespace_declarations = block_scoped
 resharper_csharp_object_creation_when_type_evident = explicitly_typed
 resharper_csharp_object_creation_when_type_not_evident = explicitly_typed
 

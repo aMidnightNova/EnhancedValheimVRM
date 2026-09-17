@@ -406,7 +406,9 @@ namespace EnhancedValheimVRM
         {
             if (_player.TryGetField<Player, GameObject>("m_visual", out var playerVisual))
             {
-                var playerHeight = Utils.GetModelHeight(_player.GetField<Player, Animator>("m_animator").gameObject);
+                var playerModel = _player.GetField<Player, Animator>("m_animator").gameObject;
+                var playerHeight = Utils.GetModelHeight(playerModel);
+                var playerWidth = Utils.GetModelWidth(playerModel);
 
                 var vrmHeight = Utils.GetModelHeight(_vrmGo);
                 var vrmWidth = Utils.GetModelWidth(_vrmGo);
@@ -419,6 +421,7 @@ namespace EnhancedValheimVRM
                 _settings.VrmRadius = vrmWidth * 0.55f; // Half shoulder width plus 10% clearance.
 
                 _settings.PlayerVrmScale = vrmHeight / playerHeight;
+                _settings.PlayerVrmWidthScale = vrmWidth / playerWidth;
                 Logger.Log(_playerName + ": avatar is " + vrmHeight.ToString("F2") + " m tall, " +
                     vrmWidth.ToString("F2") + " m across the shoulders, " +
                     _settings.PlayerVrmScale.ToString("F2") + "x the player");

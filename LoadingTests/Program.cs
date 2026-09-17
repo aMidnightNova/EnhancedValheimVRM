@@ -291,7 +291,7 @@ namespace VRM
 
     public class VRMImporterContext : UniGLTF.ImporterContext
     {
-        public VRMImporterContext(VRMData data, object map = null, object texture = null) { }
+        public VRMImporterContext(VRMData data, object map = null, object texture = null, object materials = null) { }
     }
 }
 
@@ -307,7 +307,7 @@ namespace UniVRM10
 
     public class Vrm10Importer : UniGLTF.ImporterContext
     {
-        public Vrm10Importer(Vrm10Data data, object map = null, object texture = null) { }
+        public Vrm10Importer(Vrm10Data data, object map = null, object texture = null, object materials = null) { }
     }
 }
 
@@ -330,7 +330,7 @@ namespace EnhancedValheimVRM
     public class VrmSettings
     {
         public float ModelBrightness = .8f, TextureFixEmission = 0.15f;
-        public bool UseMToonShader, AttemptTextureFix;
+        public bool UseMToonShader, AttemptTextureFix, KeepAllBlendShapes;
         public bool UsesCreatureShader => false;
         public string Name;
 
@@ -379,6 +379,11 @@ namespace EnhancedValheimVRM
         public static void LogWarning(string value) { }
     }
 
+    public static class BindPoseSpace
+    {
+        public static void Detect(GameObject root) { }
+    }
+
     public class SharedVrmLifetime
     {
         public void NotifyMaterial(object material) { }
@@ -389,13 +394,50 @@ namespace EnhancedValheimVRM
     public static class Settings
     {
         public static bool LogLoadTiming = false;
+        public static bool FaceEnabled = false, ReceiveFaceStreams = false;
     }
 
     public class TextureDeserializerAsync { }
 
+    public static class TextureFixMaterialGenerator
+    {
+        public static object For(object data)
+        {
+            return null;
+        }
+    }
+
+    public static class PatchMetallicMerge
+    {
+        public static int InFlight => 0;
+    }
+
+    public static class PatchBlendShapes
+    {
+        public sealed class Import { }
+
+        public static Import Begin(object keep, bool deferred)
+        {
+            return new Import();
+        }
+
+        public static void End(Import import) { }
+    }
+
+    public static class UsedBlendShapes
+    {
+        public static HashSet<string> Names(object parsed, OutfitConfig outfits)
+        {
+            return null;
+        }
+    }
+
     public static class FrameClock
     {
         public static double WorstFrameMs => 0;
+        public static double ReportAboveMs;
+        public static string Label;
+        public static bool Reporting => false;
 
         public static void ResetWorst() { }
     }
@@ -486,6 +528,17 @@ namespace EnhancedValheimVRM
 
 namespace EnhancedValheimVRM.Sharing
 {
+    public static class FaceWire
+    {
+        public static readonly string[] Catalogue = new string[0];
+        public const int ValueCount = 0;
+
+        public static string MeshAlias(int index)
+        {
+            return null;
+        }
+    }
+
     public class AvatarBundle
     {
         internal string VerifiedVersion;

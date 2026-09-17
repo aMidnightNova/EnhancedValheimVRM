@@ -18,6 +18,11 @@ namespace EnhancedValheimVRM
     public sealed class OutfitConfig
     {
         public readonly List<OutfitDefinition> Outfits = new List<OutfitDefinition>();
+
+        // the [Blendshapes] section, blendshapes to keep loaded even if nothing uses them
+        public readonly HashSet<string> KeepBlendshapes = new HashSet<string>(StringComparer.Ordinal);
+
+        public const string KeepSection = "Blendshapes";
         public OutfitDefinition Default => Outfits.Find(outfit => outfit.IsDefault);
 
         public OutfitDefinition Find(string name)
@@ -31,6 +36,7 @@ namespace EnhancedValheimVRM
                 throw new InvalidDataException("Outfit file exceeds 128 KiB.");
             var config = new OutfitConfig();
             OutfitDefinition current = null;
+            var keepList = false;
             var keys = new HashSet<string>(StringComparer.Ordinal);
             var lineNumber = 0;
             using (var reader = new StringReader(text))
@@ -45,6 +51,14 @@ namespace EnhancedValheimVRM
                     if (line.StartsWith("[") && line.EndsWith("]"))
                     {
                         var name = line.Substring(1, line.Length - 2).Trim();
+                        if (name.Equals(KeepSection, StringComparison.OrdinalIgnoreCase))
+                        {
+                            current = null;
+                            keepList = true;
+                            continue;
+                        }
+
+                        keepList = false;
                         Sharing.SharingWire.ValidateOutfitName(name);
                         if (config.Find(name) != null || config.Outfits.Count >= 64)
                             throw new InvalidDataException("Duplicate outfit name or too many outfits.");
@@ -55,6 +69,15 @@ namespace EnhancedValheimVRM
                     }
 
                     var equals = line.IndexOf('=');
+                    if (keepList)
+                    {
+                        // One blendshape name per line
+                        if (equals >= 0 || config.KeepBlendshapes.Count >= 1024)
+                            throw new InvalidDataException("Invalid blendshape entry at line " + lineNumber);
+                        config.KeepBlendshapes.Add(line);
+                        continue;
+                    }
+
                     if (current == null || equals < 1)
                         throw new InvalidDataException("Invalid outfit entry at line " + lineNumber);
                     var key = line.Substring(0, equals).Trim();
@@ -76,7 +99,10 @@ namespace EnhancedValheimVRM
                 }
             }
 
-            if (config.Outfits.Count == 0 || config.Outfits.Count(outfit => outfit.IsDefault) != 1)
+            // a file with only a [Blendshapes] section is fine
+            if (config.Outfits.Count > 0 && config.Outfits.Count(outfit => outfit.IsDefault) != 1)
+                throw new InvalidDataException("Set Default=True in exactly one outfit section.");
+            if (config.Outfits.Count == 0 && config.KeepBlendshapes.Count == 0)
                 throw new InvalidDataException("Set Default=True in exactly one outfit section.");
             return config;
         }

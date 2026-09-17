@@ -45,6 +45,7 @@ namespace EnhancedValheimVRM
             if (_lastCall > 0 && _lastFrame == Time.frameCount)
             {
                 var stretch = (now - _lastCall) * 1000.0;
+                if (FrameClock.Reporting) FrameClock.Charge(stretch);
                 if (stretch > _longestStepMs)
                 {
                     _longestStepMs = stretch;
@@ -55,6 +56,7 @@ namespace EnhancedValheimVRM
             _stepsInPhase++;
             _lastCall = now;
             _lastFrame = Time.frameCount;
+            if (FrameClock.Reporting) FrameClock.Label = _phase + " step " + _stepsInPhase;
         }
 
         private int _lastFrame = -1;
@@ -113,10 +115,34 @@ namespace EnhancedValheimVRM
             MarkStep();
             Protect();
             BeginFrame();
-            if ((Time.realtimeSinceStartup - _start) * 1000f < _budgetMs) return Task.CompletedTask;
+            if (PatchBlendShapes.PendingCount > 0) return FinishBlendShapes();
+            return SliceLeft() ? Task.CompletedTask : Yield();
+        }
+
+        private static bool SliceLeft()
+        {
+            return (Time.realtimeSinceStartup - _start) * 1000f < _budgetMs;
+        }
+
+        private Task Yield()
+        {
             _frames++;
             _budgetSumMs += _budgetMs;
             return _inner.NextFrame();
+        }
+
+        // blendshapes the vrm 1.0 mesh builder would have added in one go, see PatchBlendShapes
+        private async Task FinishBlendShapes()
+        {
+            while (true)
+            {
+                var drainStart = Time.realtimeSinceStartupAsDouble;
+                var done = PatchBlendShapes.Drain(_start + _budgetMs / 1000f);
+                if (FrameClock.Reporting) FrameClock.Charge((Time.realtimeSinceStartupAsDouble - drainStart) * 1000.0);
+                if (done && SliceLeft()) return;
+                await Yield();
+                BeginFrame();
+            }
         }
 
         public Task NextFrameIfTimedOut()
@@ -154,6 +180,7 @@ namespace EnhancedValheimVRM
             // the importer uploads the result on the main thread right after, so leave room for that
             var remainingMs = (_budgetMs - (Time.realtimeSinceStartup - _start) * 1000f) * 0.6f;
             if (remainingMs <= 0) return task.IsCompleted;
+            var waitStart = Time.realtimeSinceStartupAsDouble;
             try
             {
                 task.Wait((int)remainingMs);
@@ -162,6 +189,8 @@ namespace EnhancedValheimVRM
             {
                 // the awaiting code sees the fault through the task itself
             }
+
+            if (FrameClock.Reporting) FrameClock.Charge((Time.realtimeSinceStartupAsDouble - waitStart) * 1000.0);
 
             if (task.IsCompleted)
                 _inline++;

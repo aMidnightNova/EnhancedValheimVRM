@@ -63,6 +63,27 @@ internal static class SettingsChecks
             check(Math.Abs(shared.GetWeaponScale("BowFineWood") - 1.1f) < 0.000001f &&
                 Math.Abs(shared.GetWeaponScale("BowDraugrFang") - 1.2f) < 0.000001f,
                 "Weapon scale lines lost in shared settings");
+            // rigged weapons get a line for each hand and forearm piece. make sure those read right, dont mess
+            // with the normal weapon lines, and still come through in shared settings
+            File.WriteAllText(path,
+                "KnifeSkollAndHatiLeftHandPos=<0,0.01,0>\nknifeskollandhatiRightHandRot=<0,0,20>\nFistGoldLeftForeArmRot=(5,0,0)\nKnifeHandRot=<0,10,0>\nRightHandItemPos=<1,0,0>\n");
+            var rigged = new VrmSettings("Test");
+            check(rigged.TryGetRigOffset("KnifeSkollAndHati", "LeftHand", out var rp1, out var rr1) && rp1.y == 0.01f &&
+                rr1.x == 0 && rr1.y == 0 && rr1.z == 0,
+                "Left hand piece line not parsed");
+            check(rigged.TryGetRigOffset("KnifeSkollAndHati", "RightHand", out _, out var rr2) && rr2.z == 20,
+                "Right hand piece line not parsed case insensitively");
+            check(!rigged.TryGetRigOffset("KnifeSkollAndHati", "LeftForeArm", out _, out _) &&
+                rigged.TryGetRigOffset("FistGold", "LeftForeArm", out _, out var rr3) && rr3.x == 5,
+                "Forearm piece line not parsed on its own");
+            check(rigged.TryGetItemAdjustment("KnifeCopper", "Knife", true, out _, out var rr4) && rr4.y == 10 &&
+                rigged.RightHandItemPos.x == 1,
+                "Piece lines broke class or slot lines");
+            var riggedShared = new VrmSettings("Test", rigged.Serialize());
+            check(riggedShared.TryGetRigOffset("KnifeSkollAndHati", "LeftHand", out var rp5, out _) && rp5.y == 0.01f &&
+                riggedShared.TryGetRigOffset("KnifeSkollAndHati", "RightHand", out _, out var rr5) && rr5.z == 20 &&
+                riggedShared.TryGetRigOffset("FistGold", "LeftForeArm", out _, out var rr6) && rr6.x == 5,
+                "Piece lines lost in shared settings");
             File.WriteAllText(path, "BowPos=Draugrfang\n");
             var badWeapon = false;
             try

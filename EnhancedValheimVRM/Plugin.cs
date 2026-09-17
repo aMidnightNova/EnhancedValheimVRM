@@ -5,6 +5,7 @@ using System.Globalization;
 using BepInEx;
 using HarmonyLib;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace EnhancedValheimVRM
 {
@@ -13,7 +14,7 @@ namespace EnhancedValheimVRM
     {
         private const string PluginGuid = "com.rawrtastic.plugins.enhancedvalheimvrm";
         private const string PluginName = "EnhancedValheimVRM";
-        private const string PluginVersion = "1.1.1";
+        private const string PluginVersion = "1.1.2";
 
         private static EnhancedValheimVrmPlugin _instance;
         private static bool _clientInitialized;
@@ -77,14 +78,24 @@ namespace EnhancedValheimVRM
             if (_clientInitialized) return;
             _clientInitialized = true;
             FrameClock.Install();
+            VrmAnimator.InstallPhysicsPose();
+            PatchVisEquipmentUpdateLodgroup.InstallSwingingParts();
             _harmony.PatchAll();
             _instance.gameObject.AddComponent<FileTransferController>();
+            _instance.gameObject.AddComponent<VmcReceiver>();
+            _instance.gameObject.AddComponent<FaceStreamClient>();
             System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(ConsoleCommands).TypeHandle);
             if (Settings.EnableProfileCode) PatchAllUpdateMethods.ApplyPatches(_harmony);
         }
 
         internal static void PatchAll()
         {
+            // ZNet does not exist yet when the menu boots, so:
+            // a dedicated server is a headless build with no graphics device.
+
+            // the server needs none of the client patches and has no univrm dlls to scan them against anyways
+            // the dll on the server should be standalone
+            if (Application.isBatchMode || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return;
             if (ZNet.instance != null && ZNet.instance.IsDedicated()) return;
             InitializeClient();
         }

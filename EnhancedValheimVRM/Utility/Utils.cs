@@ -9,12 +9,11 @@ namespace EnhancedValheimVRM
 {
     public static class Utils
     {
-        // univrm keeps bind poses in the models root space, the games own models keep them
-        // relative to the renderer. skinning ignores the renderers transform either way, so a
-        // scaled mesh node in a vrm renders fine but would throw the measurements off.
+        // which space the bind poses live in was decided at import, see BindPoseSpace
         private static Transform BindSpace(GameObject model, SkinnedMeshRenderer renderer)
         {
-            return model.GetComponent<SharedVrmLifetime>() != null ? model.transform : renderer.transform;
+            var space = renderer.GetComponent<BindPoseSpace>();
+            return space != null && space.UseRoot ? model.transform : renderer.transform;
         }
 
         private static Vector3 RestPosition(GameObject model, Transform bone)

@@ -28,6 +28,10 @@ WeaponScale=1.0
 #BowPos=BowDraugrFang,<0, 0.03, 0>
 #KnifeRot=<0, 0, 15>
 #SwordHandPos=<0, -0.01, 0>
+# rigged weapons (Skoll and Hati, Berserkir axes, fists) ignore the lines above. each piece gets its own,
+# item name then LeftHand RightHand LeftForeArm or RightForeArm, then Pos or Rot. Rot spins it where its held.
+#KnifeSkollAndHatiLeftHandPos=<0, 0.01, 0>
+#KnifeSkollAndHatiRightHandRot=<0, 0, 15>
 
 # Vanilla helmet visibility and additional scale/position adjustment.
 HelmetVisible=false
@@ -50,6 +54,9 @@ AttemptTextureFix=false
 TextureFixEmission=0.15
 # Use the MToon shader (texture conversion takes precedence).
 UseMToonShader=false
+# only blendshapes the vrm expressions or your outfit file use get loaded, the rest stay empty so models with hundreds of them load faster and cause less of a frame spike.
+# true loads all of them.
+KeepAllBlendShapes=false
 # Camera height follows the avatar, with optional close-camera fading.
 FixCameraHeight=true
 EnablePlayerFade=true

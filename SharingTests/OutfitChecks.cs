@@ -28,13 +28,23 @@ internal static class OutfitChecks
         var renamed =
             OutfitConfig.Parse("[Anything]\nDefault=False\n[My usual clothes]\nDefault=True\nmesh:Body=True\n");
         check(renamed.Default.Name == "My usual clothes", "Default must come from flag, not section name or order");
+        // the [Blendshapes] section keeps names, it is not an outfit, and it can exist without outfit sections
+        var kept = OutfitConfig.Parse(
+            "[Look]\nDefault=True\nmesh:Body=True\n\n[Blendshapes]\njawOpen\nBlink\n#Wink\n#Sad\n");
+        check(kept.Outfits.Count == 1 && kept.KeepBlendshapes.SetEquals(new[] { "jawOpen", "Blink" }),
+            "Blendshapes section lists names to keep without becoming an outfit");
+        var keepOnly = OutfitConfig.Parse("[blendshapes]\njawOpen\n");
+        check(keepOnly.Outfits.Count == 0 && keepOnly.Default == null &&
+            keepOnly.KeepBlendshapes.Contains("jawOpen"),
+            "A file with only a Blendshapes section parses");
         foreach (var invalid in new[]
                  {
                      "[A]\nDefault=False", "[A]\nDefault=True\n[B]\nDefault=True",
                      "[A]\nDefault=True\n[a]\nDefault=False", "[A]\nDefault=True\nblendshape:Body:Test=NaN",
                      "[A]\nDefault=True\nblendshape:Body:Test=101", "[A]\nDefault=True\nmesh:Body=perhaps",
                      "[A]\nDefault=True\nmesh:Body=True\nmesh:Body=False", "[A]\nDefault=True\ndefault=False",
-                     "[A]\nDefault=True\nblendshape:Body:=25"
+                     "[A]\nDefault=True\nblendshape:Body:=25", "[Blendshapes]\n",
+                     "[A]\nDefault=False\n[Blendshapes]\nX\n", "[Blendshapes]\nBlink=True\n"
                  })
         {
             var rejected = false;
@@ -60,6 +70,12 @@ internal static class OutfitChecks
             "Changing outfits did not invalidate the settings blob version");
         BundleCrypto.UnpackProfile(BundleCrypto.PackProfile("", ""), out _, out outfits);
         check(outfits == "", "Empty outfit file");
+        var stripped = SharingWire.StripComments(
+            "# top\r\n[Look]\r\n  Default=True  \r\n\r\n// note\r\n; note\r\nmesh:Body=True\r\n#mesh:Hat=True\r\n");
+        check(stripped == "[Look]\nDefault=True\nmesh:Body=True\n" && SharingWire.StripComments(null) == "" &&
+            SharingWire.StripComments("# only\n") == "",
+            "Comments and blank lines are stripped before the outfit text gets transmitted");
+        check(OutfitConfig.Parse(stripped).Default.Name == "Look", "Stripped outfit text still parses");
 
         await Task.CompletedTask;
     }
