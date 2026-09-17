@@ -7,7 +7,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{56266ABF-B3F1-44F5-8790-D269FE536067}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <Version>1.1.2</Version>
+    <Version>1.2.0</Version>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>EnhancedValheimVRM</RootNamespace>
     <AssemblyName>EnhancedValheimVRM</AssemblyName>
