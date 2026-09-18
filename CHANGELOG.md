@@ -4,7 +4,7 @@
 
 ### fixed
 
-- in some cases a haev the name of a previous created character saved to it casuing settings reload to swap to it.
+- in some cases the name of a previous created character saved to a newly created character casuing settings reload to swap the older character.
 - some avatars showed white or missing textures for other players
 - some avatars could get stuck walking into half walls
 
