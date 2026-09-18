@@ -16,6 +16,9 @@ namespace EnhancedValheimVRM
         // Player.prefab capsule: radius 0.49, height 1.85, centre 0.925, bottom on the feet
         private const float VanillaRadius = 0.49f;
 
+        // how far over the games own rise an edge carries you. 1 is what physics gives a solid sphere
+        private const float Bump = 1.15f;
+
         // /vrm dev stepover | sensor on | off. not saved
         internal static bool Enabled = true, UseSensor = true;
 
@@ -53,9 +56,14 @@ namespace EnhancedValheimVRM
             foreach (var contact in contacts)
             {
                 var height = contact.point.y - feet.y;
-                if (height <= 0f) continue;
+                // skip the floor under your feet and anything 0.49 m or higher, only low edges get stepped over.
+                // higher ones broke the maths below and got people stuck on walls
+                if (height <= 0f || height >= VanillaRadius) continue;
                 var facing = contact.normal;
                 if (facing.y < 0f) facing.y = -facing.y;
+                // tried a vanilla sized sphere (Physics.ComputePenetration) instead of the ring. no wall test
+                // needed but it boosts way over the game even with the fixed lift, the ring is closer and cheaper
+                // to how vanilla feels
                 // a wall, the vanilla sphere would have met this collider flat on and gone nowhere
                 if (UseSensor && WallSensor.Touching(player, collision.collider)) continue;
                 // anything else this low is an edge the vanilla sphere rides up. facing up it keeps its
@@ -80,16 +88,21 @@ namespace EnhancedValheimVRM
                 }
 
                 if (body == null) continue;
-                // what the vanilla sphere gets from this edge: the game re-imposes the intended horizontal
-                // speed every physics step, the edge takes the part pointing into it and turns it along
-                // the sphere surface, so every step adds that much upward speed until the games own 3 m/s
-                // cap. a sloped contact already gets this from physics, only a straight edge gives nothing
+                // what the vanilla sphere gets from this edge: the game sets the sideways speed every step and
+                // leaves the vertical alone, the contact takes away the part of that pointing into the surface.
+                // the rise already there counts, so it settles on sliding along the surface, under the games
+                // 3 m/s cap on a low edge. a sloped contact gets this from physics, a straight edge gets nothing
                 var wanted = CurrentVelocity(__instance);
                 var sideways = new Vector3(normal.x, 0f, normal.z);
                 var into = Vector3.Dot(new Vector3(wanted.x, 0f, wanted.z), -sideways.normalized);
                 if (into <= 0.05f) continue;
                 var velocity = body.linearVelocity;
-                var lifted = Mathf.Min(3f, velocity.y + into * sideways.magnitude * normal.y);
+                var push = into * sideways.magnitude;
+                var closing = push * Bump - velocity.y * normal.y;
+                if (closing <= 0f) continue;
+                // never more in one step than the first version added, that one ignored the rise and went
+                // straight to the cap
+                var lifted = Mathf.Min(3f, velocity.y + Mathf.Min(closing, push) * normal.y);
                 if (lifted > velocity.y) body.linearVelocity = new Vector3(velocity.x, lifted, velocity.z);
             }
         }

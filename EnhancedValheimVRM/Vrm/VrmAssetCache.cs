@@ -401,11 +401,11 @@ namespace EnhancedValheimVRM
                 importer = parsed is VRMData vrm0
                     ? (ImporterContext)new VRMImporterContext(vrm0,
                         null,
-                        new TextureDeserializerAsync(),
+                        TextureDeserializerAsync.For(parsed),
                         textureFix ? TextureFixMaterialGenerator.For(vrm0) : null)
                     : new Vrm10Importer((Vrm10Data)parsed,
                         null,
-                        new TextureDeserializerAsync(),
+                        TextureDeserializerAsync.For(parsed),
                         textureFix ? TextureFixMaterialGenerator.For((Vrm10Data)parsed) : null);
                 var caller = new PersistentImportAwaitCaller(importer);
                 if (timer != null) Logger.Log("Avatar import for " + source.Name + ": native import started");
@@ -499,6 +499,7 @@ namespace EnhancedValheimVRM
                     if (alias != null) names.Add(alias);
                 }
             }
+
             return names;
         }
 

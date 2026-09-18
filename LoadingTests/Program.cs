@@ -397,7 +397,13 @@ namespace EnhancedValheimVRM
         public static bool FaceEnabled = false, ReceiveFaceStreams = false;
     }
 
-    public class TextureDeserializerAsync { }
+    public class TextureDeserializerAsync
+    {
+        public static TextureDeserializerAsync For(object data)
+        {
+            return new TextureDeserializerAsync();
+        }
+    }
 
     public static class TextureFixMaterialGenerator
     {

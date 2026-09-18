@@ -108,10 +108,9 @@ namespace EnhancedValheimVRM
 
             if (_inventoryRead != null || Time.realtimeSinceStartup < _nextInventory) return;
             _nextInventory = Time.realtimeSinceStartup + 5;
-            var directory = Constants.Vrm.Dir;
-            _inventoryRead = Task.Run(() => new HashSet<string>(Directory.Exists(directory)
-                    ? Directory.EnumerateFiles(directory, "*.vrm").Select(Path.GetFileNameWithoutExtension)
-                    : Enumerable.Empty<string>(),
+            _inventoryRead = Task.Run(() => new HashSet<string>(Constants.Vrm.ReadDirs.Where(Directory.Exists)
+                    .SelectMany(directory => Directory.EnumerateFiles(directory, "*.vrm"))
+                    .Select(Path.GetFileNameWithoutExtension),
                 StringComparer.OrdinalIgnoreCase));
         }
 
