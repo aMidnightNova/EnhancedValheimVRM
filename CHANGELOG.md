@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.1
+
+### fixed
+
+- in some cases a haev the name of a previous created character saved to it casuing settings reload to swap to it.
+- some avatars showed white or missing textures for other players
+- some avatars could get stuck walking into half walls
+
 ## 1.3.0
 
 ### fixed

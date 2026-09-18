@@ -14,7 +14,10 @@ namespace EnhancedValheimVRM
             // so when you switch characters and teh destroy method is called and the keys are the name. its wrong 
             // this insures access to the correct player name always.
 
-            __instance.m_customData.Set(Constants.Keys.PlayerName, __instance.GetPlayerDisplayName());
+            // the menus preview character is saved as a brand new character, so writing a name on it put the
+            // previously shown character into that save and its avatar came back on every settings reload
+            if (!__instance.IsInStartMenu())
+                __instance.m_customData.Set(Constants.Keys.PlayerName, __instance.GetPlayerDisplayName());
             FileTransferController.RecordPlayerSeen(__instance);
             VrmController.AttachVrmToPlayer(__instance);
         }

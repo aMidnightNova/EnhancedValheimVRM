@@ -11,17 +11,28 @@ namespace EnhancedValheimVRM
 
             var playerName = "";
 
+            // the characters own name wins. the copy kept on the character (see PatchPlayerAwake) is only
+            // for when the game has not filled that in, and older saves can carry the wrong one, so a real
+            // name replaces it here
+            if (Game.instance != null)
+            {
+                playerName = player.GetPlayerName();
+                if (playerName != "" && playerName != "...")
+                {
+                    if (!player.m_customData.TryGetValue(Constants.Keys.PlayerName, out var stored) ||
+                        stored != playerName)
+                        player.m_customData.Set(Constants.Keys.PlayerName, playerName);
+                    return playerName;
+                }
+            }
+
             // see comments in PatchPlayerAwake for the reason this exists.
             if (player.m_customData.TryGetValue(Constants.Keys.PlayerName, out playerName)) return playerName;
 
             if (Game.instance != null)
             {
-                playerName = player.GetPlayerName();
-                if (playerName == "" || playerName == "...")
-                {
-                    playerName = Game.instance.GetPlayerProfile().GetName();
-                    return playerName;
-                }
+                playerName = Game.instance.GetPlayerProfile().GetName();
+                return playerName;
             }
             else
             {

@@ -15,15 +15,23 @@ namespace EnhancedValheimVRM
             public static readonly string GoName = $"{Prefix}_vrm";
             public static readonly string DefaultName = "___Default.vrm";
             public static readonly string Dir = PluginDir;
-            public static readonly string DefaultPath = Path.Combine(PluginDir, DefaultName);
+            public static string DefaultPath => Find(DefaultName);
+
+            // test dir so i can stop mixing test cases with my models
+            public static readonly string[] ReadDirs = { Path.Combine(PluginDir, "test"), PluginDir };
 
             // case-insensitive filenames
             public static string Find(string fileName)
             {
                 var exact = Path.Combine(Dir, fileName);
-                if (File.Exists(exact) || !Directory.Exists(Dir)) return exact;
+                if (File.Exists(exact)) return exact;
                 var files = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var path in Directory.EnumerateFiles(Dir)) files[Path.GetFileName(path)] = path;
+                foreach (var directory in ReadDirs)
+                {
+                    if (!Directory.Exists(directory)) continue;
+                    foreach (var path in Directory.EnumerateFiles(directory)) files[Path.GetFileName(path)] = path;
+                }
+
                 return files.TryGetValue(fileName, out var found) ? found : exact;
             }
         }
