@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.1
+
+### fixed
+
+- some vrm 1.0 avatars failed to load
+- Instances where AttemptTextureFix did nothing on your own vrm 1.0 avatar
+
+### changed
+
+- The mod no longer uses the MIT Licence. Instead it uses RML-1.0
+
 ## 1.4.0
 
 ### new features

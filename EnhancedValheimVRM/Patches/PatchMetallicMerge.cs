@@ -33,7 +33,8 @@ namespace EnhancedValheimVRM
                 metallic = metallicRoughnessTexture != null ? metallicRoughnessTexture.GetPixels32() : null;
                 occlusion = occlusionTexture != null ? occlusionTexture.GetPixels32() : null;
             }
-            catch (UnityException error)
+            // unity 6 throws ArgumentException for a texture it cant read, not UnityException
+            catch (Exception error)
             {
                 Logger.LogWarning("Metallic map merge left to univrm, " + error.Message);
                 return true;

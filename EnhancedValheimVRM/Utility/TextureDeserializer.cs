@@ -46,6 +46,10 @@ namespace EnhancedValheimVRM
             if (textureInfo.ImageData == null || textureInfo.ImageData.Length == 0) return Blank(textureInfo);
             var settings = new AsyncImageLoader.LoaderSettings();
             settings.linear = textureInfo.ColorSpace == UniGLTF.ColorSpace.Linear;
+            // mipmaps when the file asks for them, same as univrms own loader. without them a texture
+            // shimmers at a distance
+            settings.generateMipmap = textureInfo.UseMipmap;
+            settings.autoMipmapCount = true;
 
             switch (textureInfo.DataMimeType)
             {
@@ -73,13 +77,16 @@ namespace EnhancedValheimVRM
                 ? textureInfo.DataMimeType + " " + textureInfo.ImageData.Length + " bytes"
                 : null;
             if (label != null) FrameClock.Label = "decoding " + label;
-            Texture2D texture = null;
-
-            texture = await AsyncImageLoader.CreateFromImageAsync(textureInfo.ImageData, settings);
+            // univrms synchronous Load hands over the ImmediateCaller and needs every step done before it
+            // returns, so the menu import decodes on the main thread
+            var texture = awaitCaller is ImmediateCaller
+                ? AsyncImageLoader.CreateFromImage(textureInfo.ImageData, settings)
+                : await AsyncImageLoader.CreateFromImageAsync(textureInfo.ImageData, settings);
             if (label != null) FrameClock.Label = "uploaded " + label;
+            if (texture == null) texture = UnityDecode(textureInfo);
             if (texture == null)
             {
-                // the async loader refused it. one missing texture beats losing the avatar
+                // neither decoder could read it. one missing texture beats losing the avatar
                 Logger.LogWarning("Texture " + NameOf(textureInfo.ImageData.Length) + " could not be decoded (" +
                     textureInfo.DataMimeType + ", " + textureInfo.ImageData.Length +
                     " bytes), the avatar loads without it.");
@@ -92,6 +99,20 @@ namespace EnhancedValheimVRM
 
 
             return texture;
+        }
+
+        // freeimage refused it, unitys own decoder still reads some pngs and jpegs it does not. kept readable,
+        // the metallic merge and the texture fix read the pixels back
+        private static Texture2D UnityDecode(DeserializingTextureInfo textureInfo)
+        {
+            var texture = new Texture2D(2,
+                2,
+                TextureFormat.ARGB32,
+                textureInfo.UseMipmap,
+                textureInfo.ColorSpace == UniGLTF.ColorSpace.Linear);
+            if (texture.LoadImage(textureInfo.ImageData, false)) return texture;
+            Object.Destroy(texture);
+            return null;
         }
 
         // a blank texture instead of null, a null fails the whole import. a new texture holds whatever was
