@@ -38,6 +38,7 @@ namespace EnhancedValheimVRM
         public static class ShaderOptions
         {
             public static string Current => "current";
+            public static string Previous => "previous";
             public static string Old => "old";
         }
 
@@ -70,7 +71,7 @@ namespace EnhancedValheimVRM
             _shaderBundle = config.Bind("General",
                 "ShaderBundle",
                 ShaderOptions.Current,
-                "Use the current or old shader bundle. Options are: [old, current]. you probably don't need to change this.");
+                "Which shader bundle to use. Options are: [old, previous, current]. you probably don't need to change this.");
 
             _enableProfileCode = config.Bind("General",
                 "EnableProfileCode",

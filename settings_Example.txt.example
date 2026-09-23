@@ -59,11 +59,23 @@ UseMToonShader=false
 KeepAllBlendShapes=false
 # Camera height follows the avatar, with optional close-camera fading.
 FixCameraHeight=true
-EnablePlayerFade=true
+EnablePlayerFade=false
 
 # Multipliers on the avatar's authored spring settings.
 SpringBoneStiffness=1.0
 SpringBoneGravityPower=1.0
+# same as Immobile on a physbone. 0 to 1, how much of your movement the springs ignore.
+# turn it up if hair, fur or the tongue gets pulled way out of place when you run.
+# a name in front does one spring group only (unity spring bone comment or root bone).
+SpringBoneImmobile=0
+#SpringBoneImmobile=Neckfloof,1
+# World = only ignores you moving around. AllMotion = ignores the animation too.
+SpringBoneImmobileType=World
+# same as the angle limit on a physbone. how many degrees a spring bone can swing away from where it rests.
+# 0 = off, a vrm 1.0 avatar then keeps any limits it was exported with. a name in front does one spring
+# group only, same names as SpringBoneImmobile.
+SpringBoneMaxAngle=0
+#SpringBoneMaxAngle=Ears,18
 
 # Gameplay interaction distance multiplier; weapon attack range is unchanged.
 InteractionDistanceScale=1.0

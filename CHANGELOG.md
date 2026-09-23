@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.4.0
+
+### new features
+
+- SpringBoneImmobile and SpringBoneImmobileType, same as Immobile on a physbone, for the whole avatar or one spring group
+- SpringBoneMaxAngle, same as the angle limit on a physbone, works on vrm 0.x and 1.0 avatars
+- vrm 1.0 avatars exported with spring angle limits now use them
+- ShaderBundle=previous brings back the last versions shaders if the new ones give you trouble
+
+### changed
+
+- updated UniVRM to 0.131.2 for the unity 6 version of valheim
+- a big avatars collision is never bigger than a normal players, so it fits wherever a player fits
+- no longer ships Unity.Burst and Unity.Mathematics, the game has its own
+- FastSpringBone and the VRMShaders dlls are gone from UniVRM, manual installs can delete them from valheim_Data/Managed
+
+### fixed
+
+- hair, tail and ear physics missing on vrm 1.0 avatars
+- avatars with EnablePlayerFade on disappeared much closer than normal players
+- arrows and magic came out at the wrong height on small and big avatars
+
 ## 1.3.1
 
 ### fixed

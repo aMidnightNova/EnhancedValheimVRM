@@ -49,6 +49,15 @@ settings_Example.txt.example has everything with comments, but the short version
   show the vanilla armor on top of the vrm. off by default because it usually looks wrong.
 - SpringBoneStiffness, SpringBoneGravityPower \
   multipliers on what the vrm author set. 1.0 = leave it alone.
+- SpringBoneImmobile, SpringBoneImmobileType \
+  same as Immobile on a physbone. 0 to 1, how much of your movement the hair, fur, tail and so on ignore. turn it up if things get pulled way out of place when you run. 0 = off. \
+  a name in front does one spring group only, SpringBoneImmobile=Neckfloof,1 \
+  the name is the spring bone comment from unity (a part of it is enough) or its root bone. \
+  SpringBoneImmobileType is World (only ignores you moving around, the animation still moves them) or AllMotion (ignores the animation too). \
+  does nothing on a spring group that has a center set in the vrm.
+- SpringBoneMaxAngle \
+  same as the angle limit on a physbone. how many degrees hair, ears, tails and so on can swing away from where they rest. 0 = off, a vrm 1.0 avatar then keeps any limits it was exported with. \
+  a name in front does one spring group only, SpringBoneMaxAngle=Ears,18, same names as SpringBoneImmobile.
 - InteractionDistanceScale \
   how far you can reach, small avatars might want a bit more.
 - AllowShare \
@@ -173,8 +182,8 @@ Downloaded avatars are cached in EnhancedValheimVRM/Shared, the server keeps the
 If you put someones vrm and settings file in your folder yourself, that is used instead of the shared one.
 
 ### Usefull Info
-- If you have a shader compile error you probably need to use the old shader bundle. \
-  the newer current bundle should work, but JIC ive included the old one still\
-  Its in General settings. ShaderBundle=<old,current>. Note that this will affect all models.
+- If you have a shader compile error you probably need to use an older shader bundle. \
+  the current bundle should work, but JIC ive included the previous and old ones still\
+  Its in General settings. ShaderBundle=<old,previous,current>. Note that this will affect all models.
 - if the mod says sharing is unavailable because the server did not answer, the server and clients are on different versions. update all of them and restart.
 

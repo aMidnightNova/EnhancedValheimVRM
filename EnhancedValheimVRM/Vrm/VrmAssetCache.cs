@@ -11,7 +11,6 @@ using UniGLTF;
 using UniVRM10;
 using UnityEngine;
 using VRM;
-using VRMShaders;
 using Object = UnityEngine.Object;
 
 namespace EnhancedValheimVRM
@@ -41,6 +40,11 @@ namespace EnhancedValheimVRM
         }
 
         private static readonly Dictionary<string, Entry> Entries = new Dictionary<string, Entry>();
+
+        // univrm makes imported textures unreadable at runtime since 0.128.4, the texture fix and the
+        // metallic merge read their pixels back
+        private static readonly ImporterContextSettings ReadableTextures =
+            new ImporterContextSettings(importedTexturesAccessibility: ImportedTexturesAccessibility.Readable);
 
         private static readonly Dictionary<string, string> Latest = new Dictionary<string, string>();
 
@@ -261,9 +265,9 @@ namespace EnhancedValheimVRM
                 }
 
                 importer = parsed is VRMData vrm0
-                    ? (ImporterContext)new VRMImporterContext(vrm0)
-                    : new Vrm10Importer((Vrm10Data)parsed);
-                blendShapes = PatchBlendShapes.Begin(BlendShapesToKeep(parsed, source), false);
+                    ? (ImporterContext)new VRMImporterContext(vrm0, settings: ReadableTextures)
+                    : new Vrm10Importer((Vrm10Data)parsed, settings: ReadableTextures);
+                blendShapes = PatchBlendShapes.Begin(BlendShapesToKeep(parsed, source));
                 var parseMs = timer?.Elapsed.TotalMilliseconds ?? 0;
                 var loaded = importer.Load();
                 if (timer != null)
@@ -392,7 +396,7 @@ namespace EnhancedValheimVRM
 
             var queueMs = timer?.Elapsed.TotalMilliseconds ?? 0;
             ImporterContext importer = null;
-            var blendShapes = PatchBlendShapes.Begin(BlendShapesToKeep(parsed, source), true);
+            var blendShapes = PatchBlendShapes.Begin(BlendShapesToKeep(parsed, source));
             try
             {
                 yield return PatchShaderFind.EnsureLoaded();
@@ -402,11 +406,13 @@ namespace EnhancedValheimVRM
                     ? (ImporterContext)new VRMImporterContext(vrm0,
                         null,
                         TextureDeserializerAsync.For(parsed),
-                        textureFix ? TextureFixMaterialGenerator.For(vrm0) : null)
+                        textureFix ? TextureFixMaterialGenerator.For(vrm0) : null,
+                        ReadableTextures)
                     : new Vrm10Importer((Vrm10Data)parsed,
                         null,
                         TextureDeserializerAsync.For(parsed),
-                        textureFix ? TextureFixMaterialGenerator.For((Vrm10Data)parsed) : null);
+                        textureFix ? TextureFixMaterialGenerator.For((Vrm10Data)parsed) : null,
+                        settings: ReadableTextures);
                 var caller = new PersistentImportAwaitCaller(importer);
                 if (timer != null) Logger.Log("Avatar import for " + source.Name + ": native import started");
                 // univrm reports each phase through this hook. keep the longest single call per phase so a

@@ -8,7 +8,6 @@ namespace EnhancedValheimVRM
     // one follows the collider every frame.
     public sealed class CapsuleGizmo : MonoBehaviour
     {
-        private const float VanillaRadius = 0.49f, VanillaHeight = 1.85f, VanillaCentre = 0.925f;
         private static Material _red, _blue, _green;
         private Shape _live, _vanilla;
         private GameObject _sensor;
@@ -19,13 +18,13 @@ namespace EnhancedValheimVRM
         {
             internal GameObject Middle, Top, Bottom;
 
-            internal void Fit(Vector3 centre, float radius, float height)
+            internal void Fit(Vector3 center, float radius, float height)
             {
                 var half = Mathf.Max(0f, height / 2f - radius);
-                Middle.transform.position = centre;
+                Middle.transform.position = center;
                 Middle.transform.localScale = new Vector3(radius * 2f, half, radius * 2f);
-                Top.transform.position = centre + Vector3.up * half;
-                Bottom.transform.position = centre - Vector3.up * half;
+                Top.transform.position = center + Vector3.up * half;
+                Bottom.transform.position = center - Vector3.up * half;
                 Top.transform.localScale = Bottom.transform.localScale = Vector3.one * (radius * 2f);
             }
 
@@ -63,10 +62,13 @@ namespace EnhancedValheimVRM
         {
             var origin = transform.position;
             if (_capsule != null) _live.Fit(_capsule.bounds.center, _capsule.radius, _capsule.height);
-            _vanilla.Fit(origin + Vector3.up * VanillaCentre, VanillaRadius, VanillaHeight);
+            _vanilla.Fit(origin + Vector3.up * Constants.VanillaCapsule.Center,
+                Constants.VanillaCapsule.Radius,
+                Constants.VanillaCapsule.Height);
             // unitys cylinder primitive is 2 tall and 1 wide
-            _sensor.transform.position = origin + Vector3.up * VanillaRadius;
-            _sensor.transform.localScale = new Vector3(VanillaRadius * 2f, 0.02f, VanillaRadius * 2f);
+            _sensor.transform.position = origin + Vector3.up * Constants.VanillaCapsule.Radius;
+            _sensor.transform.localScale =
+                new Vector3(Constants.VanillaCapsule.Radius * 2f, 0.02f, Constants.VanillaCapsule.Radius * 2f);
         }
 
         private static Shape Capsule(Material material)

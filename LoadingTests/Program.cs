@@ -213,6 +213,20 @@ namespace UnityEngine
 
 namespace UniGLTF
 {
+    public enum ImportedTexturesAccessibility
+    {
+        Auto,
+        Readable,
+        NonReadable
+    }
+
+    public class ImporterContextSettings
+    {
+        public ImporterContextSettings(bool loadAnimation = true,
+            object invertAxis = null,
+            ImportedTexturesAccessibility importedTexturesAccessibility = ImportedTexturesAccessibility.Auto) { }
+    }
+
     public class GlbBinaryParser
     {
         private readonly byte[] bytes;
@@ -291,7 +305,11 @@ namespace VRM
 
     public class VRMImporterContext : UniGLTF.ImporterContext
     {
-        public VRMImporterContext(VRMData data, object map = null, object texture = null, object materials = null) { }
+        public VRMImporterContext(VRMData data,
+            object map = null,
+            object texture = null,
+            object materials = null,
+            UniGLTF.ImporterContextSettings settings = null) { }
     }
 }
 
@@ -307,11 +325,14 @@ namespace UniVRM10
 
     public class Vrm10Importer : UniGLTF.ImporterContext
     {
-        public Vrm10Importer(Vrm10Data data, object map = null, object texture = null, object materials = null) { }
+        public Vrm10Importer(Vrm10Data data,
+            object map = null,
+            object texture = null,
+            object materials = null,
+            bool useControlRig = false,
+            UniGLTF.ImporterContextSettings settings = null) { }
     }
 }
-
-namespace VRMShaders { }
 
 namespace HarmonyLib
 {
@@ -422,7 +443,7 @@ namespace EnhancedValheimVRM
     {
         public sealed class Import { }
 
-        public static Import Begin(object keep, bool deferred)
+        public static Import Begin(object keep)
         {
             return new Import();
         }

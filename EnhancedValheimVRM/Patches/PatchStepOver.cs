@@ -9,13 +9,10 @@ namespace EnhancedValheimVRM
     // capsule is sized to the avatar so it fits under things, and a thin one meets a step side on,
     // so nothing lifts it. this gives every avatar the vanilla band: a contact below the vanilla
     // radius counts as ground, and the push a vanilla sphere would have got from it is applied,
-    // its normal is where that sphere's centre would be
+    // its normal is where that sphere's center would be
     [HarmonyPatch(typeof(Character), "OnCollisionStay")]
     internal static class PatchStepOver
     {
-        // Player.prefab capsule: radius 0.49, height 1.85, centre 0.925, bottom on the feet
-        private const float VanillaRadius = 0.49f;
-
         // how far over the games own rise an edge carries you. 1 is what physics gives a solid sphere
         private const float Bump = 1.15f;
 
@@ -58,7 +55,7 @@ namespace EnhancedValheimVRM
                 var height = contact.point.y - feet.y;
                 // skip the floor under your feet and anything 0.49 m or higher, only low edges get stepped over.
                 // higher ones broke the maths below and got people stuck on walls
-                if (height <= 0f || height >= VanillaRadius) continue;
+                if (height <= 0f || height >= Constants.VanillaCapsule.Radius) continue;
                 var facing = contact.normal;
                 if (facing.y < 0f) facing.y = -facing.y;
                 // tried a vanilla sized sphere (Physics.ComputePenetration) instead of the ring. no wall test
@@ -72,7 +69,7 @@ namespace EnhancedValheimVRM
                 var normal = facing;
                 if (facing.y <= 0.1f)
                 {
-                    var up = (VanillaRadius - height) / VanillaRadius;
+                    var up = (Constants.VanillaCapsule.Radius - height) / Constants.VanillaCapsule.Radius;
                     var outward = new Vector3(facing.x, 0f, facing.z).normalized;
                     normal = outward * Mathf.Sqrt(1f - up * up) + Vector3.up * up;
                 }

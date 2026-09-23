@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using UniGLTF;
 using UniVRM10;
 using VRM;
-using VRMShaders;
 
 namespace EnhancedValheimVRM
 {
@@ -33,9 +32,9 @@ namespace EnhancedValheimVRM
             return WithoutMergedMap(_inner.Get(data, i));
         }
 
-        public MaterialDescriptor GetGltfDefault()
+        public MaterialDescriptor GetGltfDefault(string materialName = null)
         {
-            return WithoutMergedMap(_inner.GetGltfDefault());
+            return WithoutMergedMap(_inner.GetGltfDefault(materialName));
         }
 
         private static MaterialDescriptor WithoutMergedMap(MaterialDescriptor source)

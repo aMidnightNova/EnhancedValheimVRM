@@ -39,11 +39,22 @@ namespace EnhancedValheimVRM
         public float ModelBrightness = 0.8f;
         public bool FixCameraHeight = true;
         public bool UseMToonShader = false;
-        public bool EnablePlayerFade = true;
+        public bool EnablePlayerFade = false;
         public bool AllowShare = true;
 
         public float SpringBoneStiffness = 1.0f;
         public float SpringBoneGravityPower = 1.0f;
+
+        // same idea as Immobile on a physbone: 0 to 1, how much of the movement the springs
+        // ignore. a name in front sets one spring group only: SpringBoneImmobile=Neckfloof,1
+        public float SpringBoneImmobile = 0f;
+
+        // "World" ignores only the player moving through the world, "AllMotion" also the animation
+        public string SpringBoneImmobileType = "World";
+
+        // same idea as the angle limit on a physbone: how many degrees a spring bone can swing away
+        // from its rest pose, 0 is off. a name in front sets one spring group only: SpringBoneMaxAngle=Ears,18
+        public float SpringBoneMaxAngle = 0f;
 
         public float InteractionDistanceScale = 1.0f;
 
@@ -57,7 +68,7 @@ namespace EnhancedValheimVRM
         // with hundreds of them load faster and cause less of a frame spike. true loads all of them.
         public bool KeepAllBlendShapes = false;
 
-        // With AttemptTextureFix, how much of the avatar's own colour glows on its own (0 = none,
+        // With AttemptTextureFix, how much of the avatar's own color glows on its own (0 = none,
         // 1 = fully self-lit). Keeps a toon avatar from going black in shadow.
         public float TextureFixEmission = 0.15f;
 
@@ -130,6 +141,12 @@ namespace EnhancedValheimVRM
         private readonly Dictionary<string, float> _weaponScales =
             new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
 
+        private readonly Dictionary<string, float> _springImmobile =
+            new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+
+        private readonly Dictionary<string, float> _springMaxAngle =
+            new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+
         // per piece offsets for rigged weapons:
         //   KnifeSkollAndHatiLeftHandPos=<0, 0.01, 0>
         //   FistGoldRightForeArmRot=<0, 10, 0>
@@ -189,6 +206,66 @@ namespace EnhancedValheimVRM
             return !string.IsNullOrEmpty(prefabName) && _weaponScales.TryGetValue(prefabName, out var scale)
                 ? scale
                 : WeaponScale;
+        }
+
+        public bool SpringBoneImmobileAllMotion =>
+            string.Equals(SpringBoneImmobileType, "AllMotion", StringComparison.OrdinalIgnoreCase);
+
+        public float GetSpringBoneImmobile(string comment, IEnumerable<string> rootBones)
+        {
+            return SpringGroupValue(_springImmobile, comment, rootBones, SpringBoneImmobile);
+        }
+
+        public float GetSpringBoneMaxAngle(string comment, IEnumerable<string> rootBones)
+        {
+            return SpringGroupValue(_springMaxAngle, comment, rootBones, SpringBoneMaxAngle);
+        }
+
+        // a named line wins when the name is in the groups comment or is one of its root bones
+        private static float SpringGroupValue(Dictionary<string, float> named,
+            string comment,
+            IEnumerable<string> rootBones,
+            float fallback)
+        {
+            foreach (var pair in named)
+            {
+                if (!string.IsNullOrEmpty(comment) &&
+                    comment.IndexOf(pair.Key, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return pair.Value;
+                foreach (var bone in rootBones)
+                {
+                    if (string.Equals(bone, pair.Key, StringComparison.OrdinalIgnoreCase)) return pair.Value;
+                }
+            }
+
+            return fallback;
+        }
+
+        private bool TryParseSpringGroupLine(string key, string value)
+        {
+            string name;
+            Dictionary<string, float> named;
+            if (key.Equals(nameof(SpringBoneImmobile), StringComparison.OrdinalIgnoreCase))
+            {
+                name = nameof(SpringBoneImmobile);
+                named = _springImmobile;
+            }
+            else if (key.Equals(nameof(SpringBoneMaxAngle), StringComparison.OrdinalIgnoreCase))
+            {
+                name = nameof(SpringBoneMaxAngle);
+                named = _springMaxAngle;
+            }
+            else
+                return false;
+
+            var comma = value.IndexOf(',');
+            if (comma < 0) return false;
+            var group = value.Substring(0, comma).Trim();
+            var amountText = value.Substring(comma + 1).Trim();
+            if (group.Length == 0 || !(ParseValue(typeof(float), amountText) is float amount))
+                throw new InvalidDataException("Cannot parse named " + name + ": " + value);
+            named[group] = amount;
+            return true;
         }
 
         private bool TryParseWeaponScaleLine(string key, string value)
@@ -354,6 +431,18 @@ namespace EnhancedValheimVRM
             foreach (var pair in _weaponScales)
                 lines.Add("WeaponScale=" + pair.Key + "," + pair.Value.ToString("R", CultureInfo.InvariantCulture));
 
+            foreach (var pair in _springImmobile)
+            {
+                lines.Add("SpringBoneImmobile=" + pair.Key + "," +
+                    pair.Value.ToString("R", CultureInfo.InvariantCulture));
+            }
+
+            foreach (var pair in _springMaxAngle)
+            {
+                lines.Add("SpringBoneMaxAngle=" + pair.Key + "," +
+                    pair.Value.ToString("R", CultureInfo.InvariantCulture));
+            }
+
             foreach (var pair in _rigParts)
             {
                 if (pair.Value.HasPos)
@@ -397,6 +486,7 @@ namespace EnhancedValheimVRM
                 var value = parts[1].Trim();
 
                 if (TryParseWeaponScaleLine(key, value)) continue;
+                if (TryParseSpringGroupLine(key, value)) continue;
                 if (!_fields.ContainsKey(key) && TryParseItemLine(key, value)) continue;
                 if (!_fields.ContainsKey(key) && TryParseRigLine(key, value)) continue;
 
@@ -441,6 +531,25 @@ namespace EnhancedValheimVRM
                     throw new InvalidDataException("Non-finite offset: " + field.Name);
             }
 
+            foreach (var pair in _springImmobile)
+            {
+                if (!(pair.Value >= 0 && pair.Value <= 1))
+                    throw new InvalidDataException("SpringBoneImmobile must be between 0 and 1: " + pair.Key);
+            }
+
+            if (SpringBoneImmobile < 0 || SpringBoneImmobile > 1)
+                throw new InvalidDataException("SpringBoneImmobile must be between 0 and 1.");
+            foreach (var pair in _springMaxAngle)
+            {
+                if (!(pair.Value >= 0 && pair.Value <= 180))
+                    throw new InvalidDataException("SpringBoneMaxAngle must be between 0 and 180: " + pair.Key);
+            }
+
+            if (SpringBoneMaxAngle < 0 || SpringBoneMaxAngle > 180)
+                throw new InvalidDataException("SpringBoneMaxAngle must be between 0 and 180.");
+            if (!SpringBoneImmobileAllMotion &&
+                !string.Equals(SpringBoneImmobileType, "World", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("SpringBoneImmobileType must be World or AllMotion.");
             if (!UsesCreatureShader &&
                 !string.Equals(ShaderForTextureFix, "player", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("ShaderForTextureFix must be player or creature.");

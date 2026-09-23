@@ -59,5 +59,13 @@ namespace EnhancedValheimVRM
         {
             public static readonly string PlayerName = $"{Prefix}PlayerName";
         }
+
+        // the Player.prefab capsule. an vrms capsule never grows past it
+        public static class VanillaCapsule
+        {
+            public const float Radius = 0.49f;
+            public const float Height = 1.85f;
+            public const float Center = 0.925f;
+        }
     }
 }

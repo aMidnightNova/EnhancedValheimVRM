@@ -252,7 +252,7 @@ namespace EnhancedValheimVRM
             _sourceReadyMs = LoadMilliseconds;
             TraceLoad("source prepared; cached import lookup");
             _cacheHit = VrmAssetCache.IsImported(source.Key);
-            // A cache import outlives a cancelled menu preview or departing player.
+            // A cache import outlives a canceled menu preview or departing player.
             var entry = _synchronousMenuLoad ? VrmAssetCache.GetForMenu(source) : VrmAssetCache.Get(source);
             while (!entry.Imported && !entry.Completed) yield return null;
             if (entry.Error != null) throw new InvalidOperationException("VRM cache import failed.", entry.Error);
@@ -283,6 +283,9 @@ namespace EnhancedValheimVRM
                     yield break;
                 }
 
+                var restored = VrmRepair.Restore(entry.Root, _vrmGo);
+                if (restored > 0 && Settings.LogLoadTiming)
+                    Logger.Log(_playerName + ": put back " + restored + " fields the avatar copy lost");
                 _cloneReadyMs = LoadMilliseconds;
                 TraceLoad("clone ready; material copies and outfit/size setup started");
                 _vrmGo.transform.localScale = Vector3.one * _settings.ModelScale;
@@ -372,6 +375,16 @@ namespace EnhancedValheimVRM
             yield break;
         }
 
+        // the game's player lod group, used when the live one cannot be read
+        private const float VanillaCullHeight = 0.04171111f;
+        private const float VanillaLodSize = 2.2767289f;
+
+        private static float WorldLodSize(LODGroup group)
+        {
+            var scale = group.transform.lossyScale;
+            return group.size * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z));
+        }
+
         private void CreateVrmGo()
         {
             var lodGroupPlayer = _player.GetComponentInChildren<LODGroup>();
@@ -380,14 +393,34 @@ namespace EnhancedValheimVRM
             if (_settings.EnablePlayerFade)
             {
                 //TODO: determine if regular Renderers need to be put into the lod group. and then any armors added
-                lodGroup.SetLODs(new LOD[]
+                var lods = new LOD[]
                 {
-                    new LOD(0.1f,
+                    new LOD(VanillaCullHeight,
                         _vrmGo.GetComponentsInChildren<Renderer>(true)
                             .Where(renderer =>
                                 renderer is SkinnedMeshRenderer || renderer is MeshRenderer)
                             .ToArray())
-                });
+                };
+                lodGroup.SetLODs(lods);
+                lodGroup.RecalculateBounds();
+
+                // screen height is size over distance, so scaling the game's cull height by the size
+                // ratio makes the avatar cull at the same distance as the game's own player model
+                var playerHeight = VanillaCullHeight;
+                var playerSize = VanillaLodSize;
+                if (lodGroupPlayer != null && lodGroupPlayer.lodCount > 0 && lodGroupPlayer.size > 0f)
+                {
+                    var playerLods = lodGroupPlayer.GetLODs();
+                    playerHeight = playerLods[playerLods.Length - 1].screenRelativeTransitionHeight;
+                    playerSize = WorldLodSize(lodGroupPlayer);
+                }
+
+                var vrmSize = WorldLodSize(lodGroup);
+                if (vrmSize > 0f && playerSize > 0f && playerHeight > 0f)
+                {
+                    lods[0].screenRelativeTransitionHeight = playerHeight * vrmSize / playerSize;
+                    lodGroup.SetLODs(lods);
+                }
             }
 
             lodGroup.RecalculateBounds();
@@ -568,7 +601,7 @@ namespace EnhancedValheimVRM
                             mat.SetFloat("_Glossiness", 0.2f);
                             mat.SetFloat("_Metallic", 0f);
                             mat.SetFloat("_MetalGloss", 0f);
-                            // The avatar's own colours glow at the configured strength.
+                            // The avatar's own colors glow at the configured strength.
                             mat.SetTexture("_EmissionMap", tex);
                             mat.SetColor("_EmissionColor", Color.white * settings.TextureFixEmission);
                         }

@@ -603,7 +603,7 @@ namespace EnhancedValheimVRM
         }
 
         // What the game copies from a dying player onto its ragdoll so the corpse looks like
-        // them: body model, skin and hair colours, worn items. Read from either object's ZDO.
+        // them: body model, skin and hair colors, worn items. Read from either object's ZDO.
         private struct CorpseSignature
         {
             private int _model, _beard, _hair, _helmet, _chest, _legs;
@@ -697,7 +697,7 @@ namespace EnhancedValheimVRM
             if (ragdoll == null) yield break;
             var position = ragdoll.transform.position;
             var signature = CorpseSignature.Read(ragdoll);
-            // Candidates are recently dead players near the corpse. The equipment/colour
+            // Candidates are recently dead players near the corpse. The equipment/color
             // signature the game copied onto the ragdoll decides between them; distance only
             // breaks ties or stands in when the ragdoll's data has not arrived yet.
             var radius = CorpseClaimRadius * CorpseClaimRadius;
@@ -1007,9 +1007,12 @@ namespace EnhancedValheimVRM
             if (collider != null)
             {
                 // the vanilla capsule scaled by how the avatar compares to the player, bones measured the same
-                // way on both. the bones alone undershoot, a head bone sits well below the top of the head
-                var height = baseline.Height * settings.PlayerVrmScale;
-                var radius = Mathf.Min(baseline.Radius * settings.PlayerVrmWidthScale, height / 2f);
+                // way on both. the bones alone undershoot, a head bone sits well below the top of the head.
+                // never bigger than the vanilla capsule, so a big avatar still fits where a player can go
+                var height = Mathf.Min(baseline.Height * settings.PlayerVrmScale, Constants.VanillaCapsule.Height);
+                var radius = Mathf.Min(baseline.Radius * settings.PlayerVrmWidthScale,
+                    Constants.VanillaCapsule.Radius,
+                    height / 2f);
                 collider.height = height;
                 collider.radius = radius;
                 collider.center = new Vector3(0, height / 2, 0);
