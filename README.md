@@ -2,7 +2,7 @@
 
 **This mod requires [BepInEx](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/) to be installed.**
 
-## Join our discord if you need help or just want to chill. [discord](https://rawrtastic.com/join/discord).
+## Join our [discord]([discord](https://rawrtastic.com/join/discord)) if you need help or just want to chill.
 
 **dont copy the settings from ValheimVRM over. Start from settings_Example.txt.example and only add back what you actually need. offsets work differently now and most avatars should need a lot less tuning.**
 
@@ -208,3 +208,8 @@ If you put someones vrm and settings file in your folder yourself, that is used 
 
 
 - If for whatever reason you are targeting 111 still, Make sure in Unity you have Mono  and .NET 4.x selected.
+
+### Official Sources
+- Rawrtastic: https://rawrtastic.com/mods
+- GitHub: https://github.com/aMidnightNova/EnhancedValheimVRM
+- Thunderstore: https://thunderstore.io/c/valheim/p/Rawrtastic/EnhancedValheimVRM/

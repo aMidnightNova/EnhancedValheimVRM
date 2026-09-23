@@ -213,20 +213,6 @@ namespace UnityEngine
 
 namespace UniGLTF
 {
-    public enum ImportedTexturesAccessibility
-    {
-        Auto,
-        Readable,
-        NonReadable
-    }
-
-    public class ImporterContextSettings
-    {
-        public ImporterContextSettings(bool loadAnimation = true,
-            object invertAxis = null,
-            ImportedTexturesAccessibility importedTexturesAccessibility = ImportedTexturesAccessibility.Auto) { }
-    }
-
     public class GlbBinaryParser
     {
         private readonly byte[] bytes;
@@ -308,8 +294,7 @@ namespace VRM
         public VRMImporterContext(VRMData data,
             object map = null,
             object texture = null,
-            object materials = null,
-            UniGLTF.ImporterContextSettings settings = null) { }
+            object materials = null) { }
     }
 }
 
@@ -328,9 +313,7 @@ namespace UniVRM10
         public Vrm10Importer(Vrm10Data data,
             object map = null,
             object texture = null,
-            object materials = null,
-            bool useControlRig = false,
-            UniGLTF.ImporterContextSettings settings = null) { }
+            object materials = null) { }
     }
 }
 

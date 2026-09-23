@@ -41,11 +41,6 @@ namespace EnhancedValheimVRM
 
         private static readonly Dictionary<string, Entry> Entries = new Dictionary<string, Entry>();
 
-        // univrm makes imported textures unreadable at runtime since 0.128.4, the texture fix and the
-        // metallic merge read their pixels back
-        private static readonly ImporterContextSettings ReadableTextures =
-            new ImporterContextSettings(importedTexturesAccessibility: ImportedTexturesAccessibility.Readable);
-
         private static readonly Dictionary<string, string> Latest = new Dictionary<string, string>();
 
         // Thread-safe view of imported keys, so a receive worker can skip fetching a model that
@@ -253,20 +248,8 @@ namespace EnhancedValheimVRM
                 var shadersMs = timer?.Elapsed.TotalMilliseconds ?? 0;
                 var bytes = File.ReadAllBytes(source.Path);
                 var readMs = timer?.Elapsed.TotalMilliseconds ?? 0;
-                var data = new GlbBinaryParser(bytes, source.Path).Parse();
-                object parsed;
-                try
-                {
-                    parsed = new VRMData(data);
-                }
-                catch (NotVrm0Exception)
-                {
-                    parsed = Vrm10Data.Parse(data);
-                }
-
-                importer = parsed is VRMData vrm0
-                    ? (ImporterContext)new VRMImporterContext(vrm0, settings: ReadableTextures)
-                    : new Vrm10Importer((Vrm10Data)parsed, settings: ReadableTextures);
+                var parsed = Parse(bytes, source.Path);
+                importer = CreateImporter(parsed, source);
                 blendShapes = PatchBlendShapes.Begin(BlendShapesToKeep(parsed, source));
                 var parseMs = timer?.Elapsed.TotalMilliseconds ?? 0;
                 var loaded = importer.Load();
@@ -361,6 +344,35 @@ namespace EnhancedValheimVRM
             }
         }
 
+        private static object Parse(byte[] bytes, string path)
+        {
+            var data = new GlbBinaryParser(bytes, path).Parse();
+            try
+            {
+                return new VRMData(data);
+            }
+            catch (NotVrm0Exception)
+            {
+                return Vrm10Data.Parse(data);
+            }
+        }
+
+        // the menu and world imports build the importer the same way, only the await caller differs
+        private static ImporterContext CreateImporter(object parsed, Source source)
+        {
+            var textures = TextureDeserializerAsync.For(parsed);
+            var textureFix = source.Settings != null && source.Settings.AttemptTextureFix;
+            return parsed is VRMData vrm0
+                ? (ImporterContext)new VRMImporterContext(vrm0,
+                    null,
+                    textures,
+                    textureFix ? TextureFixMaterialGenerator.For(vrm0) : null)
+                : new Vrm10Importer((Vrm10Data)parsed,
+                    null,
+                    textures,
+                    textureFix ? TextureFixMaterialGenerator.For((Vrm10Data)parsed) : null);
+        }
+
         private static IEnumerator Import(Entry entry, Source source)
         {
             // Parse concurrently; native imports share one main-thread frame budget.
@@ -374,16 +386,7 @@ namespace EnhancedValheimVRM
                         "The shared model is no longer imported; it will be fetched again.");
                 }
 
-                var bytes = source.Bytes ?? File.ReadAllBytes(source.Path);
-                var data = new GlbBinaryParser(bytes, source.Path).Parse();
-                try
-                {
-                    return new VRMData(data);
-                }
-                catch (NotVrm0Exception)
-                {
-                    return Vrm10Data.Parse(data);
-                }
+                return Parse(source.Bytes ?? File.ReadAllBytes(source.Path), source.Path);
             });
             while (!parsing.IsCompleted) yield return null;
             var parsed = parsing.GetAwaiter().GetResult();
@@ -401,18 +404,7 @@ namespace EnhancedValheimVRM
             {
                 yield return PatchShaderFind.EnsureLoaded();
                 var shadersMs = timer?.Elapsed.TotalMilliseconds ?? 0;
-                var textureFix = source.Settings != null && source.Settings.AttemptTextureFix;
-                importer = parsed is VRMData vrm0
-                    ? (ImporterContext)new VRMImporterContext(vrm0,
-                        null,
-                        TextureDeserializerAsync.For(parsed),
-                        textureFix ? TextureFixMaterialGenerator.For(vrm0) : null,
-                        ReadableTextures)
-                    : new Vrm10Importer((Vrm10Data)parsed,
-                        null,
-                        TextureDeserializerAsync.For(parsed),
-                        textureFix ? TextureFixMaterialGenerator.For((Vrm10Data)parsed) : null,
-                        settings: ReadableTextures);
+                importer = CreateImporter(parsed, source);
                 var caller = new PersistentImportAwaitCaller(importer);
                 if (timer != null) Logger.Log("Avatar import for " + source.Name + ": native import started");
                 // univrm reports each phase through this hook. keep the longest single call per phase so a

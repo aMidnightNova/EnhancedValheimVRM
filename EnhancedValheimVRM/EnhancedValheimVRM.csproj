@@ -7,18 +7,19 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{56266ABF-B3F1-44F5-8790-D269FE536067}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <Version>1.4.0</Version>
+    <Version>1.4.1</Version>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>EnhancedValheimVRM</RootNamespace>
     <AssemblyName>EnhancedValheimVRM</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <LangVersion>8</LangVersion>
-    <FrameworkPathOverride Condition="'$(OS)' == 'Unix'">/usr/lib/mono/4.7.1-api</FrameworkPathOverride>
   </PropertyGroup>
   <!-- Match the neighboring ValheimVRM development installation; explicit overrides take precedence. -->
   <PropertyGroup>
     <VALHEIM_INSTALL Condition="'$(VALHEIM_INSTALL)' == '' and '$(OS)' != 'Windows_NT'">$(HOME)/.local/share/Steam/steamapps/common/Valheim</VALHEIM_INSTALL>
+    <!-- build against the mscorlib and system dlls valheim ships with its unity stuff -->
+    <FrameworkPathOverride>$(VALHEIM_INSTALL)/valheim_Data/Managed</FrameworkPathOverride>
     <!-- the UniVRM 0.131 build, /mnt/data2/game_mods/ValheimUniLibs131 -->
     <UNIVRM_UNITY_LIBS Condition="'$(UNIVRM_UNITY_LIBS)' == '' and Exists('$(MSBuildProjectDirectory)/../../../../game_mods/ValheimUniLibs131/Valheim_Data/Managed/SpringBoneJobs.dll')">$(MSBuildProjectDirectory)/../../../../game_mods/ValheimUniLibs131/Valheim_Data</UNIVRM_UNITY_LIBS>
     <UNIVRM_UNITY_LIBS Condition="'$(UNIVRM_UNITY_LIBS)' == ''">$(VALHEIM_INSTALL)/valheim_Data</UNIVRM_UNITY_LIBS>
@@ -227,6 +228,9 @@
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
       <HintPath>$(VALHEIM_INSTALL)\valheim_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
     </Reference>
@@ -381,7 +385,7 @@
       <ReleaseLibraryName Include="$(UniVrmLibraryNames)"/>
       <ReleaseLibrary Include="@(ReleaseLibraryName->'$(UNIVRM_UNITY_LIBS)/Managed/%(Identity).dll')"/>
       <ReleaseLibrary Include="$(FreeImagePath)"/>
-      <ReleaseDocumentation Include="$(EnhancedProjectRoot)/README.md;$(EnhancedProjectRoot)/CHANGELOG.md;$(EnhancedProjectRoot)/WEAPONS.md;$(EnhancedProjectRoot)/outfits_Example.txt.example;$(EnhancedProjectRoot)/settings_Example.txt.example;$(EnhancedProjectRoot)/settings____Default.txt.example"/>
+      <ReleaseDocumentation Include="$(EnhancedProjectRoot)/README.md;$(EnhancedProjectRoot)/CHANGELOG.md;$(EnhancedProjectRoot)/WEAPONS.md;$(EnhancedProjectRoot)/LICENSE;$(EnhancedProjectRoot)/outfits_Example.txt.example;$(EnhancedProjectRoot)/settings_Example.txt.example;$(EnhancedProjectRoot)/settings____Default.txt.example"/>
     </ItemGroup>
     <RemoveDir Directories="$(ReleasePackageRoot)"/>
     <MakeDir Directories="$(ReleasePath)/BepInEx/plugins;$(ReleasePath)/valheim_Data/Managed;$(ReleasePath)/EnhancedValheimVRM/shaders"/>
@@ -421,13 +425,14 @@
     <RemoveDir Directories="$(ThunderstorePackageRoot)"/>
     <MakeDir Directories="$(ThunderstorePackageRoot)"/>
     <ItemGroup>
-      <!-- the github readme stays out of the thunderstore zip, the changelog goes in its root -->
-      <ThunderstoreRuntimeFile Include="$(ThunderstoreReleasePath)**/*" Exclude="$(ThunderstoreReleasePath)EnhancedValheimVRM/README.md;$(ThunderstoreReleasePath)EnhancedValheimVRM/CHANGELOG.md"/>
+      <!-- the github readme stays out of the thunderstore zip, the changelog and license go in its root -->
+      <ThunderstoreRuntimeFile Include="$(ThunderstoreReleasePath)**/*" Exclude="$(ThunderstoreReleasePath)EnhancedValheimVRM/README.md;$(ThunderstoreReleasePath)EnhancedValheimVRM/CHANGELOG.md;$(ThunderstoreReleasePath)EnhancedValheimVRM/LICENSE"/>
     </ItemGroup>
     <Copy SourceFiles="@(ThunderstoreRuntimeFile)"
           DestinationFiles="@(ThunderstoreRuntimeFile->'$(ThunderstorePackageRoot)/%(RecursiveDir)%(Filename)%(Extension)')"/>
     <Copy SourceFiles="$(EnhancedProjectRoot)/thunderstore/README.md" DestinationFolder="$(ThunderstorePackageRoot)"/>
     <Copy SourceFiles="$(EnhancedProjectRoot)/CHANGELOG.md" DestinationFolder="$(ThunderstorePackageRoot)"/>
+    <Copy SourceFiles="$(EnhancedProjectRoot)/LICENSE" DestinationFolder="$(ThunderstorePackageRoot)"/>
     <Copy SourceFiles="$(EnhancedProjectRoot)/icon.png" DestinationFolder="$(ThunderstorePackageRoot)"/>
     <WriteLinesToFile File="$(ThunderstorePackageRoot)/manifest.json"
                       Lines="$(ThunderstoreManifest)" Overwrite="true" Encoding="ASCII"/>
@@ -538,11 +543,13 @@
     <Copy Condition=" '$(Configuration)' == 'Release' " SourceFiles="@(LibFiles)" DestinationFolder="$(ReleaseManagedPath)"/>
 
     <!--  Copy Other Project files  -->
-    <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)settings____Default.txt.example&quot; &quot;$(ReleasePath)EnhancedValheimVRM\settings___Default.txt.example&quot;"/>
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)settings____Default.txt.example&quot; &quot;$(ReleasePath)EnhancedValheimVRM\settings____Default.txt.example&quot;"/>
     <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)settings_Example.txt.example&quot; &quot;$(ReleasePath)EnhancedValheimVRM\settings_Example.txt.example&quot;"/>
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)outfits_Example.txt.example&quot; &quot;$(ReleasePath)EnhancedValheimVRM\outfits_Example.txt.example&quot;"/>
     <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)README.md&quot; &quot;$(ReleasePath)EnhancedValheimVRM\README.md&quot;"/>
     <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)CHANGELOG.md&quot; &quot;$(ReleasePath)EnhancedValheimVRM\CHANGELOG.md&quot;"/>
     <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)WEAPONS.md&quot; &quot;$(ReleasePath)EnhancedValheimVRM\WEAPONS.md&quot;"/>
+    <Exec Condition=" '$(Configuration)' == 'Release' " Command="copy &quot;$(SolutionDir)LICENSE&quot; &quot;$(ReleasePath)EnhancedValheimVRM\LICENSE&quot;"/>
 
 
     <!-- Zip for release -->
