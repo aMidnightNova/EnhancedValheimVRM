@@ -2,7 +2,7 @@
 
 **This mod requires [BepInEx](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/) to be installed.**
 
-## Join our [discord]([discord](https://rawrtastic.com/join/discord)) if you need help or just want to chill.
+## Join our [discord](https://rawrtastic.com/join/discord) if you need help or just want to chill.
 
 **dont copy the settings from ValheimVRM over. Start from settings_Example.txt.example and only add back what you actually need. offsets work differently now and most avatars should need a lot less tuning.**
 
