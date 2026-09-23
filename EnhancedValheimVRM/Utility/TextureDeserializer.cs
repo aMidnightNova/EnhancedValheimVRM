@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UniGLTF;
 using UnityEngine;
-using VRMShaders;
 
 
 namespace EnhancedValheimVRM
@@ -45,7 +45,7 @@ namespace EnhancedValheimVRM
             // an image with no bytes in the file
             if (textureInfo.ImageData == null || textureInfo.ImageData.Length == 0) return Blank(textureInfo);
             var settings = new AsyncImageLoader.LoaderSettings();
-            settings.linear = textureInfo.ColorSpace == VRMShaders.ColorSpace.Linear;
+            settings.linear = textureInfo.ColorSpace == UniGLTF.ColorSpace.Linear;
 
             switch (textureInfo.DataMimeType)
             {
@@ -103,7 +103,7 @@ namespace EnhancedValheimVRM
                 2,
                 TextureFormat.ARGB32,
                 textureInfo.UseMipmap,
-                textureInfo.ColorSpace == VRMShaders.ColorSpace.Linear);
+                textureInfo.ColorSpace == UniGLTF.ColorSpace.Linear);
             var fill = new Color32(0, 0, 0, 255);
             if (textureInfo.ImportTypes == TextureImportTypes.NormalMap)
                 fill = new Color32(128, 128, 255, 255);

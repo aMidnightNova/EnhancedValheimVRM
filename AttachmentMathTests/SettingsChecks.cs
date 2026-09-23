@@ -63,6 +63,40 @@ internal static class SettingsChecks
             check(Math.Abs(shared.GetWeaponScale("BowFineWood") - 1.1f) < 0.000001f &&
                 Math.Abs(shared.GetWeaponScale("BowDraugrFang") - 1.2f) < 0.000001f,
                 "Weapon scale lines lost in shared settings");
+            // spring immobile: one amount for the avatar, a named line for one spring group, matched on
+            // the groups comment or a root bone, and it comes through in shared settings
+            File.WriteAllText(path,
+                "SpringBoneImmobile=0.25\nSpringBoneImmobile=Neckfloof,1\nSpringBoneImmobile=Tail.001,0.5\nSpringBoneImmobileType=allmotion\n");
+            var springs = new VrmSettings("Test");
+            var sharedSprings = new VrmSettings("Test", springs.Serialize());
+            foreach (var immobile in new[] { springs, sharedSprings })
+            {
+                check(immobile.SpringBoneImmobileAllMotion, "SpringBoneImmobileType did not read");
+                check(immobile.GetSpringBoneImmobile("Physbones/Ears", new[] { "Ear.01.L" }) == 0.25f,
+                    "Avatar wide immobile did not apply");
+                check(immobile.GetSpringBoneImmobile("[Copied from PhysBone] Physbones/neckfloof",
+                        new[] { "ChestRoot" }) == 1f,
+                    "Named immobile did not match the group comment");
+                check(immobile.GetSpringBoneImmobile(null, new[] { "tail.001" }) == 0.5f,
+                    "Named immobile did not match a root bone");
+            }
+
+            check(!new VrmSettings("Test", "").SpringBoneImmobileAllMotion, "Immobile type does not default to World");
+            // max angle works the same way: one limit for the avatar, named lines for single groups
+            File.WriteAllText(path,
+                "SpringBoneMaxAngle=45\nSpringBoneMaxAngle=Ears,18\nspringbonemaxangle=Tail.001,0\n");
+            var angles = new VrmSettings("Test");
+            foreach (var limit in new[] { angles, new VrmSettings("Test", angles.Serialize()) })
+            {
+                check(limit.GetSpringBoneMaxAngle("Physbones/Long Hair", new[] { "LongHair1.001" }) == 45f,
+                    "Avatar wide max angle did not apply");
+                check(limit.GetSpringBoneMaxAngle("[Copied from PhysBone] Physbones/Ears", new[] { "Ear.01.L" }) == 18f,
+                    "Named max angle did not match the group comment");
+                check(limit.GetSpringBoneMaxAngle("Physbones/Tail", new[] { "Tail.001" }) == 0f,
+                    "Named max angle did not turn the limit off for one group");
+            }
+
+            check(new VrmSettings("Test", "").SpringBoneMaxAngle == 0f, "Max angle does not default to no limit");
             // rigged weapons get a line for each hand and forearm piece. make sure those read right, dont mess
             // with the normal weapon lines, and still come through in shared settings
             File.WriteAllText(path,
@@ -100,8 +134,11 @@ internal static class SettingsChecks
                      {
                          "ModelScale=0", "ModelScale=banana", "ModelScale=NaN", "WeaponScale=0",
                          "WeaponScale=BowDraugrFang,NaN", "WeaponScale=,1.2", "SpringBoneStiffness=-1",
-                         "InteractionDistanceScale=Infinity", "RightHandBackItemPos=(0,NaN,0)",
-                         "SittingOnChairOffset=(0,Infinity,0)"
+                         "SpringBoneImmobile=1.5", "SpringBoneImmobile=Tail,-0.1", "SpringBoneImmobile=Tail,NaN",
+                         "SpringBoneImmobile=,1", "SpringBoneImmobileType=Sideways", "SpringBoneMaxAngle=181",
+                         "SpringBoneMaxAngle=-5", "SpringBoneMaxAngle=Ears,200", "SpringBoneMaxAngle=Ears,NaN",
+                         "SpringBoneMaxAngle=,18", "InteractionDistanceScale=Infinity",
+                         "RightHandBackItemPos=(0,NaN,0)", "SittingOnChairOffset=(0,Infinity,0)"
                      })
             {
                 File.WriteAllText(path, bad);

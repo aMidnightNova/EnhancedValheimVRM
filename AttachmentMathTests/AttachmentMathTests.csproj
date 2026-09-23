@@ -3,8 +3,6 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <VALHEIM_INSTALL Condition="'$(VALHEIM_INSTALL)' == '' and '$(OS)' != 'Windows_NT'">$(HOME)/.local/share/Steam/steamapps/common/Valheim</VALHEIM_INSTALL>
-    <UNIVRM_UNITY_LIBS Condition="'$(UNIVRM_UNITY_LIBS)' == '' and Exists('$(MSBuildProjectDirectory)/../../ValheimLibs/valheim_Data/Managed/VRM.dll')">$(MSBuildProjectDirectory)/../../ValheimLibs/valheim_Data</UNIVRM_UNITY_LIBS>
-    <UNIVRM_UNITY_LIBS Condition="'$(UNIVRM_UNITY_LIBS)' == ''">$(VALHEIM_INSTALL)/valheim_Data</UNIVRM_UNITY_LIBS>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../EnhancedValheimVRM/Utility/BoneNames.cs" Link="BoneNames.cs"/>
@@ -16,7 +14,7 @@
     <Compile Include="../EnhancedValheimVRM/Utility/SeatSupportMeasurement.cs" Link="SeatSupportMeasurement.cs"/>
     <Compile Include="../EnhancedValheimVRM/Utility/FixedRotationSmoother.cs" Link="FixedRotationSmoother.cs"/>
     <Reference Include="Unity.Mathematics">
-      <HintPath>$(UNIVRM_UNITY_LIBS)/Managed/Unity.Mathematics.dll</HintPath>
+      <HintPath>$(VALHEIM_INSTALL)/valheim_Data/Managed/Unity.Mathematics.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

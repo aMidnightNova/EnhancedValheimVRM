@@ -49,6 +49,15 @@ settings_Example.txt.example has everything with comments, but the short version
   show the vanilla armor on top of the vrm. off by default because it usually looks wrong.
 - SpringBoneStiffness, SpringBoneGravityPower \
   multipliers on what the vrm author set. 1.0 = leave it alone.
+- SpringBoneImmobile, SpringBoneImmobileType \
+  same as Immobile on a physbone. 0 to 1, how much of your movement the hair, fur, tail and so on ignore. turn it up if things get pulled way out of place when you run. 0 = off. \
+  a name in front does one spring group only, SpringBoneImmobile=Neckfloof,1 \
+  the name is the spring bone comment from unity (a part of it is enough) or its root bone. \
+  SpringBoneImmobileType is World (only ignores you moving around, the animation still moves them) or AllMotion (ignores the animation too). \
+  does nothing on a spring group that has a center set in the vrm.
+- SpringBoneMaxAngle \
+  same as the angle limit on a physbone. how many degrees hair, ears, tails and so on can swing away from where they rest. 0 = off, a vrm 1.0 avatar then keeps any limits it was exported with. \
+  a name in front does one spring group only, SpringBoneMaxAngle=Ears,18, same names as SpringBoneImmobile.
 - InteractionDistanceScale \
   how far you can reach, small avatars might want a bit more.
 - AllowShare \
@@ -173,19 +182,22 @@ Downloaded avatars are cached in EnhancedValheimVRM/Shared, the server keeps the
 If you put someones vrm and settings file in your folder yourself, that is used instead of the shared one.
 
 ### Usefull Info
-- If you have a shader compile error you probably need to use the old shader bundle. \
-  the newer current bundle should work, but JIC ive included the old one still\
-  Its in General settings. ShaderBundle=<old,current>. Note that this will affect all models.
+- If you have a shader compile error you probably need to use an older shader bundle. \
+  the current bundle should work, but JIC ive included the previous and old ones still\
+  Its in General settings. ShaderBundle=<old,previous,current>. Note that this will affect all models.
 - if the mod says sharing is unavailable because the server did not answer, the server and clients are on different versions. update all of them and restart.
 
 ### Technical Stuff for maintaining this repo
 - You might need to build an Asset Bundle of shaders to stay inline with UniVrm. This is probably a non issue
   unless Valheim Updates Unity. - see next point.
-- Current UniVrm version is 121, for Unity 2022. UniVrm was 111 previous to  Valheim Patch 0.217.46. 111 is the last version to support Unity 2020.
-- Most Recent AssetBundle of shaders is UniVrm.shaders. This has shaders that are required since version 67 - 70(I dont know exactly when).
+- Current UniVrm version is 131.2, for Unity 6000 (Valheim runs 6000.0.75f1). 121 was the one for Unity 2022. UniVrm was 111 previous to  Valheim Patch 0.217.46. 111 is the last version to support Unity 2020.
+- Most Recent AssetBundle of shaders is UniVrm.shaders, built from UniVrm 131 in Unity 6000. PreviousUniVrm.shaders is the UniVrm 121 one from Unity 2022.
+  both have the shaders that are required since version 67 - 70(I dont know exactly when), OldUniVrm.shaders is from before that.
 - You will need to install UniVrm into a blank project (create the shader asset bundle there too)
-  once that's done(install from git the assetBundle Browser), you will need to build the Unity Project. Find the (build folder)_Data and set that
-  as a system Path. I called my project "UniVrm v121" so the data folder would be UniVrm v121_Data - **UNIVRM_UNITY_LIBS**
+  for the bundle copy shaders/BuildUniVrmShaders.cs into Assets/Editor and run Tools > Build UniVRM shader bundle. it needs Windows Build Support,
+  and the Windows graphics apis set to Direct3D11 + Vulkan so the bundle works on proton and native linux. \
+  once that's done, you will need to build the Unity Project as a Windows player (Mono, .NET Standard 2.1, Managed Stripping Level Disabled). Find the (build folder)_Data and set that
+  as a system Path - **UNIVRM_UNITY_LIBS**. without it the build looks for /mnt/data2/game_mods/ValheimUniLibs131/Valheim_Data, then the game folder.
 - inside your UniVrm Project you will need to install UnityAsyncImageLoader https://github.com/aMidnightNova/UnityAsyncImageLoader
 - Set your Valheim Folder as a system path. **VALHEIM_INSTALL**
 - Build without deploying with `dotnet build EnhancedValheimVRM/EnhancedValheimVRM.csproj -p:DeployToGame=false`. Normal builds deploy the mod to `BepInEx/plugins` of **VALHEIM_INSTALL**; Release builds also create `artifacts/EnhancedValheimVRM-<version>.zip`.

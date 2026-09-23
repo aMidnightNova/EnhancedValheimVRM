@@ -17,9 +17,15 @@ namespace EnhancedValheimVRM
         private static AssetBundle _bundle;
         private static AssetBundleCreateRequest _bundleRequest;
 
-        private static string BundlePath =>
-            Path.Combine(Constants.Shaders.Dir,
-                Settings.ShaderBundle == Settings.ShaderOptions.Old ? "OldUniVrm.shaders" : "UniVrm.shaders");
+        private static string BundlePath => Path.Combine(Constants.Shaders.Dir, BundleFile(Settings.ShaderBundle));
+
+        // current is the univrm the mod ships with, previous and old stay around for shaders that break on it
+        private static string BundleFile(string option)
+        {
+            if (option == Settings.ShaderOptions.Old) return "OldUniVrm.shaders";
+            if (option == Settings.ShaderOptions.Previous) return "PreviousUniVrm.shaders";
+            return "UniVrm.shaders";
+        }
 
         private static void CaptureGameShaders()
         {

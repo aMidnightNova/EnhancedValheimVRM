@@ -2,8 +2,8 @@ using System;
 using System.Collections;
 using System.Threading.Tasks;
 using HarmonyLib;
+using UniGLTF;
 using UnityEngine;
-using VRMShaders;
 
 namespace EnhancedValheimVRM
 {
